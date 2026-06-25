@@ -42,11 +42,7 @@ export default function RootLayout() {
           headerShown: false,
           contentStyle: { backgroundColor: color.gallery },
         }}
-      >
-        <Stack.Screen name="index" />
-        <Stack.Screen name="module/[key]" />
-        <Stack.Screen name="screen/[id]" />
-      </Stack>
+      />
     </SupabaseProvider>
   );
 }
