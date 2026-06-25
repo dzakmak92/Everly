@@ -1,0 +1,18 @@
+# dependencies
+node_modules/
+
+# expo
+.expo/
+dist/
+web-build/
+*.orig.*
+
+# env (anon key is public, but keep local env files out of git)
+.env
+.env.local
+.env.*.local
+
+# misc
+.DS_Store
+*.log
+npm-debug.*

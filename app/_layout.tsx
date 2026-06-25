@@ -16,6 +16,7 @@ import {
   Nunito_800ExtraBold,
 } from '@expo-google-fonts/nunito';
 import { color } from '../src/theme/tokens';
+import { SupabaseProvider } from '../src/lib/supabase';
 
 export default function RootLayout() {
   const [loaded] = useQuicksand({
@@ -34,7 +35,7 @@ export default function RootLayout() {
   }
 
   return (
-    <>
+    <SupabaseProvider>
       <StatusBar style="dark" />
       <Stack
         screenOptions={{
@@ -46,6 +47,6 @@ export default function RootLayout() {
         <Stack.Screen name="module/[key]" />
         <Stack.Screen name="screen/[id]" />
       </Stack>
-    </>
+    </SupabaseProvider>
   );
 }
