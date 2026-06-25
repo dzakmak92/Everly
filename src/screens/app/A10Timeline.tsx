@@ -9,10 +9,10 @@ const f = font;
 const c = color;
 
 /* A10 · Lifelong Timeline — Oliver's story, milestone spine + keepsake export. */
-export default function A10Timeline() {
+export default function A10Timeline({ embedded = false }: { embedded?: boolean }) {
   return (
     <View style={{ backgroundColor: c.canvas }}>
-      <StatusBar showIcons />
+      {!embedded && <StatusBar showIcons />}
 
       {/* header: Oliver's story + export */}
       <View

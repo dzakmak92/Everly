@@ -7,10 +7,11 @@ const f = font;
 const c = color;
 
 /* 02 · Today / Dashboard — Everly family home (Oliver mint / Mia lilac + maternal You). */
-export default function A02Today() {
+export default function A02Today({ embedded = false }: { embedded?: boolean }) {
   return (
     <View style={{ backgroundColor: c.canvas }}>
       {/* status bar */}
+      {!embedded && (
       <View
         style={{
           paddingTop: 14,
@@ -41,6 +42,7 @@ export default function A02Today() {
           </Svg>
         </View>
       </View>
+      )}
 
       {/* greeting */}
       <View style={{ paddingHorizontal: 24, paddingTop: 16, paddingBottom: 6 }}>
@@ -168,6 +170,7 @@ export default function A02Today() {
       </View>
 
       {/* bottom nav */}
+      {!embedded && (
       <View
         style={{
           backgroundColor: '#fff',
@@ -241,6 +244,7 @@ export default function A02Today() {
           }
         />
       </View>
+      )}
     </View>
   );
 }

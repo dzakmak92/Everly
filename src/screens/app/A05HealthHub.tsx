@@ -9,10 +9,10 @@ const f = font;
 const c = color;
 
 /* A05 · Health Hub — vaccine / medication / growth records, privacy note, PDF CTA. */
-export default function A05HealthHub() {
+export default function A05HealthHub({ embedded = false }: { embedded?: boolean }) {
   return (
     <View style={{ backgroundColor: c.canvas }}>
-      <StatusBar showIcons />
+      {!embedded && <StatusBar showIcons />}
 
       {/* header */}
       <View style={{ paddingVertical: 14, paddingHorizontal: 24, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -169,7 +169,7 @@ export default function A05HealthHub() {
       </View>
 
       {/* bottom nav (Family active) */}
-      <CalendarBottomNav active="Family" />
+      {!embedded && <CalendarBottomNav active="Family" />}
     </View>
   );
 }
