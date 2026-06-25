@@ -23,7 +23,7 @@ function timeOf(iso: string) {
 export default function Today() {
   const insets = useSafeAreaInsets();
   const { session, profile } = useSupabase();
-  const { entries, addEntry, deleteEntry } = useData();
+  const { entries, addEntry, deleteEntry, children, activeChild, setActiveChild } = useData();
 
   const [noteOpen, setNoteOpen] = useState(false);
   const [noteText, setNoteText] = useState('');
@@ -61,8 +61,38 @@ export default function Today() {
         <Text style={{ fontFamily: font.display700, fontSize: 26, color: color.ink }}>
           {greeting()}, {name}
         </Text>
-        <Text style={{ fontFamily: font.body400, fontSize: 13, color: color.muted, marginTop: 4 }}>{dateLabel}</Text>
+        <Text style={{ fontFamily: font.body400, fontSize: 13, color: color.muted, marginTop: 4 }}>
+          {dateLabel}{activeChild ? `  ·  ${activeChild.name}` : ''}
+        </Text>
       </View>
+
+      {children.length > 1 && (
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          {children.map((ch) => {
+            const sel = ch.id === activeChild?.id;
+            return (
+              <Pressable key={ch.id} onPress={() => setActiveChild(ch.id)}>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 7,
+                    paddingVertical: 7,
+                    paddingHorizontal: 13,
+                    borderRadius: radius.pill,
+                    backgroundColor: sel ? color.primary : '#fff',
+                    borderWidth: 1,
+                    borderColor: sel ? color.primary : color.hairline,
+                  }}
+                >
+                  <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: sel ? '#fff' : color.primary }} />
+                  <Text style={{ fontFamily: font.body600, fontSize: 13, color: sel ? '#fff' : color.ink }}>{ch.name}</Text>
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
+      )}
 
       {/* Quick add */}
       <View>
