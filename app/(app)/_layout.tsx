@@ -1,6 +1,7 @@
 import React from 'react';
 import { Redirect, Tabs } from 'expo-router';
 import { useSupabase } from '../../src/lib/supabase';
+import { DataProvider } from '../../src/lib/store';
 import { Splash } from '../../src/components/forms';
 import { color, font } from '../../src/theme/tokens';
 import { Home, Calendar, Heart, Clock, Settings } from '../../src/components/icons';
@@ -12,6 +13,7 @@ export default function AppLayout() {
   if (!session) return <Redirect href="/(auth)/welcome" />;
 
   return (
+    <DataProvider>
     <Tabs
       screenOptions={{
         headerShown: false,
@@ -49,5 +51,6 @@ export default function AppLayout() {
         options={{ title: 'Settings', tabBarIcon: ({ color: c, size }) => <Settings size={size} color={c as string} /> }}
       />
     </Tabs>
+    </DataProvider>
   );
 }
