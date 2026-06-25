@@ -1,0 +1,54 @@
+name: Deploy web preview to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Needs write access to push the built site to the gh-pages branch.
+permissions:
+  contents: write
+
+# One deploy at a time; newer pushes supersede in-flight ones.
+concurrency:
+  group: pages-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      # Project Pages are served from /<repo>/, so the web bundle needs that
+      # base path. Injected at build time only (not committed).
+      - name: Set Pages base path
+        run: |
+          node -e "const f='app.json',j=require('./'+f);j.expo.experiments=j.expo.experiments||{};j.expo.experiments.baseUrl='/${{ github.event.repository.name }}';require('fs').writeFileSync(f,JSON.stringify(j,null,2)+'\n')"
+
+      - name: Export web build
+        run: npx expo export --platform web --output-dir dist
+
+      # SPA fallback for client-side routes + disable Jekyll so the _expo/
+      # bundle directory is served.
+      - name: Add SPA fallback and .nojekyll
+        run: |
+          cp dist/index.html dist/404.html
+          touch dist/.nojekyll
+
+      - name: Publish to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: gh-pages
+          user_name: github-actions[bot]
+          user_email: github-actions[bot]@users.noreply.github.com
+          commit_message: "Deploy web preview from ${{ github.sha }}"

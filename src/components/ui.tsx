@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ViewStyle, TextStyle, StyleProp } from 'react-native';
+import { View, Text, ViewStyle, TextStyle, StyleProp, useWindowDimensions } from 'react-native';
 import Svg, { Path, Rect, Circle } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { color, fill, font, radius, shadow, PHONE_WIDTH } from '../theme/tokens';
@@ -22,8 +22,13 @@ export function PhoneFrame({
   accent?: string;
   frameRadius?: number;
 }) {
+  // Phone-sized frames (<=430) scale down to fit narrow screens, leaving a
+  // 24px gutter on each side; wide desktop frames (Kiosk/Admin) keep their
+  // design width and scroll horizontally instead.
+  const { width: screenW } = useWindowDimensions();
+  const w = width <= 430 ? Math.min(width, screenW - 48) : width;
   return (
-    <View style={{ width, flexShrink: 0 }}>
+    <View style={{ width: w, flexShrink: 0 }}>
       <Text
         style={{
           fontFamily: font.body700,
@@ -39,7 +44,7 @@ export function PhoneFrame({
       <View
         style={[
           {
-            width,
+            width: w,
             borderRadius: frameRadius,
             overflow: 'hidden',
             backgroundColor: color.canvas,

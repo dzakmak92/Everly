@@ -12,7 +12,7 @@ const f = font;
    (the only display family loaded in this app). */
 export default function L4Manifest() {
   return (
-    <View style={{ width: 390 }}>
+    <View style={{ width: '100%' }}>
       <View
         style={{
           borderRadius: 44,
