@@ -48,9 +48,34 @@ and `<SupabaseProvider>` mounted in `app/_layout.tsx`). Connection comes from
 falling back to the public project values. The anon/publishable key is safe to
 ship — RLS enforces all access.
 
-## Not yet provisioned
-- **Stripe** account is empty (no products/prices). Pricing lives in `config.pricing`
-  but the matching Stripe Products/Prices + webhook (`/api/webhooks/stripe`) and the
-  service-role reconciler still need to be created.
-- **Admin accounts** — no rows in `admin_accounts` yet; seed a superadmin to use the
-  operator console.
+## Stripe (live mode)
+Products + prices are seeded in the live Stripe account (EUR), and their IDs are
+mirrored into the `stripe_prices` config row (and `DEFAULT_CONFIG` in the app):
+
+| Tier | Cadence | Amount | Price ID |
+|---|---|---|---|
+| Pro | monthly | €3.99 | `price_1TmBzoI6MN6KZN7CyLHyI57V` |
+| Pro | yearly | €39.99 | `price_1TmBzrI6MN6KZN7CZsh3Y7Ut` |
+| Family | monthly | €4.99 | `price_1TmBztI6MN6KZN7CuYFcG4dt` |
+| Family | yearly | €49.99 | `price_1TmBzvI6MN6KZN7C7CBoD7N3` |
+| Lifetime | one-time | €149.99 | `price_1TmBzxI6MN6KZN7CaWW19frq` |
+
+The webhook reconciler lives in `supabase/functions/stripe-webhook/`. It mirrors
+subscription state into `profiles` (billing columns only) and handles
+`checkout.session.completed`, `customer.subscription.{created,updated,deleted}`,
+`invoice.paid`, and `invoice.payment_failed`. Deploy it with:
+
+```bash
+supabase functions deploy stripe-webhook --no-verify-jwt
+supabase secrets set STRIPE_SECRET_KEY=sk_live_... STRIPE_WEBHOOK_SECRET=whsec_...
+```
+
+Then add a Stripe webhook endpoint pointing at the function URL for those events.
+
+## Still to do
+- **Deploy** the `stripe-webhook` function and set its secrets (above).
+- **Checkout flow** — create Checkout Sessions with `client_reference_id` = the
+  Supabase user id so the webhook can link the Stripe customer to the profile.
+- **Stripe Tax / Customer Portal** — enable for EU VAT + self-service (PRD §10.4).
+- **Admin accounts** — no rows in `admin_accounts` yet; seed a superadmin to use
+  the operator console.

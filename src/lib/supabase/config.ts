@@ -16,9 +16,16 @@ export type Pricing = {
   lifetime: { oneTime: number; currency: string };
 };
 
+export type StripePrices = {
+  pro: { monthly: string; yearly: string };
+  family: { monthly: string; yearly: string };
+  lifetime: { oneTime: string };
+};
+
 export type RemoteConfig = {
   trialDays: number;
   pricing: Pricing;
+  stripePrices: StripePrices;
   enabledLanguages: string[];
   enabledCurrencies: string[];
   maintenanceMode: boolean;
@@ -32,6 +39,12 @@ export const DEFAULT_CONFIG: RemoteConfig = {
     pro: { monthly: 399, yearly: 3999, currency: 'EUR' },
     family: { monthly: 499, yearly: 4999, currency: 'EUR' },
     lifetime: { oneTime: 14999, currency: 'EUR' },
+  },
+  // Live Stripe price IDs (mirrored from the `stripe_prices` config row).
+  stripePrices: {
+    pro: { monthly: 'price_1TmBzoI6MN6KZN7CyLHyI57V', yearly: 'price_1TmBzrI6MN6KZN7CZsh3Y7Ut' },
+    family: { monthly: 'price_1TmBztI6MN6KZN7CuYFcG4dt', yearly: 'price_1TmBzvI6MN6KZN7C7CBoD7N3' },
+    lifetime: { oneTime: 'price_1TmBzxI6MN6KZN7CaWW19frq' },
   },
   enabledLanguages: ['en', 'de', 'es', 'fr', 'tr', 'it'],
   enabledCurrencies: ['EUR', 'GBP', 'USD', 'JPY', 'CAD', 'AUD'],
@@ -59,6 +72,7 @@ export async function fetchRemoteConfig(): Promise<RemoteConfig> {
     if (error || !data) return DEFAULT_CONFIG;
     const map = new Map(data.map((r) => [r.key, r.value]));
     const pricing = asRecord(map.get('pricing'));
+    const stripePrices = asRecord(map.get('stripe_prices'));
     return {
       trialDays: (map.get('trial_days') as number) ?? DEFAULT_CONFIG.trialDays,
       pricing: {
@@ -66,6 +80,11 @@ export async function fetchRemoteConfig(): Promise<RemoteConfig> {
         family: { ...DEFAULT_CONFIG.pricing.family, ...asRecord(pricing.family) },
         lifetime: { ...DEFAULT_CONFIG.pricing.lifetime, ...asRecord(pricing.lifetime) },
       } as Pricing,
+      stripePrices: {
+        pro: { ...DEFAULT_CONFIG.stripePrices.pro, ...asRecord(stripePrices.pro) },
+        family: { ...DEFAULT_CONFIG.stripePrices.family, ...asRecord(stripePrices.family) },
+        lifetime: { ...DEFAULT_CONFIG.stripePrices.lifetime, ...asRecord(stripePrices.lifetime) },
+      } as StripePrices,
       enabledLanguages:
         (map.get('enabled_languages') as string[]) ?? DEFAULT_CONFIG.enabledLanguages,
       enabledCurrencies:
