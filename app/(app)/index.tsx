@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ScrollView, View, Text, Pressable, Modal } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, font, radius, shadow } from '../../src/theme/tokens';
 import { Button, Field } from '../../src/components/forms';
@@ -24,6 +25,7 @@ const dayTimeOf = (iso: string) => new Date(iso).toLocaleString(undefined, { wee
 
 export default function Today() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const { session, profile } = useSupabase();
   const { entries, addEntry, deleteEntry, children, activeChild, setActiveChild, events } = useData();
 
@@ -64,13 +66,13 @@ export default function Today() {
         <Text style={{ fontFamily: font.display700, fontSize: 20, color: color.ink }}>Everly</Text>
       </View>
 
-      <View>
+      <Pressable onPress={() => activeChild && router.push(`/(app)/child/${activeChild.id}` as any)} disabled={!activeChild}>
         <Text style={{ fontFamily: font.display700, fontSize: 26, color: color.ink }}>{greeting()}, {name}</Text>
         <Text style={{ fontFamily: font.body400, fontSize: 13, color: color.muted, marginTop: 4 }}>
           {dateLabel}
-          {activeChild ? `  ·  ${activeChild.name}${activeChild.birthDate ? ` · ${ageLabel(activeChild.birthDate)} · ${STAGE_LABEL[stageFrom(activeChild.birthDate)]}` : ''}` : ''}
+          {activeChild ? `  ·  ${activeChild.name}${activeChild.birthDate ? ` · ${ageLabel(activeChild.birthDate)} · ${STAGE_LABEL[stageFrom(activeChild.birthDate)]}` : ''} ›` : ''}
         </Text>
-      </View>
+      </Pressable>
 
       {children.length > 1 && (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>

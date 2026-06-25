@@ -13,7 +13,7 @@ export default function SettingsTab() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { session, profile } = useSupabase();
-  const { children, activeChild, setActiveChild, addChild } = useData();
+  const { children, activeChild, addChild } = useData();
   const [busy, setBusy] = useState(false);
 
   const [addOpen, setAddOpen] = useState(false);
@@ -67,7 +67,7 @@ export default function SettingsTab() {
             const t = childToken[ch.color];
             const sel = ch.id === activeChild?.id;
             return (
-              <Pressable key={ch.id} onPress={() => setActiveChild(ch.id)} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <Pressable key={ch.id} onPress={() => router.push(`/(app)/child/${ch.id}` as any)} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                 <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: t.fill, alignItems: 'center', justifyContent: 'center' }}>
                   <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: t.stroke }} />
                 </View>
