@@ -1,12 +1,85 @@
 import React from 'react';
-import { AppScreen } from '../../src/components/AppScreen';
-import A10Timeline from '../../src/screens/app/A10Timeline';
+import { ScrollView, View, Text, Pressable } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { color, font, radius, shadow } from '../../src/theme/tokens';
+import { useData, ENTRY_META, type Entry } from '../../src/lib/store';
 
-/** Timeline tab. */
+function dayKey(iso: string) {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+
+function dayLabel(iso: string) {
+  const d = new Date(iso);
+  const now = new Date();
+  const yest = new Date(now);
+  yest.setDate(now.getDate() - 1);
+  if (dayKey(iso) === dayKey(now.toISOString())) return 'Today';
+  if (dayKey(iso) === dayKey(yest.toISOString())) return 'Yesterday';
+  return d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+}
+
+function timeOf(iso: string) {
+  return new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+}
+
 export default function TimelineTab() {
+  const insets = useSafeAreaInsets();
+  const { entries, deleteEntry } = useData();
+
+  // Group newest-first into day buckets, preserving order.
+  const groups: { key: string; items: Entry[] }[] = [];
+  for (const e of entries) {
+    const k = dayKey(e.at);
+    const g = groups.find((x) => x.key === k);
+    if (g) g.items.push(e);
+    else groups.push({ key: k, items: [e] });
+  }
+
   return (
-    <AppScreen>
-      <A10Timeline embedded />
-    </AppScreen>
+    <ScrollView
+      style={{ flex: 1, backgroundColor: color.canvas }}
+      contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: 28, paddingHorizontal: 22, gap: 16 }}
+      showsVerticalScrollIndicator={false}
+    >
+      <Text style={{ fontFamily: font.display700, fontSize: 26, color: color.ink }}>Timeline</Text>
+
+      {groups.length === 0 ? (
+        <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 22, alignItems: 'center' }, shadow.card]}>
+          <Text style={{ fontFamily: font.body500, fontSize: 14, color: color.muted, textAlign: 'center' }}>
+            Your history is empty.{'\n'}Log something on the Today tab and it appears here.
+          </Text>
+        </View>
+      ) : (
+        groups.map((g) => (
+          <View key={g.key} style={{ gap: 8 }}>
+            <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: color.muted }}>
+              {dayLabel(g.items[0].at)} · {g.items.length}
+            </Text>
+            {g.items.map((e) => {
+              const m = ENTRY_META[e.kind];
+              return (
+                <View
+                  key={e.id}
+                  style={[{ backgroundColor: '#fff', borderRadius: radius.cardSm, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12 }, shadow.card]}
+                >
+                  <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: m.ink }} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontFamily: font.body700, fontSize: 14, color: color.ink }}>{m.label}</Text>
+                    {e.note ? (
+                      <Text style={{ fontFamily: font.body400, fontSize: 13, color: color.inkSecondary, marginTop: 2 }}>{e.note}</Text>
+                    ) : null}
+                  </View>
+                  <Text style={{ fontFamily: font.body500, fontSize: 12, color: color.muted }}>{timeOf(e.at)}</Text>
+                  <Pressable onPress={() => deleteEntry(e.id)} hitSlop={8} style={{ paddingHorizontal: 6 }}>
+                    <Text style={{ fontFamily: font.body700, fontSize: 18, color: color.faint }}>×</Text>
+                  </Pressable>
+                </View>
+              );
+            })}
+          </View>
+        ))
+      )}
+    </ScrollView>
   );
 }
