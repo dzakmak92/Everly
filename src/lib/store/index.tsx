@@ -52,6 +52,11 @@ export type Vaccine = { id: string; childId: string; name: string; dueDate?: str
 export type Medication = { id: string; childId: string; name: string; dose?: string; schedule?: string; active: boolean };
 export type Growth = { id: string; childId: string; at: string; weightKg?: number; heightCm?: number; headCm?: number };
 
+export type RoutineStep = { id: string; label: string; done: boolean };
+export type Routine = { id: string; childId?: string; name: string; steps: RoutineStep[] };
+export type Chore = { id: string; childId?: string; label: string; points: number; done: boolean };
+export type Milestone = { id: string; childId: string; title: string; date: string; note?: string };
+
 export const ENTRY_META: Record<EntryKind, { label: string; verb: string; fill: string; ink: string }> = {
   sleep: { label: 'Sleep', verb: 'Logged sleep', fill: '#E7E4FB', ink: '#54579E' },
   feed: { label: 'Feed', verb: 'Logged a feed', fill: '#FCE6D8', ink: '#B5662E' },
@@ -67,6 +72,9 @@ const EVENTS_KEY = 'everly.events.v1';
 const VACCINES_KEY = 'everly.vaccines.v1';
 const MEDS_KEY = 'everly.meds.v1';
 const GROWTH_KEY = 'everly.growth.v1';
+const ROUTINES_KEY = 'everly.routines.v1';
+const CHORES_KEY = 'everly.chores.v1';
+const MILESTONES_KEY = 'everly.milestones.v1';
 
 function newId() {
   return `${Date.now().toString(36)}-${Math.floor(Math.random() * 1e6).toString(36)}`;
@@ -97,6 +105,19 @@ type DataValue = {
   growth: Growth[];
   addGrowth: (input: { childId: string; weightKg?: number; heightCm?: number; headCm?: number }) => void;
   deleteGrowth: (id: string) => void;
+  routines: Routine[];
+  addRoutine: (input: { name: string; childId?: string }) => void;
+  addRoutineStep: (routineId: string, label: string) => void;
+  toggleStep: (routineId: string, stepId: string) => void;
+  resetRoutine: (routineId: string) => void;
+  deleteRoutine: (id: string) => void;
+  chores: Chore[];
+  addChore: (input: { label: string; points: number; childId?: string }) => void;
+  toggleChore: (id: string) => void;
+  deleteChore: (id: string) => void;
+  milestones: Milestone[];
+  addMilestone: (input: { childId: string; title: string; date: string; note?: string }) => void;
+  deleteMilestone: (id: string) => void;
   clearAll: () => void;
 };
 
@@ -111,12 +132,15 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
   const [vaccines, setVaccines] = useState<Vaccine[]>([]);
   const [medications, setMedications] = useState<Medication[]>([]);
   const [growth, setGrowth] = useState<Growth[]>([]);
+  const [routines, setRoutines] = useState<Routine[]>([]);
+  const [chores, setChores] = useState<Chore[]>([]);
+  const [milestones, setMilestones] = useState<Milestone[]>([]);
 
   useEffect(() => {
     let active = true;
     (async () => {
       try {
-        const [rawE, rawC, rawA, rawEv, rawV, rawM, rawG] = await Promise.all([
+        const [rawE, rawC, rawA, rawEv, rawV, rawM, rawG, rawR, rawCh, rawMs] = await Promise.all([
           AsyncStorage.getItem(ENTRIES_KEY),
           AsyncStorage.getItem(CHILDREN_KEY),
           AsyncStorage.getItem(ACTIVE_KEY),
@@ -124,6 +148,9 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
           AsyncStorage.getItem(VACCINES_KEY),
           AsyncStorage.getItem(MEDS_KEY),
           AsyncStorage.getItem(GROWTH_KEY),
+          AsyncStorage.getItem(ROUTINES_KEY),
+          AsyncStorage.getItem(CHORES_KEY),
+          AsyncStorage.getItem(MILESTONES_KEY),
         ]);
         if (!active) return;
         if (rawE) setEntries(JSON.parse(rawE));
@@ -133,6 +160,9 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
         if (rawV) setVaccines(JSON.parse(rawV));
         if (rawM) setMedications(JSON.parse(rawM));
         if (rawG) setGrowth(JSON.parse(rawG));
+        if (rawR) setRoutines(JSON.parse(rawR));
+        if (rawCh) setChores(JSON.parse(rawCh));
+        if (rawMs) setMilestones(JSON.parse(rawMs));
       } catch {
         // Corrupt/missing cache → start empty. Never crash on storage.
       } finally {
@@ -149,6 +179,9 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
   useEffect(() => { if (!loading) AsyncStorage.setItem(VACCINES_KEY, JSON.stringify(vaccines)).catch(() => {}); }, [vaccines, loading]);
   useEffect(() => { if (!loading) AsyncStorage.setItem(MEDS_KEY, JSON.stringify(medications)).catch(() => {}); }, [medications, loading]);
   useEffect(() => { if (!loading) AsyncStorage.setItem(GROWTH_KEY, JSON.stringify(growth)).catch(() => {}); }, [growth, loading]);
+  useEffect(() => { if (!loading) AsyncStorage.setItem(ROUTINES_KEY, JSON.stringify(routines)).catch(() => {}); }, [routines, loading]);
+  useEffect(() => { if (!loading) AsyncStorage.setItem(CHORES_KEY, JSON.stringify(chores)).catch(() => {}); }, [chores, loading]);
+  useEffect(() => { if (!loading) AsyncStorage.setItem(MILESTONES_KEY, JSON.stringify(milestones)).catch(() => {}); }, [milestones, loading]);
 
   const addChild = useCallback((input: { name: string; color: ChildColor; birthDate?: string }) => {
     const child: Child = { id: newId(), name: input.name.trim(), color: input.color, birthDate: input.birthDate?.trim() || undefined };
@@ -168,6 +201,9 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
     setMedications((prev) => prev.filter((m) => m.childId !== id));
     setGrowth((prev) => prev.filter((g) => g.childId !== id));
     setEvents((prev) => prev.filter((e) => e.childId !== id));
+    setRoutines((prev) => prev.filter((r) => r.childId !== id));
+    setChores((prev) => prev.filter((c) => c.childId !== id));
+    setMilestones((prev) => prev.filter((m) => m.childId !== id));
   }, []);
 
   const setActiveChild = useCallback((id: string) => setActiveId(id), []);
@@ -220,6 +256,32 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
   }, []);
   const deleteGrowth = useCallback((id: string) => setGrowth((prev) => prev.filter((g) => g.id !== id)), []);
 
+  const addRoutine = useCallback((input: { name: string; childId?: string }) => {
+    setRoutines((prev) => [...prev, { id: newId(), name: input.name.trim(), childId: input.childId, steps: [] }]);
+  }, []);
+  const addRoutineStep = useCallback((routineId: string, label: string) => {
+    setRoutines((prev) => prev.map((r) => (r.id === routineId ? { ...r, steps: [...r.steps, { id: newId(), label: label.trim(), done: false }] } : r)));
+  }, []);
+  const toggleStep = useCallback((routineId: string, stepId: string) => {
+    setRoutines((prev) => prev.map((r) => (r.id === routineId ? { ...r, steps: r.steps.map((s) => (s.id === stepId ? { ...s, done: !s.done } : s)) } : r)));
+  }, []);
+  const resetRoutine = useCallback((routineId: string) => {
+    setRoutines((prev) => prev.map((r) => (r.id === routineId ? { ...r, steps: r.steps.map((s) => ({ ...s, done: false })) } : r)));
+  }, []);
+  const deleteRoutine = useCallback((id: string) => setRoutines((prev) => prev.filter((r) => r.id !== id)), []);
+
+  const addChore = useCallback((input: { label: string; points: number; childId?: string }) => {
+    setChores((prev) => [...prev, { id: newId(), label: input.label.trim(), points: input.points, childId: input.childId, done: false }]);
+  }, []);
+  const toggleChore = useCallback((id: string) => setChores((prev) => prev.map((c) => (c.id === id ? { ...c, done: !c.done } : c))), []);
+  const deleteChore = useCallback((id: string) => setChores((prev) => prev.filter((c) => c.id !== id)), []);
+
+  const addMilestone = useCallback((input: { childId: string; title: string; date: string; note?: string }) => {
+    setMilestones((prev) => [{ id: newId(), childId: input.childId, title: input.title.trim(), date: input.date, note: input.note?.trim() || undefined }, ...prev]
+      .sort((a, b) => b.date.localeCompare(a.date)));
+  }, []);
+  const deleteMilestone = useCallback((id: string) => setMilestones((prev) => prev.filter((m) => m.id !== id)), []);
+
   const clearAll = useCallback(() => { setEntries([]); setEvents([]); }, []);
 
   const activeChild = useMemo(() => children.find((c) => c.id === activeId) ?? null, [children, activeId]);
@@ -230,9 +292,13 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
       entries, addEntry, deleteEntry, events, addEvent, deleteEvent,
       vaccines, addVaccine, updateVaccine, deleteVaccine,
       medications, addMedication, toggleMedication, deleteMedication,
-      growth, addGrowth, deleteGrowth, clearAll,
+      growth, addGrowth, deleteGrowth,
+      routines, addRoutine, addRoutineStep, toggleStep, resetRoutine, deleteRoutine,
+      chores, addChore, toggleChore, deleteChore,
+      milestones, addMilestone, deleteMilestone,
+      clearAll,
     }),
-    [loading, children, activeChild, setActiveChild, addChild, updateChild, deleteChild, entries, addEntry, deleteEntry, events, addEvent, deleteEvent, vaccines, addVaccine, updateVaccine, deleteVaccine, medications, addMedication, toggleMedication, deleteMedication, growth, addGrowth, deleteGrowth, clearAll],
+    [loading, children, activeChild, setActiveChild, addChild, updateChild, deleteChild, entries, addEntry, deleteEntry, events, addEvent, deleteEvent, vaccines, addVaccine, updateVaccine, deleteVaccine, medications, addMedication, toggleMedication, deleteMedication, growth, addGrowth, deleteGrowth, routines, addRoutine, addRoutineStep, toggleStep, resetRoutine, deleteRoutine, chores, addChore, toggleChore, deleteChore, milestones, addMilestone, deleteMilestone, clearAll],
   );
 
   return <DataContext.Provider value={value}>{node}</DataContext.Provider>;

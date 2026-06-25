@@ -18,7 +18,7 @@ export default function ChildProfile() {
   const d = useData();
   const child = d.children.find((c) => c.id === id);
 
-  const [modal, setModal] = useState<null | 'edit' | 'vaccine' | 'med' | 'growth'>(null);
+  const [modal, setModal] = useState<null | 'edit' | 'vaccine' | 'med' | 'growth' | 'milestone'>(null);
   // form fields (reused per modal)
   const [name, setName] = useState('');
   const [birth, setBirth] = useState('');
@@ -41,6 +41,7 @@ export default function ChildProfile() {
   const myMeds = d.medications.filter((m) => m.childId === child.id);
   const myGrowth = d.growth.filter((g) => g.childId === child.id);
   const latestGrowth = myGrowth[0];
+  const myMilestones = d.milestones.filter((m) => m.childId === child.id);
 
   const feeds = today.filter((e) => e.kind === 'feed').length;
   const ml = today.filter((e) => e.kind === 'feed' || e.kind === 'pump').reduce((s, e) => s + (e.volumeMl ?? 0), 0);
@@ -48,12 +49,17 @@ export default function ChildProfile() {
   const diapers = today.filter((e) => e.kind === 'diaper').length;
 
   function openEdit() { setName(child!.name); setBirth(child!.birthDate ?? ''); setColorKey(child!.color); setModal('edit'); }
-  function openAdd(m: 'vaccine' | 'med' | 'growth') { setName(''); setF1(''); setF2(''); setModal(m); }
+  function openAdd(m: 'vaccine' | 'med' | 'growth' | 'milestone') {
+    setName(''); setF2('');
+    setF1(m === 'milestone' ? new Date().toISOString().slice(0, 10) : '');
+    setModal(m);
+  }
   function save() {
     if (modal === 'edit') d.updateChild(child!.id, { name, birthDate: birth, color: colorKey });
     else if (modal === 'vaccine' && name.trim()) d.addVaccine({ childId: child!.id, name, dueDate: f1 });
     else if (modal === 'med' && name.trim()) d.addMedication({ childId: child!.id, name, dose: f1, schedule: f2 });
     else if (modal === 'growth') d.addGrowth({ childId: child!.id, weightKg: num(f1), heightCm: num(f2) });
+    else if (modal === 'milestone' && name.trim()) d.addMilestone({ childId: child!.id, title: name, date: f1 || new Date().toISOString().slice(0, 10), note: f2 });
     setModal(null);
   }
   function remove() { d.deleteChild(child!.id); router.back(); }
@@ -138,6 +144,13 @@ export default function ChildProfile() {
         )) : <Empty text="No medications." />}
       </Section>
 
+      {/* Milestones */}
+      <Section title="Milestones" action={<AddLink onPress={() => openAdd('milestone')} />}>
+        {myMilestones.length ? myMilestones.map((m) => (
+          <Row key={m.id} title={m.title} sub={[dateOf(m.date), m.note].filter(Boolean).join(' · ')} onDelete={() => d.deleteMilestone(m.id)} />
+        )) : <Empty text="No milestones yet." />}
+      </Section>
+
       {/* Recent activity */}
       <Section title="Recent activity">
         {recent.length ? recent.map((e) => {
@@ -161,7 +174,7 @@ export default function ChildProfile() {
         <Pressable onPress={() => setModal(null)} style={{ flex: 1, backgroundColor: 'rgba(40,18,50,0.35)', justifyContent: 'center', paddingHorizontal: 28 }}>
           <Pressable onPress={() => {}} style={[{ backgroundColor: color.canvas, borderRadius: radius.card, padding: 20, gap: 14 }, shadow.card]}>
             <Text style={{ fontFamily: font.display700, fontSize: 18, color: color.ink }}>
-              {modal === 'edit' ? 'Edit child' : modal === 'vaccine' ? 'Add vaccine' : modal === 'med' ? 'Add medication' : 'Add measurement'}
+              {modal === 'edit' ? 'Edit child' : modal === 'vaccine' ? 'Add vaccine' : modal === 'med' ? 'Add medication' : modal === 'milestone' ? 'Add milestone' : 'Add measurement'}
             </Text>
 
             {modal === 'edit' && <>
@@ -186,6 +199,11 @@ export default function ChildProfile() {
             {modal === 'growth' && <>
               <Field label="Weight (kg)" value={f1} onChangeText={setF1} placeholder="e.g. 6.4" />
               <Field label="Height (cm, optional)" value={f2} onChangeText={setF2} placeholder="e.g. 62" />
+            </>}
+            {modal === 'milestone' && <>
+              <Field label="Milestone" value={name} onChangeText={setName} placeholder="e.g. First smile" autoCapitalize="sentences" />
+              <Field label="Date (YYYY-MM-DD)" value={f1} onChangeText={setF1} placeholder="2026-06-25" />
+              <Field label="Note (optional)" value={f2} onChangeText={setF2} placeholder="Anything to remember" autoCapitalize="sentences" />
             </>}
 
             <View style={{ flexDirection: 'row', gap: 10 }}>

@@ -25,7 +25,8 @@ function timeOf(iso: string) {
 
 export default function TimelineTab() {
   const insets = useSafeAreaInsets();
-  const { entries, deleteEntry } = useData();
+  const { entries, deleteEntry, milestones, children } = useData();
+  const childName = (id?: string) => children.find((c) => c.id === id)?.name;
 
   // Group newest-first into day buckets, preserving order.
   const groups: { key: string; items: Entry[] }[] = [];
@@ -43,6 +44,22 @@ export default function TimelineTab() {
       showsVerticalScrollIndicator={false}
     >
       <Text style={{ fontFamily: font.display700, fontSize: 26, color: color.ink }}>Timeline</Text>
+
+      {milestones.length > 0 && (
+        <View style={{ gap: 8 }}>
+          <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: color.muted }}>Milestones</Text>
+          {milestones.map((m) => (
+            <View key={m.id} style={[{ backgroundColor: '#fff', borderRadius: radius.cardSm, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12, borderLeftWidth: 3, borderLeftColor: color.sparkleGold }, shadow.card]}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: font.body700, fontSize: 14, color: color.ink }}>{m.title}</Text>
+                <Text style={{ fontFamily: font.body400, fontSize: 12, color: color.muted, marginTop: 2 }}>
+                  {new Date(m.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}{childName(m.childId) ? ` · ${childName(m.childId)}` : ''}{m.note ? ` · ${m.note}` : ''}
+                </Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      )}
 
       {groups.length === 0 ? (
         <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 22, alignItems: 'center' }, shadow.card]}>
