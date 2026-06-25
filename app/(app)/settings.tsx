@@ -88,6 +88,7 @@ export default function SettingsTab() {
         <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 6 }, shadow.card]}>
           {[
             { label: 'Plans & billing', to: '/(app)/plans' },
+            { label: 'Routines & chores', to: '/(app)/routines' },
             { label: 'Kick counter', to: '/(app)/kick-counter' },
             { label: 'Contraction timer', to: '/(app)/contractions' },
             { label: 'Browse all designs', to: '/gallery' },

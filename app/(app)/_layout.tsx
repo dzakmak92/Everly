@@ -35,6 +35,7 @@ function AppTabs() {
       <Tabs.Screen name="kick-counter" options={{ href: null }} />
       <Tabs.Screen name="contractions" options={{ href: null }} />
       <Tabs.Screen name="admin" options={{ href: null }} />
+      <Tabs.Screen name="routines" options={{ href: null }} />
       <Tabs.Screen name="child/[id]" options={{ href: null }} />
     </Tabs>
   );
