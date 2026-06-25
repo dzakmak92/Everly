@@ -77,6 +77,26 @@ export default function SettingsTab() {
           })}
           <Button label="+ Add child" variant="secondary" onPress={openAdd} />
         </View>
+
+        {/* Navigation */}
+        <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 6 }, shadow.card]}>
+          {[
+            { label: 'Plans & billing', to: '/(app)/plans' },
+            { label: 'Kick counter', to: '/(app)/kick-counter' },
+            { label: 'Contraction timer', to: '/(app)/contractions' },
+            { label: 'Browse all designs', to: '/gallery' },
+            { label: 'Admin console', to: '/(app)/admin' },
+          ].map((row, i) => (
+            <Pressable
+              key={row.to}
+              onPress={() => router.push(row.to as any)}
+              style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 12, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: color.hairline }}
+            >
+              <Text style={{ flex: 1, fontFamily: font.body600, fontSize: 15, color: color.ink }}>{row.label}</Text>
+              <Text style={{ fontFamily: font.body700, fontSize: 18, color: color.faint }}>›</Text>
+            </Pressable>
+          ))}
+        </View>
       </View>
 
       {/* Static settings design */}
