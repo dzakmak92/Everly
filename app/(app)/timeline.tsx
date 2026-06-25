@@ -2,7 +2,7 @@ import React from 'react';
 import { ScrollView, View, Text, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, font, radius, shadow } from '../../src/theme/tokens';
-import { useData, ENTRY_META, type Entry } from '../../src/lib/store';
+import { useData, ENTRY_META, entryDetail, type Entry } from '../../src/lib/store';
 
 function dayKey(iso: string) {
   const d = new Date(iso);
@@ -66,8 +66,8 @@ export default function TimelineTab() {
                   <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: m.ink }} />
                   <View style={{ flex: 1 }}>
                     <Text style={{ fontFamily: font.body700, fontSize: 14, color: color.ink }}>{m.label}</Text>
-                    {e.note ? (
-                      <Text style={{ fontFamily: font.body400, fontSize: 13, color: color.inkSecondary, marginTop: 2 }}>{e.note}</Text>
+                    {entryDetail(e) ? (
+                      <Text style={{ fontFamily: font.body400, fontSize: 13, color: color.inkSecondary, marginTop: 2 }}>{entryDetail(e)}</Text>
                     ) : null}
                   </View>
                   <Text style={{ fontFamily: font.body500, fontSize: 12, color: color.muted }}>{timeOf(e.at)}</Text>

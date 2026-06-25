@@ -6,6 +6,7 @@ import { color, font, radius, shadow, childToken } from '../../src/theme/tokens'
 import { Button, Field, Notice } from '../../src/components/forms';
 import { useSupabase, signOut } from '../../src/lib/supabase';
 import { useData, CHILD_COLORS, type ChildColor } from '../../src/lib/store';
+import { ageLabel, stageFrom, STAGE_LABEL } from '../../src/lib/age';
 import A12Settings from '../../src/screens/app/A12Settings';
 
 export default function SettingsTab() {
@@ -70,7 +71,12 @@ export default function SettingsTab() {
                 <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: t.fill, alignItems: 'center', justifyContent: 'center' }}>
                   <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: t.stroke }} />
                 </View>
-                <Text style={{ flex: 1, fontFamily: font.body600, fontSize: 15, color: color.ink }}>{ch.name}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontFamily: font.body600, fontSize: 15, color: color.ink }}>{ch.name}</Text>
+                  <Text style={{ fontFamily: font.body400, fontSize: 12, color: color.muted }}>
+                    {ch.birthDate ? `${ageLabel(ch.birthDate)} · ${STAGE_LABEL[stageFrom(ch.birthDate)]}` : 'No birth date'}
+                  </Text>
+                </View>
                 {sel && <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.primary }}>Active</Text>}
               </Pressable>
             );
