@@ -8,10 +8,10 @@ const f = font;
 const c = color;
 
 /* A12 · Settings — grouped on lilac: account, preferences, night-mode, data, about. */
-export default function A12Settings() {
+export default function A12Settings({ embedded = false }: { embedded?: boolean }) {
   return (
     <View style={{ backgroundColor: c.canvas }}>
-      <StatusBar showIcons />
+      {!embedded && <StatusBar showIcons />}
 
       {/* title */}
       <View style={{ paddingHorizontal: 24, paddingTop: 12, paddingBottom: 20 }}>

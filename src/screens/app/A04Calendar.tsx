@@ -8,10 +8,10 @@ const f = font;
 const c = color;
 
 /* A04 · Calendar — month grid, custody bands, weather glyphs, today events. */
-export default function A04Calendar() {
+export default function A04Calendar({ embedded = false }: { embedded?: boolean }) {
   return (
     <View style={{ backgroundColor: c.canvas }}>
-      <StatusBar showIcons />
+      {!embedded && <StatusBar showIcons />}
 
       {/* weather alert (calendar-integrated) */}
       <View
@@ -223,7 +223,7 @@ export default function A04Calendar() {
       </View>
 
       {/* bottom nav (Calendar active) */}
-      <CalendarBottomNav active="Calendar" />
+      {!embedded && <CalendarBottomNav active="Calendar" />}
     </View>
   );
 }
