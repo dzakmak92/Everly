@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <style>body{margin:0;}*{box-sizing:border-box;}</style>
+</helmet>
+
+<div style="width:max-content;min-width:100%;min-height:100vh;background:#1E1C3A;padding:56px 48px;font-family:Nunito,sans-serif;">
+
+  <div style="margin-bottom:48px;">
+    <div style="font:700 11px/1 Nunito,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#6B6FC9;margin-bottom:10px;">Everly · Operator Admin</div>
+    <div style="font:700 30px/1.1 Quicksand,sans-serif;color:#EDEBFA;">Desktop Admin Screens</div>
+    <div style="font:400 14px/1 Nunito,sans-serif;color:#6F6E86;margin-top:8px;">1440px desktop · Periwinkle accents · SaaS dashboard</div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:56px;">
+
+    <!-- ═══════════════════════════════════════════════════════
+         SCREEN 1 — REVENUE DASHBOARD
+    ═══════════════════════════════════════════════════════ -->
+    <div>
+      <div style="font:700 11px/1 Nunito,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#6B6FC9;margin-bottom:14px;">Admin · 01 — Revenue Dashboard</div>
+      <div style="width:1440px;border-radius:20px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.5);display:flex;background:#F8F7FF;">
+
+        <!-- Sidebar -->
+        <div style="width:240px;background:#fff;border-right:1px solid rgba(51,50,74,.07);display:flex;flex-direction:column;flex:none;">
+          <!-- Logo -->
+          <div style="padding:24px 20px 20px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(51,50,74,.06);">
+            <div style="color:#76a878;"><img src="logo-tree.svg" width="28" height="32" alt="Everly" style="display:block;object-fit:contain;"/></div>
+            <div><div style="font:700 15px/1 Quicksand,sans-serif;color:#33324A;">Everly</div><div style="font:400 10px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:3px;">Admin Console</div></div>
+          </div>
+          <!-- Nav items -->
+          <div style="padding:16px 12px;flex:1;display:flex;flex-direction:column;gap:2px;">
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#E7E4FB;border-radius:12px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B6FC9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span style="font:700 13px/1 Nunito,sans-serif;color:#6B6FC9;">Dashboard</span></div>
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9C9AB2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg><span style="font:600 13px/1 Nunito,sans-serif;color:#6F6E86;">Users</span></div>
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9C9AB2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg><span style="font:600 13px/1 Nunito,sans-serif;color:#6F6E86;">Billing</span></div>
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9C9AB2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg><span style="font:600 13px/1 Nunito,sans-serif;color:#6F6E86;">Config &amp; Flags</span></div>
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9C9AB2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span style="font:600 13px/1 Nunito,sans-serif;color:#6F6E86;">Audit Log</span></div>
+          </div>
+          <!-- Bottom user -->
+          <div style="padding:16px 20px;border-top:1px solid rgba(51,50,74,.06);display:flex;align-items:center;gap:10px;">
+            <div style="width:32px;height:32px;background:#E7E4FB;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;"><svg width="16" height="16" viewBox="0 0 20 20" fill="#6B6FC9"><circle cx="10" cy="7.5" r="5"/><path d="M2 19Q2 13 10 13Q18 13 18 19Z"/></svg></div>
+            <div style="flex:1;min-width:0;"><div style="font:700 12px/1 Nunito,sans-serif;color:#33324A;">Admin</div><div style="font:400 10px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:2px;">Superadmin</div></div>
+          </div>
+        </div>
+
+        <!-- Main canvas -->
+        <div style="flex:1;padding:28px 32px;overflow:hidden;">
+
+          <!-- Page header -->
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+            <div><div style="font:700 22px/1 Quicksand,sans-serif;color:#33324A;">Revenue Dashboard</div><div style="font:400 13px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:5px;">June 2026 · Updated just now</div></div>
+            <div style="display:flex;gap:8px;">
+              <div style="background:#fff;border:1px solid rgba(51,50,74,.08);border-radius:10px;padding:8px 16px;font:600 13px/1 Nunito,sans-serif;color:#6F6E86;display:flex;align-items:center;gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Last 30 days</div>
+              <div style="background:#6B6FC9;color:#fff;border-radius:10px;padding:8px 16px;font:700 13px/1 Nunito,sans-serif;">Export</div>
+            </div>
+          </div>
+
+          <!-- KPI strip -->
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:24px;">
+            <!-- MRR -->
+            <div style="background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(51,50,74,.06);padding:18px;">
+              <div style="font:400 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">MRR</div>
+              <div style="font:700 28px/1 Quicksand,sans-serif;color:#33324A;margin-bottom:8px;">€23.8k</div>
+              <div style="display:flex;align-items:center;gap:5px;margin-bottom:10px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3FA98A" stroke-width="2.5" stroke-linecap="round"><path d="M5 12l7-7 7 7"/></svg><span style="font:700 11px/1 Nunito,sans-serif;color:#3FA98A;">+12.4%</span><span style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;">vs May</span></div>
+              <svg width="100%" height="28" viewBox="0 0 120 28" fill="none" preserveAspectRatio="none"><path d="M0 22 L20 18 L40 20 L60 14 L80 10 L100 8 L120 4" stroke="#6B6FC9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M0 22 L20 18 L40 20 L60 14 L80 10 L100 8 L120 4 L120 28 L0 28Z" fill="rgba(107,111,201,.08)"/></svg>
+            </div>
+            <!-- Active Subs -->
+            <div style="background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(51,50,74,.06);padding:18px;">
+              <div style="font:400 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">Active Subs</div>
+              <div style="font:700 28px/1 Quicksand,sans-serif;color:#33324A;margin-bottom:8px;">5,924</div>
+              <div style="display:flex;align-items:center;gap:5px;margin-bottom:10px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3FA98A" stroke-width="2.5" stroke-linecap="round"><path d="M5 12l7-7 7 7"/></svg><span style="font:700 11px/1 Nunito,sans-serif;color:#3FA98A;">+284</span><span style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;">this month</span></div>
+              <svg width="100%" height="28" viewBox="0 0 120 28" fill="none" preserveAspectRatio="none"><path d="M0 24 L20 20 L40 22 L60 16 L80 12 L100 9 L120 5" stroke="#3FA98A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M0 24 L20 20 L40 22 L60 16 L80 12 L100 9 L120 5 L120 28 L0 28Z" fill="rgba(63,169,138,.08)"/></svg>
+            </div>
+            <!-- Trial → Paid -->
+            <div style="background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(51,50,74,.06);padding:18px;">
+              <div style="font:400 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">Trial → Paid</div>
+              <div style="font:700 28px/1 Quicksand,sans-serif;color:#33324A;margin-bottom:8px;">38.2%</div>
+              <div style="display:flex;align-items:center;gap:5px;margin-bottom:10px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3FA98A" stroke-width="2.5" stroke-linecap="round"><path d="M5 12l7-7 7 7"/></svg><span style="font:700 11px/1 Nunito,sans-serif;color:#3FA98A;">+2.1pp</span><span style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;">vs May</span></div>
+              <svg width="100%" height="28" viewBox="0 0 120 28" fill="none" preserveAspectRatio="none"><path d="M0 20 L20 22 L40 18 L60 16 L80 14 L100 11 L120 8" stroke="#E9C46A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M0 20 L20 22 L40 18 L60 16 L80 14 L100 11 L120 8 L120 28 L0 28Z" fill="rgba(233,196,106,.08)"/></svg>
+            </div>
+            <!-- Churn -->
+            <div style="background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(51,50,74,.06);padding:18px;">
+              <div style="font:400 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">Churn Rate</div>
+              <div style="font:700 28px/1 Quicksand,sans-serif;color:#33324A;margin-bottom:8px;">2.8%</div>
+              <div style="display:flex;align-items:center;gap:5px;margin-bottom:10px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3FA98A" stroke-width="2.5" stroke-linecap="round"><path d="M19 12l-7 7-7-7"/></svg><span style="font:700 11px/1 Nunito,sans-serif;color:#3FA98A;">-0.4pp</span><span style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;">improving</span></div>
+              <svg width="100%" height="28" viewBox="0 0 120 28" fill="none" preserveAspectRatio="none"><path d="M0 10 L20 12 L40 14 L60 18 L80 20 L100 22 L120 24" stroke="#E98FB3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M0 10 L20 12 L40 14 L60 18 L80 20 L100 22 L120 24 L120 28 L0 28Z" fill="rgba(233,143,179,.08)"/></svg>
+            </div>
+            <!-- Dunning -->
+            <div style="background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(51,50,74,.06);padding:18px;border:1.5px solid rgba(233,143,179,.35);">
+              <div style="font:400 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">Dunning</div>
+              <div style="font:700 28px/1 Quicksand,sans-serif;color:#33324A;margin-bottom:8px;">47</div>
+              <div style="background:#FBE0EA;color:#D46E97;border-radius:999px;padding:4px 10px;font:700 10px/1 Nunito,sans-serif;display:inline-block;margin-bottom:10px;">⚠ Action needed</div>
+              <svg width="100%" height="28" viewBox="0 0 120 28" fill="none" preserveAspectRatio="none"><path d="M0 20 L20 18 L40 22 L60 16 L80 12 L100 15 L120 18" stroke="#E98FB3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+            </div>
+          </div>
+
+          <!-- Charts row -->
+          <div style="display:grid;grid-template-columns:1.8fr 1fr 1fr;gap:16px;margin-bottom:20px;">
+
+            <!-- MRR Waterfall -->
+            <div style="background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(51,50,74,.06);padding:20px;">
+              <div style="font:700 14px/1 Nunito,sans-serif;color:#33324A;margin-bottom:4px;">MRR Movement</div>
+              <div style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;margin-bottom:18px;">May → June waterfall</div>
+              <div style="display:flex;align-items:flex-end;gap:8px;height:120px;padding:0 4px;">
+                <!-- Starting bar -->
+                <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;">
+                  <div style="font:600 10px/1 Nunito,sans-serif;color:#9C9AB2;">€21.2k</div>
+                  <div style="width:100%;background:#E7E4FB;border-radius:6px 6px 0 0;height:90px;"></div>
+                  <div style="font:400 9px/1 Nunito,sans-serif;color:#9C9AB2;text-align:center;">Start</div>
+                </div>
+                <!-- New MRR -->
+                <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;">
+                  <div style="font:600 10px/1 Nunito,sans-serif;color:#3FA98A;">+€4.1k</div>
+                  <div style="width:100%;display:flex;flex-direction:column;justify-content:flex-end;height:90px;"><div style="width:100%;background:#D8F0E6;border-radius:6px 6px 0 0;height:42px;"></div></div>
+                  <div style="font:400 9px/1 Nunito,sans-serif;color:#9C9AB2;text-align:center;">New</div>
+                </div>
+                <!-- Expansion -->
+                <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;">
+                  <div style="font:600 10px/1 Nunito,sans-serif;color:#3FA98A;">+€1.2k</div>
+                  <div style="width:100%;display:flex;flex-direction:column;justify-content:flex-end;height:90px;"><div style="width:100%;background:#D8F0E6;border-radius:6px 6px 0 0;height:18px;"></div></div>
+                  <div style="font:400 9px/1 Nunito,sans-serif;color:#9C9AB2;text-align:center;">Expansion</div>
+                </div>
+                <!-- Churn -->
+                <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;">
+                  <div style="font:600 10px/1 Nunito,sans-serif;color:#E98FB3;">-€2.7k</div>
+                  <div style="width:100%;display:flex;flex-direction:column;justify-content:flex-end;height:90px;"><div style="width:100%;background:#FBE0EA;border-radius:6px 6px 0 0;height:28px;"></div></div>
+                  <div style="font:400 9px/1 Nunito,sans-serif;color:#9C9AB2;text-align:center;">Churned</div>
+                </div>
+                <!-- Ending -->
+                <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;">
+                  <div style="font:700 10px/1 Nunito,sans-serif;color:#6B6FC9;">€23.8k</div>
+                  <div style="width:100%;background:#6B6FC9;border-radius:6px 6px 0 0;height:100px;"></div>
+                  <div style="font:400 9px/1 Nunito,sans-serif;color:#9C9AB2;text-align:center;">End</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Trial → Paid Funnel -->
+            <div style="background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(51,50,74,.06);padding:20px;">
+              <div style="font:700 14px/1 Nunito,sans-serif;color:#33324A;margin-bottom:4px;">Trial Funnel</div>
+              <div style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;margin-bottom:16px;">Last 30 days</div>
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <div><div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font:600 11px/1 Nunito,sans-serif;color:#33324A;">Trials started</span><span style="font:700 11px/1 Nunito,sans-serif;color:#6B6FC9;">812</span></div><div style="height:8px;background:#F4F3FB;border-radius:999px;overflow:hidden;"><div style="width:100%;height:100%;background:#6B6FC9;border-radius:999px;"></div></div></div>
+                <div><div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font:600 11px/1 Nunito,sans-serif;color:#33324A;">Onboarded</span><span style="font:700 11px/1 Nunito,sans-serif;color:#6B6FC9;">641 (79%)</span></div><div style="height:8px;background:#F4F3FB;border-radius:999px;overflow:hidden;"><div style="width:79%;height:100%;background:#8B8FD9;border-radius:999px;"></div></div></div>
+                <div><div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font:600 11px/1 Nunito,sans-serif;color:#33324A;">Day 5 active</span><span style="font:700 11px/1 Nunito,sans-serif;color:#6B6FC9;">489 (60%)</span></div><div style="height:8px;background:#F4F3FB;border-radius:999px;overflow:hidden;"><div style="width:60%;height:100%;background:#A8ABE8;border-radius:999px;"></div></div></div>
+                <div><div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font:600 11px/1 Nunito,sans-serif;color:#33324A;">Converted</span><span style="font:700 11px/1 Nunito,sans-serif;color:#3FA98A;">310 (38%)</span></div><div style="height:8px;background:#F4F3FB;border-radius:999px;overflow:hidden;"><div style="width:38%;height:100%;background:#3FA98A;border-radius:999px;"></div></div></div>
+              </div>
+            </div>
+
+            <!-- Plan Mix Donut -->
+            <div style="background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(51,50,74,.06);padding:20px;">
+              <div style="font:700 14px/1 Nunito,sans-serif;color:#33324A;margin-bottom:4px;">Plan Mix</div>
+              <div style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;margin-bottom:14px;">Active subscribers</div>
+              <!-- Simplified donut using conic-gradient -->
+              <div style="width:120px;height:120px;border-radius:50%;background:conic-gradient(#6B6FC9 0% 42%, #3FA98A 42% 67%, #E9C46A 67% 82%, #D8D6F0 82% 100%);margin:0 auto 16px;position:relative;"><div style="position:absolute;inset:22px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;"><div style="font:700 16px/1 Quicksand,sans-serif;color:#33324A;">5.9k</div></div></div>
+              <div style="display:flex;flex-direction:column;gap:6px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;"><div style="display:flex;gap:6px;align-items:center;"><div style="width:8px;height:8px;background:#6B6FC9;border-radius:2px;"></div><span style="font:400 11px/1 Nunito,sans-serif;color:#6F6E86;">Pro</span></div><span style="font:700 11px/1 Nunito,sans-serif;color:#33324A;">42% · 2,488</span></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;"><div style="display:flex;gap:6px;align-items:center;"><div style="width:8px;height:8px;background:#3FA98A;border-radius:2px;"></div><span style="font:400 11px/1 Nunito,sans-serif;color:#6F6E86;">Family</span></div><span style="font:700 11px/1 Nunito,sans-serif;color:#33324A;">25% · 1,481</span></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;"><div style="display:flex;gap:6px;align-items:center;"><div style="width:8px;height:8px;background:#E9C46A;border-radius:2px;"></div><span style="font:400 11px/1 Nunito,sans-serif;color:#6F6E86;">Lifetime</span></div><span style="font:700 11px/1 Nunito,sans-serif;color:#33324A;">15% · 889</span></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;"><div style="display:flex;gap:6px;align-items:center;"><div style="width:8px;height:8px;background:#D8D6F0;border-radius:2px;"></div><span style="font:400 11px/1 Nunito,sans-serif;color:#6F6E86;">Free</span></div><span style="font:700 11px/1 Nunito,sans-serif;color:#33324A;">18% · 1,066</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cohort retention heatmap + live feed row -->
+          <div style="display:grid;grid-template-columns:1fr 320px;gap:16px;">
+
+            <!-- Cohort heatmap -->
+            <div style="background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(51,50,74,.06);padding:20px;">
+              <div style="font:700 14px/1 Nunito,sans-serif;color:#33324A;margin-bottom:4px;">Cohort Retention</div>
+              <div style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;margin-bottom:16px;">% retained by month since signup · darker = higher retention</div>
+              <!-- heatmap grid -->
+              <div style="display:grid;grid-template-columns:80px repeat(6,1fr);gap:3px;font-family:Nunito,sans-serif;">
+                <!-- headers -->
+                <div style="font:700 9px/1 Nunito,sans-serif;color:#9C9AB2;padding:6px 4px;text-align:right;">Cohort</div>
+                <div style="font:700 9px/1 Nunito,sans-serif;color:#9C9AB2;text-align:center;padding:6px 0;">M+0</div>
+                <div style="font:700 9px/1 Nunito,sans-serif;color:#9C9AB2;text-align:center;padding:6px 0;">M+1</div>
+                <div style="font:700 9px/1 Nunito,sans-serif;color:#9C9AB2;text-align:center;padding:6px 0;">M+2</div>
+                <div style="font:700 9px/1 Nunito,sans-serif;color:#9C9AB2;text-align:center;padding:6px 0;">M+3</div>
+                <div style="font:700 9px/1 Nunito,sans-serif;color:#9C9AB2;text-align:center;padding:6px 0;">M+4</div>
+                <div style="font:700 9px/1 Nunito,sans-serif;color:#9C9AB2;text-align:center;padding:6px 0;">M+5</div>
+                <!-- Jan 2026 -->
+                <div style="font:600 10px/1 Nunito,sans-serif;color:#9C9AB2;padding:6px 4px;text-align:right;display:flex;align-items:center;justify-content:flex-end;">Jan '26</div>
+                <div style="background:#6B6FC9;border-radius:5px;padding:8px 4px;text-align:center;font:700 11px/1 Nunito,sans-serif;color:#fff;">100%</div>
+                <div style="background:#7E82D1;border-radius:5px;padding:8px 4px;text-align:center;font:700 11px/1 Nunito,sans-serif;color:#fff;">72%</div>
+                <div style="background:#9599D9;border-radius:5px;padding:8px 4px;text-align:center;font:700 11px/1 Nunito,sans-serif;color:#fff;">61%</div>
+                <div style="background:#AAADE0;border-radius:5px;padding:8px 4px;text-align:center;font:700 11px/1 Nunito,sans-serif;color:#54579E;">55%</div>
+                <div style="background:#BFC1E8;border-radius:5px;padding:8px 4px;text-align:center;font:700 11px/1 Nunito,sans-serif;color:#54579E;">51%</div>
+                <div style="background:#D2D3EF;border-radius:5px;padding:8px 4px;text-align:center;font:700 11px/1 Nunito,sans-serif;color:#54579E;">48%</div>
+                <!-- Feb 2026 -->
+                <div style="font:600 10px/1 Nunito,sans-serif;color:#9C9AB2;padding:6px 4px;text-align:right;display:flex;align-items:center;justify-content:flex-end;">Feb '26</div>
+                <div style="background:#6B6FC9;border-radius:5px;padding:8px 4px;text-align:center;font:700 11px/1 Nunito,sans-serif;color:#fff;">100%</div>
+                <div style="background:#7E82D1;border-radius:5px;padding:8px 4px;text-align:center;font:700 11px/1 Nunito,sans-serif;color:#fff;">74%</div>
+                <div style="background:#9599D9;border-radius:5px;padding:8px 4px;text-align:center;font:700 11px/1 Nunito,sans-serif;color:#fff;">63%</div>
+                <div style="background:#AAADE0;border-radius:5px;padding:8px 4px;text-align:center;font:700 11px/1 Nunito,sans-serif;color:#54579E;">57%</div>
+                <div style="background:#BFC1E8;border-radius:5px;padding:8px 4px;text-align:center;font:700 11px/1 Nunito,sans-serif;color:#54579E;">53%</div>
+                <div style="background:#F4F3FB;border-radius:5px;padding:8px 4px;text-align:center;font:600 11px/1 Nunito,sans-serif;color:#9C9AB2;">—</div>
+                <!-- Mar 2026 -->
+                <div style="font:600 10px/1 Nunito,sans-serif;color:#9C9AB2;padding:6px 4px;text-align:right;display:flex;align-items:center;justify-content:flex-end;">Mar '26</div>
+                <div style="background:#6B6FC9;border-radius:5px;padding:8px 4px;text-align:center;font:700 11px/1 Nunito,sans-serif;color:#fff;">100%</div>
+                <div style="background:#7A7FCF;border-radius:5px;padding:8px 4px;text-align:center;font:700 11px/1 Nunito,sans-serif;color:#fff;">76%</div>
+                <div style="background:#9599D9;border-radius:5px;padding:8px 4px;text-align:center;font:700 11px/1 Nunito,sans-serif;color:#fff;">65%</div>
+                <div style="background:#AAADE0;border-radius:5px;padding:8px 4px;text-align:center;font:700 11px/1 Nunito,sans-serif;color:#54579E;">59%</div>
+                <div style="background:#F4F3FB;border-radius:5px;padding:8px 4px;text-align:center;font:600 11px/1 Nunito,sans-serif;color:#9C9AB2;">—</div>
+                <div style="background:#F4F3FB;border-radius:5px;padding:8px 4px;text-align:center;font:600 11px/1 Nunito,sans-serif;color:#9C9AB2;">—</div>
+                <!-- Apr 2026 -->
+                <div style="font:600 10px/1 Nunito,sans-serif;color:#9C9AB2;padding:6px 4px;text-align:right;display:flex;align-items:center;justify-content:flex-end;">Apr '26</div>
+                <div style="background:#6B6FC9;border-radius:5px;padding:8px 4px;text-align:center;font:700 11px/1 Nunito,sans-serif;color:#fff;">100%</div>
+                <div style="background:#7A7FCF;border-radius:5px;padding:8px 4px;text-align:center;font:700 11px/1 Nunito,sans-serif;color:#fff;">78%</div>
+                <div style="background:#9599D9;border-radius:5px;padding:8px 4px;text-align:center;font:700 11px/1 Nunito,sans-serif;color:#fff;">67%</div>
+                <div style="background:#F4F3FB;border-radius:5px;padding:8px 4px;text-align:center;font:600 11px/1 Nunito,sans-serif;color:#9C9AB2;">—</div>
+                <div style="background:#F4F3FB;border-radius:5px;padding:8px 4px;text-align:center;font:600 11px/1 Nunito,sans-serif;color:#9C9AB2;">—</div>
+                <div style="background:#F4F3FB;border-radius:5px;padding:8px 4px;text-align:center;font:600 11px/1 Nunito,sans-serif;color:#9C9AB2;">—</div>
+                <!-- May 2026 -->
+                <div style="font:600 10px/1 Nunito,sans-serif;color:#9C9AB2;padding:6px 4px;text-align:right;display:flex;align-items:center;justify-content:flex-end;">May '26</div>
+                <div style="background:#6B6FC9;border-radius:5px;padding:8px 4px;text-align:center;font:700 11px/1 Nunito,sans-serif;color:#fff;">100%</div>
+                <div style="background:#7A7FCF;border-radius:5px;padding:8px 4px;text-align:center;font:700 11px/1 Nunito,sans-serif;color:#fff;">81%</div>
+                <div style="background:#F4F3FB;border-radius:5px;padding:8px 4px;text-align:center;font:600 11px/1 Nunito,sans-serif;color:#9C9AB2;">—</div>
+                <div style="background:#F4F3FB;border-radius:5px;padding:8px 4px;text-align:center;font:600 11px/1 Nunito,sans-serif;color:#9C9AB2;">—</div>
+                <div style="background:#F4F3FB;border-radius:5px;padding:8px 4px;text-align:center;font:600 11px/1 Nunito,sans-serif;color:#9C9AB2;">—</div>
+                <div style="background:#F4F3FB;border-radius:5px;padding:8px 4px;text-align:center;font:600 11px/1 Nunito,sans-serif;color:#9C9AB2;">—</div>
+              </div>
+            </div>
+
+            <!-- Live ops feed -->
+            <div style="background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(51,50,74,.06);padding:20px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;"><div style="font:700 14px/1 Nunito,sans-serif;color:#33324A;">Live Ops</div><div style="width:8px;height:8px;background:#3FA98A;border-radius:50%;box-shadow:0 0 0 3px rgba(63,169,138,.2);"></div></div>
+              <div style="display:flex;flex-direction:column;gap:10px;">
+                <div style="padding:10px 12px;background:#FBE0EA;border-radius:12px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;"><span style="font:700 11px/1 Nunito,sans-serif;color:#D46E97;">Failed payment</span><span style="font:400 9px/1 Nunito,sans-serif;color:#D46E97;">2m ago</span></div><div style="font:400 11px/1 Nunito,sans-serif;color:#33324A;">user_29841 · Pro · €3.99</div></div>
+                <div style="padding:10px 12px;background:#D8F0E6;border-radius:12px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;"><span style="font:700 11px/1 Nunito,sans-serif;color:#3FA98A;">New subscriber</span><span style="font:400 9px/1 Nunito,sans-serif;color:#3FA98A;">5m ago</span></div><div style="font:400 11px/1 Nunito,sans-serif;color:#33324A;">user_31204 · Family · €4.99</div></div>
+                <div style="padding:10px 12px;background:#F4F3FB;border-radius:12px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;"><span style="font:700 11px/1 Nunito,sans-serif;color:#6F6E86;">Trial started</span><span style="font:400 9px/1 Nunito,sans-serif;color:#9C9AB2;">8m ago</span></div><div style="font:400 11px/1 Nunito,sans-serif;color:#33324A;">user_31203 · 10-day trial</div></div>
+                <div style="padding:10px 12px;background:#FBE0EA;border-radius:12px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;"><span style="font:700 11px/1 Nunito,sans-serif;color:#D46E97;">Cancelled</span><span style="font:400 9px/1 Nunito,sans-serif;color:#D46E97;">12m ago</span></div><div style="font:400 11px/1 Nunito,sans-serif;color:#33324A;">user_28901 · Pro · "too expensive"</div></div>
+                <div style="padding:10px 12px;background:#D8F0E6;border-radius:12px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;"><span style="font:700 11px/1 Nunito,sans-serif;color:#3FA98A;">Upgraded</span><span style="font:400 9px/1 Nunito,sans-serif;color:#3FA98A;">18m ago</span></div><div style="font:400 11px/1 Nunito,sans-serif;color:#33324A;">user_27441 · Pro → Family</div></div>
+                <div style="padding:10px 12px;background:#FBF1CE;border-radius:12px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;"><span style="font:700 11px/1 Nunito,sans-serif;color:#C9A33B;">Lifetime purchase</span><span style="font:400 9px/1 Nunito,sans-serif;color:#C9A33B;">22m ago</span></div><div style="font:400 11px/1 Nunito,sans-serif;color:#33324A;">user_31198 · €149.99</div></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ═══════════════════════════════════════════════════════
+         SCREEN 2 — CONFIG & FEATURE FLAGS
+    ═══════════════════════════════════════════════════════ -->
+    <div>
+      <div style="font:700 11px/1 Nunito,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#6B6FC9;margin-bottom:14px;">Admin · 02 — Config &amp; Feature Flags</div>
+      <div style="width:1440px;border-radius:20px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.5);display:flex;background:#F8F7FF;">
+
+        <!-- Sidebar (same structure) -->
+        <div style="width:240px;background:#fff;border-right:1px solid rgba(51,50,74,.07);display:flex;flex-direction:column;flex:none;">
+          <div style="padding:24px 20px 20px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(51,50,74,.06);">
+            <div style="color:#76a878;"><img src="logo-tree.svg" width="28" height="32" alt="Everly" style="display:block;object-fit:contain;"/></div>
+            <div><div style="font:700 15px/1 Quicksand,sans-serif;color:#33324A;">Everly</div><div style="font:400 10px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:3px;">Admin Console</div></div>
+          </div>
+          <div style="padding:16px 12px;flex:1;display:flex;flex-direction:column;gap:2px;">
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9C9AB2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span style="font:600 13px/1 Nunito,sans-serif;color:#6F6E86;">Dashboard</span></div>
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9C9AB2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><span style="font:600 13px/1 Nunito,sans-serif;color:#6F6E86;">Users</span></div>
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9C9AB2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg><span style="font:600 13px/1 Nunito,sans-serif;color:#6F6E86;">Billing</span></div>
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#E7E4FB;border-radius:12px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B6FC9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg><span style="font:700 13px/1 Nunito,sans-serif;color:#6B6FC9;">Config &amp; Flags</span></div>
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9C9AB2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span style="font:600 13px/1 Nunito,sans-serif;color:#6F6E86;">Audit Log</span></div>
+          </div>
+          <div style="padding:16px 20px;border-top:1px solid rgba(51,50,74,.06);display:flex;align-items:center;gap:10px;"><div style="width:32px;height:32px;background:#E7E4FB;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;"><svg width="16" height="16" viewBox="0 0 20 20" fill="#6B6FC9"><circle cx="10" cy="7.5" r="5"/><path d="M2 19Q2 13 10 13Q18 13 18 19Z"/></svg></div><div style="flex:1;"><div style="font:700 12px/1 Nunito,sans-serif;color:#33324A;">Admin</div><div style="font:400 10px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:2px;">Superadmin</div></div></div>
+        </div>
+
+        <!-- Main canvas -->
+        <div style="flex:1;padding:28px 32px;">
+
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+            <div><div style="font:700 22px/1 Quicksand,sans-serif;color:#33324A;">Config &amp; Feature Flags</div><div style="font:400 13px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:5px;">Changes apply without redeployment</div></div>
+            <div style="background:#D8F0E6;color:#3FA98A;border-radius:10px;padding:8px 16px;font:700 12px/1 Nunito,sans-serif;display:flex;align-items:center;gap:6px;"><div style="width:7px;height:7px;background:#3FA98A;border-radius:50%;"></div>All systems live</div>
+          </div>
+
+          <!-- Live config table -->
+          <div style="background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(51,50,74,.06);margin-bottom:20px;overflow:hidden;">
+            <div style="padding:16px 20px;border-bottom:1px solid rgba(51,50,74,.06);display:flex;justify-content:space-between;align-items:center;"><div style="font:700 14px/1 Nunito,sans-serif;color:#33324A;">Live Config Values</div><div style="background:#E7E4FB;color:#6B6FC9;border-radius:8px;padding:6px 12px;font:700 11px/1 Nunito,sans-serif;">Edit All</div></div>
+            <div style="display:grid;grid-template-columns:200px 1fr 120px 120px;gap:0;">
+              <!-- header -->
+              <div style="padding:10px 20px;font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;background:#F8F7FF;border-bottom:1px solid rgba(51,50,74,.05);">Key</div>
+              <div style="padding:10px 20px;font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;background:#F8F7FF;border-bottom:1px solid rgba(51,50,74,.05);">Value</div>
+              <div style="padding:10px 20px;font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;background:#F8F7FF;border-bottom:1px solid rgba(51,50,74,.05);">Updated</div>
+              <div style="padding:10px 20px;font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;background:#F8F7FF;border-bottom:1px solid rgba(51,50,74,.05);"></div>
+              <!-- rows -->
+              <div style="padding:12px 20px;font:600 13px/1 Nunito,sans-serif;color:#33324A;border-bottom:1px solid rgba(51,50,74,.04);">trial_length_days</div>
+              <div style="padding:12px 20px;border-bottom:1px solid rgba(51,50,74,.04);"><span style="background:#E7E4FB;color:#6B6FC9;border-radius:6px;padding:3px 10px;font:700 13px/1 Nunito,sans-serif;">10</span></div>
+              <div style="padding:12px 20px;font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;border-bottom:1px solid rgba(51,50,74,.04);">Jun 1</div>
+              <div style="padding:12px 20px;border-bottom:1px solid rgba(51,50,74,.04);"><span style="font:600 12px/1 Nunito,sans-serif;color:#6B6FC9;cursor:pointer;">Edit</span></div>
+              <div style="padding:12px 20px;font:600 13px/1 Nunito,sans-serif;color:#33324A;border-bottom:1px solid rgba(51,50,74,.04);">pro_price_monthly_eur</div>
+              <div style="padding:12px 20px;border-bottom:1px solid rgba(51,50,74,.04);"><span style="background:#E7E4FB;color:#6B6FC9;border-radius:6px;padding:3px 10px;font:700 13px/1 Nunito,sans-serif;">3.99</span></div>
+              <div style="padding:12px 20px;font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;border-bottom:1px solid rgba(51,50,74,.04);">May 15</div>
+              <div style="padding:12px 20px;border-bottom:1px solid rgba(51,50,74,.04);"><span style="font:600 12px/1 Nunito,sans-serif;color:#6B6FC9;cursor:pointer;">Edit</span></div>
+              <div style="padding:12px 20px;font:600 13px/1 Nunito,sans-serif;color:#33324A;border-bottom:1px solid rgba(51,50,74,.04);">enabled_languages</div>
+              <div style="padding:12px 20px;border-bottom:1px solid rgba(51,50,74,.04);display:flex;gap:5px;align-items:center;"><span style="background:#D8F0E6;color:#3FA98A;border-radius:5px;padding:2px 8px;font:700 11px/1 Nunito,sans-serif;">EN</span><span style="background:#D8F0E6;color:#3FA98A;border-radius:5px;padding:2px 8px;font:700 11px/1 Nunito,sans-serif;">DE</span><span style="background:#D8F0E6;color:#3FA98A;border-radius:5px;padding:2px 8px;font:700 11px/1 Nunito,sans-serif;">ES</span><span style="background:#D8F0E6;color:#3FA98A;border-radius:5px;padding:2px 8px;font:700 11px/1 Nunito,sans-serif;">FR</span><span style="background:#F4F3FB;color:#9C9AB2;border-radius:5px;padding:2px 8px;font:700 11px/1 Nunito,sans-serif;">TR</span><span style="background:#F4F3FB;color:#9C9AB2;border-radius:5px;padding:2px 8px;font:700 11px/1 Nunito,sans-serif;">IT</span></div>
+              <div style="padding:12px 20px;font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;border-bottom:1px solid rgba(51,50,74,.04);">Apr 3</div>
+              <div style="padding:12px 20px;border-bottom:1px solid rgba(51,50,74,.04);"><span style="font:600 12px/1 Nunito,sans-serif;color:#6B6FC9;cursor:pointer;">Edit</span></div>
+              <div style="padding:12px 20px;font:600 13px/1 Nunito,sans-serif;color:#33324A;">whats_new_copy</div>
+              <div style="padding:12px 20px;font:400 12px/1 Nunito,sans-serif;color:#6F6E86;">"Rhythm Ring now available…"</div>
+              <div style="padding:12px 20px;font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;">Jun 20</div>
+              <div style="padding:12px 20px;"><span style="font:600 12px/1 Nunito,sans-serif;color:#6B6FC9;cursor:pointer;">Edit</span></div>
+            </div>
+          </div>
+
+          <!-- Feature flags board -->
+          <div style="font:700 14px/1 Nunito,sans-serif;color:#33324A;margin-bottom:14px;">Feature Flags</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">
+
+            <!-- Flag 1: Snap-to-Schedule cloud parse -->
+            <div style="background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(51,50,74,.06);padding:18px;">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+                <div><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;margin-bottom:4px;">snap_cloud_parse</div><div style="font:400 11px/1.4 Nunito,sans-serif;color:#9C9AB2;">Cloud LLM parse for Snap-to-Schedule</div></div>
+                <div style="width:40px;height:22px;background:#6B6FC9;border-radius:999px;position:relative;flex:none;"><div style="width:18px;height:18px;background:white;border-radius:50%;position:absolute;right:2px;top:2px;box-shadow:0 1px 3px rgba(0,0,0,.15);"></div></div>
+              </div>
+              <!-- rollout slider -->
+              <div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font:400 10px/1 Nunito,sans-serif;color:#9C9AB2;">Rollout</span><span style="font:700 10px/1 Nunito,sans-serif;color:#6B6FC9;">75%</span></div><div style="height:6px;background:#F4F3FB;border-radius:999px;overflow:hidden;"><div style="width:75%;height:100%;background:#6B6FC9;border-radius:999px;"></div></div></div>
+              <!-- targeting chips -->
+              <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;">
+                <span style="background:#E7E4FB;color:#6B6FC9;border-radius:5px;padding:3px 8px;font:700 10px/1 Nunito,sans-serif;">Pro</span>
+                <span style="background:#E7E4FB;color:#6B6FC9;border-radius:5px;padding:3px 8px;font:700 10px/1 Nunito,sans-serif;">Family</span>
+                <span style="background:#F4F3FB;color:#9C9AB2;border-radius:5px;padding:3px 8px;font:600 10px/1 Nunito,sans-serif;">v2.4+</span>
+              </div>
+              <!-- mini adoption -->
+              <div style="display:flex;justify-content:space-between;align-items:center;"><div style="font:400 10px/1 Nunito,sans-serif;color:#9C9AB2;">Usage this week</div><svg width="60" height="16" viewBox="0 0 60 16" fill="none"><path d="M0 12 L10 10 L20 9 L30 7 L40 5 L50 4 L60 2" stroke="#6B6FC9" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <div style="margin-top:10px;border-top:1px solid rgba(51,50,74,.05);padding-top:10px;display:flex;gap:6px;"><div style="flex:1;background:#FBE0EA;color:#D46E97;border-radius:8px;padding:7px;text-align:center;font:700 11px/1 Nunito,sans-serif;cursor:pointer;">Kill switch</div><div style="flex:1;background:#F4F3FB;color:#6F6E86;border-radius:8px;padding:7px;text-align:center;font:600 11px/1 Nunito,sans-serif;cursor:pointer;">Edit</div></div>
+            </div>
+
+            <!-- Flag 2: Co-parent real-time sync -->
+            <div style="background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(51,50,74,.06);padding:18px;">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+                <div><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;margin-bottom:4px;">coparent_realtime_sync</div><div style="font:400 11px/1.4 Nunito,sans-serif;color:#9C9AB2;">Optional real-time backend for co-parents</div></div>
+                <div style="width:40px;height:22px;background:#D8D6F0;border-radius:999px;position:relative;flex:none;"><div style="width:18px;height:18px;background:white;border-radius:50%;position:absolute;left:2px;top:2px;box-shadow:0 1px 3px rgba(0,0,0,.15);"></div></div>
+              </div>
+              <div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font:400 10px/1 Nunito,sans-serif;color:#9C9AB2;">Rollout</span><span style="font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;">0% · Off</span></div><div style="height:6px;background:#F4F3FB;border-radius:999px;overflow:hidden;"><div style="width:0%;height:100%;background:#9C9AB2;border-radius:999px;"></div></div></div>
+              <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;"><span style="background:#F4F3FB;color:#9C9AB2;border-radius:5px;padding:3px 8px;font:600 10px/1 Nunito,sans-serif;">Beta only</span><span style="background:#F4F3FB;color:#9C9AB2;border-radius:5px;padding:3px 8px;font:600 10px/1 Nunito,sans-serif;">Family</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;"><div style="font:400 10px/1 Nunito,sans-serif;color:#9C9AB2;">Opt-in future feature</div></div>
+              <div style="margin-top:10px;border-top:1px solid rgba(51,50,74,.05);padding-top:10px;display:flex;gap:6px;"><div style="flex:1;background:#F4F3FB;color:#6F6E86;border-radius:8px;padding:7px;text-align:center;font:600 11px/1 Nunito,sans-serif;cursor:pointer;">Enable</div><div style="flex:1;background:#F4F3FB;color:#6F6E86;border-radius:8px;padding:7px;text-align:center;font:600 11px/1 Nunito,sans-serif;cursor:pointer;">Edit</div></div>
+            </div>
+
+            <!-- Flag 3: Night mode auto -->
+            <div style="background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(51,50,74,.06);padding:18px;">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+                <div><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;margin-bottom:4px;">night_mode_auto_v2</div><div style="font:400 11px/1.4 Nunito,sans-serif;color:#9C9AB2;">Auto night mode based on time + device brightness</div></div>
+                <div style="width:40px;height:22px;background:#6B6FC9;border-radius:999px;position:relative;flex:none;"><div style="width:18px;height:18px;background:white;border-radius:50%;position:absolute;right:2px;top:2px;box-shadow:0 1px 3px rgba(0,0,0,.15);"></div></div>
+              </div>
+              <div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font:400 10px/1 Nunito,sans-serif;color:#9C9AB2;">Rollout</span><span style="font:700 10px/1 Nunito,sans-serif;color:#6B6FC9;">100%</span></div><div style="height:6px;background:#F4F3FB;border-radius:999px;overflow:hidden;"><div style="width:100%;height:100%;background:#6B6FC9;border-radius:999px;"></div></div></div>
+              <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;"><span style="background:#D8F0E6;color:#3FA98A;border-radius:5px;padding:3px 8px;font:700 10px/1 Nunito,sans-serif;">All users</span><span style="background:#D8F0E6;color:#3FA98A;border-radius:5px;padding:3px 8px;font:700 10px/1 Nunito,sans-serif;">All versions</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;"><div style="font:400 10px/1 Nunito,sans-serif;color:#9C9AB2;">Fully rolled out</div><svg width="60" height="16" viewBox="0 0 60 16" fill="none"><path d="M0 14 L10 12 L20 10 L30 6 L40 4 L50 3 L60 2" stroke="#3FA98A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <div style="margin-top:10px;border-top:1px solid rgba(51,50,74,.05);padding-top:10px;display:flex;gap:6px;"><div style="flex:1;background:#FBE0EA;color:#D46E97;border-radius:8px;padding:7px;text-align:center;font:700 11px/1 Nunito,sans-serif;cursor:pointer;">Kill switch</div><div style="flex:1;background:#F4F3FB;color:#6F6E86;border-radius:8px;padding:7px;text-align:center;font:600 11px/1 Nunito,sans-serif;cursor:pointer;">Edit</div></div>
+            </div>
+
+            <!-- Flag 4: Postpartum / Maternal module (v1.1) -->
+            <div style="background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(51,50,74,.06);padding:18px;">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+                <div><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;margin-bottom:4px;">maternal_postpartum_module</div><div style="font:400 11px/1.4 Nunito,sans-serif;color:#9C9AB2;">v1.1 maternal arc · postpartum + recovery</div></div>
+                <div style="width:40px;height:22px;background:#6B6FC9;border-radius:999px;position:relative;flex:none;"><div style="width:18px;height:18px;background:white;border-radius:50%;position:absolute;right:2px;top:2px;box-shadow:0 1px 3px rgba(0,0,0,.15);"></div></div>
+              </div>
+              <div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font:400 10px/1 Nunito,sans-serif;color:#9C9AB2;">Rollout</span><span style="font:700 10px/1 Nunito,sans-serif;color:#6B6FC9;">40%</span></div><div style="height:6px;background:#F4F3FB;border-radius:999px;overflow:hidden;"><div style="width:40%;height:100%;background:#6B6FC9;border-radius:999px;"></div></div></div>
+              <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;"><span style="background:#E7E4FB;color:#6B6FC9;border-radius:5px;padding:3px 8px;font:700 10px/1 Nunito,sans-serif;">All tiers</span><span style="background:#F4F3FB;color:#9C9AB2;border-radius:5px;padding:3px 8px;font:600 10px/1 Nunito,sans-serif;">v3.0+</span><span style="background:#F4F3FB;color:#9C9AB2;border-radius:5px;padding:3px 8px;font:600 10px/1 Nunito,sans-serif;">Gradual</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;"><div style="font:400 10px/1 Nunito,sans-serif;color:#9C9AB2;">Adoption ramping</div><svg width="60" height="16" viewBox="0 0 60 16" fill="none"><path d="M0 14 L10 13 L20 11 L30 9 L40 6 L50 4 L60 3" stroke="#6B6FC9" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <div style="margin-top:10px;border-top:1px solid rgba(51,50,74,.05);padding-top:10px;display:flex;gap:6px;"><div style="flex:1;background:#FBE0EA;color:#D46E97;border-radius:8px;padding:7px;text-align:center;font:700 11px/1 Nunito,sans-serif;cursor:pointer;">Kill switch</div><div style="flex:1;background:#F4F3FB;color:#6F6E86;border-radius:8px;padding:7px;text-align:center;font:600 11px/1 Nunito,sans-serif;cursor:pointer;">Edit</div></div>
+            </div>
+
+            <!-- Flag 5: Preconception / TTC (v1.1) -->
+            <div style="background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(51,50,74,.06);padding:18px;">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+                <div><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;margin-bottom:4px;">preconception_ttc</div><div style="font:400 11px/1.4 Nunito,sans-serif;color:#9C9AB2;">Cycle / fertility · top-of-funnel stage</div></div>
+                <div style="width:40px;height:22px;background:#D8D6F0;border-radius:999px;position:relative;flex:none;"><div style="width:18px;height:18px;background:white;border-radius:50%;position:absolute;left:2px;top:2px;box-shadow:0 1px 3px rgba(0,0,0,.15);"></div></div>
+              </div>
+              <div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font:400 10px/1 Nunito,sans-serif;color:#9C9AB2;">Rollout</span><span style="font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;">10% · Beta</span></div><div style="height:6px;background:#F4F3FB;border-radius:999px;overflow:hidden;"><div style="width:10%;height:100%;background:#9C9AB2;border-radius:999px;"></div></div></div>
+              <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;"><span style="background:#F4F3FB;color:#9C9AB2;border-radius:5px;padding:3px 8px;font:600 10px/1 Nunito,sans-serif;">Beta cohort</span><span style="background:#F4F3FB;color:#9C9AB2;border-radius:5px;padding:3px 8px;font:600 10px/1 Nunito,sans-serif;">EN/DE only</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;"><div style="font:400 10px/1 Nunito,sans-serif;color:#9C9AB2;">Earliest funnel · testing</div></div>
+              <div style="margin-top:10px;border-top:1px solid rgba(51,50,74,.05);padding-top:10px;display:flex;gap:6px;"><div style="flex:1;background:#F4F3FB;color:#6F6E86;border-radius:8px;padding:7px;text-align:center;font:600 11px/1 Nunito,sans-serif;cursor:pointer;">Expand</div><div style="flex:1;background:#F4F3FB;color:#6F6E86;border-radius:8px;padding:7px;text-align:center;font:600 11px/1 Nunito,sans-serif;cursor:pointer;">Edit</div></div>
+            </div>
+
+            <!-- Flag 6: EPDS screening (safety — no kill switch) -->
+            <div style="background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(51,50,74,.06);padding:18px;">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+                <div><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;margin-bottom:4px;">epds_mood_screening</div><div style="font:400 11px/1.4 Nunito,sans-serif;color:#9C9AB2;">Postnatal mood screen · safety · always free</div></div>
+                <div style="width:40px;height:22px;background:#6B6FC9;border-radius:999px;position:relative;flex:none;"><div style="width:18px;height:18px;background:white;border-radius:50%;position:absolute;right:2px;top:2px;box-shadow:0 1px 3px rgba(0,0,0,.15);"></div></div>
+              </div>
+              <div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font:400 10px/1 Nunito,sans-serif;color:#9C9AB2;">Rollout</span><span style="font:700 10px/1 Nunito,sans-serif;color:#6B6FC9;">40%</span></div><div style="height:6px;background:#F4F3FB;border-radius:999px;overflow:hidden;"><div style="width:40%;height:100%;background:#6B6FC9;border-radius:999px;"></div></div></div>
+              <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;"><span style="background:#E7E4FB;color:#6B6FC9;border-radius:5px;padding:3px 8px;font:700 10px/1 Nunito,sans-serif;">All tiers · free</span><span style="background:#D8F0E6;color:#3FA98A;border-radius:5px;padding:3px 8px;font:700 10px/1 Nunito,sans-serif;">Duty of care</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;"><div style="font:400 10px/1 Nunito,sans-serif;color:#9C9AB2;">Ships with maternal module</div></div>
+              <div style="margin-top:10px;border-top:1px solid rgba(51,50,74,.05);padding-top:10px;display:flex;gap:6px;"><div style="flex:1;background:#F4F3FB;color:#C8C6DC;border-radius:8px;padding:7px;text-align:center;font:600 11px/1 Nunito,sans-serif;">Kill switch locked</div><div style="flex:1;background:#F4F3FB;color:#6F6E86;border-radius:8px;padding:7px;text-align:center;font:600 11px/1 Nunito,sans-serif;cursor:pointer;">Edit</div></div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ═══════════════════════════════════════════════════════
+         SCREEN 3 — USERS
+    ═══════════════════════════════════════════════════════ -->
+    <div>
+      <div style="font:700 11px/1 Nunito,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#6B6FC9;margin-bottom:14px;">Admin · 03 — User Search &amp; Lifecycle</div>
+      <div style="width:1440px;border-radius:20px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.5);display:flex;background:#F8F7FF;">
+
+        <!-- Sidebar: Users active -->
+        <div style="width:240px;background:#fff;border-right:1px solid rgba(51,50,74,.07);display:flex;flex-direction:column;flex:none;">
+          <div style="padding:24px 20px 20px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(51,50,74,.06);">
+            <div style="color:#76a878;"><img src="logo-tree.svg" width="28" height="32" alt="Everly" style="display:block;object-fit:contain;"/></div>
+            <div><div style="font:700 15px/1 Quicksand,sans-serif;color:#33324A;">Everly</div><div style="font:400 10px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:3px;">Admin Console</div></div>
+          </div>
+          <div style="padding:16px 12px;flex:1;display:flex;flex-direction:column;gap:2px;">
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9C9AB2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span style="font:600 13px/1 Nunito,sans-serif;color:#6F6E86;">Dashboard</span></div>
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#E7E4FB;border-radius:12px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B6FC9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg><span style="font:700 13px/1 Nunito,sans-serif;color:#6B6FC9;">Users</span></div>
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9C9AB2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg><span style="font:600 13px/1 Nunito,sans-serif;color:#6F6E86;">Billing</span></div>
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9C9AB2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg><span style="font:600 13px/1 Nunito,sans-serif;color:#6F6E86;">Config &amp; Flags</span></div>
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9C9AB2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span style="font:600 13px/1 Nunito,sans-serif;color:#6F6E86;">Audit Log</span></div>
+          </div>
+          <div style="padding:16px 20px;border-top:1px solid rgba(51,50,74,.06);display:flex;align-items:center;gap:10px;"><div style="width:32px;height:32px;background:#E7E4FB;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;"><svg width="16" height="16" viewBox="0 0 20 20" fill="#6B6FC9"><circle cx="10" cy="7.5" r="5"/><path d="M2 19Q2 13 10 13Q18 13 18 19Z"/></svg></div><div><div style="font:700 12px/1 Nunito,sans-serif;color:#33324A;">Admin</div><div style="font:400 10px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:2px;">Superadmin</div></div></div>
+        </div>
+
+        <!-- Main content -->
+        <div style="flex:1;padding:28px 32px;overflow:hidden;">
+          <!-- Header + search -->
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <div><div style="font:700 22px/1 Quicksand,sans-serif;color:#33324A;">Users</div><div style="font:400 13px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:5px;">5,924 active · 812 trialing · 47 dunning</div></div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <div style="background:#fff;border:1px solid rgba(51,50,74,.1);border-radius:10px;padding:9px 14px;display:flex;gap:8px;align-items:center;width:280px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9C9AB2" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><span style="font:400 13px/1 Nunito,sans-serif;color:#C8C6DC;">Search by email or user ID…</span></div>
+              <div style="background:#fff;border:1px solid rgba(51,50,74,.08);border-radius:10px;padding:9px 16px;font:600 13px/1 Nunito,sans-serif;color:#6F6E86;">Export CSV</div>
+            </div>
+          </div>
+          <!-- Filter chips -->
+          <div style="display:flex;gap:6px;margin-bottom:16px;">
+            <div style="background:#6B6FC9;color:#fff;border-radius:999px;padding:6px 14px;font:700 12px/1 Nunito,sans-serif;">All · 6,927</div>
+            <div style="background:#fff;border:1px solid rgba(51,50,74,.08);color:#6F6E86;border-radius:999px;padding:6px 14px;font:600 12px/1 Nunito,sans-serif;">Active · 5,924</div>
+            <div style="background:#fff;border:1px solid rgba(51,50,74,.08);color:#6F6E86;border-radius:999px;padding:6px 14px;font:600 12px/1 Nunito,sans-serif;">Trialing · 812</div>
+            <div style="background:#FBE0EA;border:1px solid rgba(212,110,151,.2);color:#D46E97;border-radius:999px;padding:6px 14px;font:700 12px/1 Nunito,sans-serif;">Failed · 47</div>
+            <div style="background:#fff;border:1px solid rgba(51,50,74,.08);color:#6F6E86;border-radius:999px;padding:6px 14px;font:600 12px/1 Nunito,sans-serif;">Churned · 144</div>
+          </div>
+          <!-- Users table -->
+          <div style="background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(51,50,74,.06);overflow:hidden;">
+            <!-- Table header -->
+            <div style="display:grid;grid-template-columns:2fr 1.2fr 1fr 1fr 1fr 1.4fr;padding:10px 20px;background:#F8F7FF;border-bottom:1px solid rgba(51,50,74,.05);">
+              <div style="font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;">User</div>
+              <div style="font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;">Plan</div>
+              <div style="font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;">Status</div>
+              <div style="font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;">Joined</div>
+              <div style="font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;">Last active</div>
+              <div style="font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;">Actions</div>
+            </div>
+            <!-- Row 1: selected / expanded -->
+            <div style="border-bottom:1px solid rgba(51,50,74,.04);">
+              <div style="display:grid;grid-template-columns:2fr 1.2fr 1fr 1fr 1fr 1.4fr;padding:12px 20px;background:rgba(107,111,201,.04);align-items:center;">
+                <div style="display:flex;gap:10px;align-items:center;"><div style="width:32px;height:32px;background:#E7E4FB;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;"><svg width="16" height="16" viewBox="0 0 20 20" fill="#6B6FC9"><circle cx="10" cy="7.5" r="5"/><path d="M2 19Q2 13 10 13Q18 13 18 19Z"/></svg></div><div><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;">Emma Wilson</div><div style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:2px;">emma@gmail.com</div></div></div>
+                <div><span style="background:#E7E4FB;color:#6B6FC9;border-radius:5px;padding:3px 10px;font:700 12px/1 Nunito,sans-serif;">Family</span></div>
+                <div><span style="background:#D8F0E6;color:#3FA98A;border-radius:999px;padding:4px 10px;font:700 11px/1 Nunito,sans-serif;">Active</span></div>
+                <div style="font:400 12px/1 Nunito,sans-serif;color:#6F6E86;">Jan 14, 2026</div>
+                <div style="font:400 12px/1 Nunito,sans-serif;color:#6F6E86;">Today</div>
+                <div style="display:flex;gap:6px;"><div style="background:#E7E4FB;color:#6B6FC9;border-radius:8px;padding:5px 12px;font:700 11px/1 Nunito,sans-serif;cursor:pointer;">View</div><div style="background:#F4F3FB;color:#6F6E86;border-radius:8px;padding:5px 10px;font:600 11px/1 Nunito,sans-serif;cursor:pointer;">···</div></div>
+              </div>
+              <!-- Expanded user detail -->
+              <div style="padding:16px 20px 20px;background:rgba(107,111,201,.03);border-top:1px solid rgba(107,111,201,.1);display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;">
+                <div><div style="font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">Account</div><div style="font:400 12px/1.5 Nunito,sans-serif;color:#33324A;">ID: user_31204<br/>Locale: EN · EUR<br/>2 children linked</div></div>
+                <div><div style="font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">Subscription</div><div style="font:400 12px/1.5 Nunito,sans-serif;color:#33324A;">Family · €4.99/mo<br/>Renews Jul 14, 2026<br/>Stripe: sub_4kF9...</div></div>
+                <div><div style="font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">Trial</div><div style="font:400 12px/1.5 Nunito,sans-serif;color:#9C9AB2;">Trial used · Converted<br/>Day 8 / 10 when paid</div></div>
+                <div><div style="font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">Actions</div><div style="display:flex;flex-direction:column;gap:5px;"><div style="background:#E7E4FB;color:#6B6FC9;border-radius:7px;padding:6px 12px;font:700 11px/1 Nunito,sans-serif;cursor:pointer;display:inline-block;">Change plan</div><div style="background:#F4F3FB;color:#6F6E86;border-radius:7px;padding:6px 12px;font:600 11px/1 Nunito,sans-serif;cursor:pointer;display:inline-block;">Reset password</div><div style="color:#E98FB3;font:700 11px/1 Nunito,sans-serif;cursor:pointer;padding:6px 0;">GDPR erasure →</div></div></div>
+              </div>
+            </div>
+            <!-- Row 2 -->
+            <div style="display:grid;grid-template-columns:2fr 1.2fr 1fr 1fr 1fr 1.4fr;padding:12px 20px;align-items:center;border-bottom:1px solid rgba(51,50,74,.04);">
+              <div style="display:flex;gap:10px;align-items:center;"><div style="width:32px;height:32px;background:#D8F0E6;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;"><svg width="16" height="16" viewBox="0 0 20 20" fill="#3FA98A"><circle cx="10" cy="7.5" r="5"/><path d="M2 19Q2 13 10 13Q18 13 18 19Z"/></svg></div><div><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;">James O'Brien</div><div style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:2px;">james@outlook.com</div></div></div>
+              <div><span style="background:#E7E4FB;color:#6B6FC9;border-radius:5px;padding:3px 10px;font:700 12px/1 Nunito,sans-serif;">Pro</span></div>
+              <div><span style="background:#FBE0EA;color:#D46E97;border-radius:999px;padding:4px 10px;font:700 11px/1 Nunito,sans-serif;">⚠ Dunning</span></div>
+              <div style="font:400 12px/1 Nunito,sans-serif;color:#6F6E86;">Feb 2, 2026</div>
+              <div style="font:400 12px/1 Nunito,sans-serif;color:#6F6E86;">Jun 20</div>
+              <div style="display:flex;gap:6px;"><div style="background:#FBE0EA;color:#D46E97;border-radius:8px;padding:5px 12px;font:700 11px/1 Nunito,sans-serif;cursor:pointer;">Retry</div><div style="background:#F4F3FB;color:#6F6E86;border-radius:8px;padding:5px 10px;font:600 11px/1 Nunito,sans-serif;cursor:pointer;">···</div></div>
+            </div>
+            <!-- Row 3 -->
+            <div style="display:grid;grid-template-columns:2fr 1.2fr 1fr 1fr 1fr 1.4fr;padding:12px 20px;align-items:center;border-bottom:1px solid rgba(51,50,74,.04);">
+              <div style="display:flex;gap:10px;align-items:center;"><div style="width:32px;height:32px;background:#FBF1CE;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;"><svg width="16" height="16" viewBox="0 0 20 20" fill="#C9A33B"><circle cx="10" cy="7.5" r="5"/><path d="M2 19Q2 13 10 13Q18 13 18 19Z"/></svg></div><div><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;">Sarah Chen</div><div style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:2px;">sarah@icloud.com</div></div></div>
+              <div><span style="background:#E7E4FB;color:#6B6FC9;border-radius:5px;padding:3px 10px;font:700 12px/1 Nunito,sans-serif;">Pro</span></div>
+              <div><span style="background:#FBF1CE;color:#C9A33B;border-radius:999px;padding:4px 10px;font:700 11px/1 Nunito,sans-serif;">Trial · Day 7</span></div>
+              <div style="font:400 12px/1 Nunito,sans-serif;color:#6F6E86;">Jun 16, 2026</div>
+              <div style="font:400 12px/1 Nunito,sans-serif;color:#6F6E86;">Today</div>
+              <div style="display:flex;gap:6px;"><div style="background:#E7E4FB;color:#6B6FC9;border-radius:8px;padding:5px 12px;font:700 11px/1 Nunito,sans-serif;cursor:pointer;">Extend</div><div style="background:#F4F3FB;color:#6F6E86;border-radius:8px;padding:5px 10px;font:600 11px/1 Nunito,sans-serif;cursor:pointer;">···</div></div>
+            </div>
+            <!-- Row 4 -->
+            <div style="display:grid;grid-template-columns:2fr 1.2fr 1fr 1fr 1fr 1.4fr;padding:12px 20px;align-items:center;border-bottom:1px solid rgba(51,50,74,.04);">
+              <div style="display:flex;gap:10px;align-items:center;"><div style="width:32px;height:32px;background:#DCEBFA;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;"><svg width="16" height="16" viewBox="0 0 20 20" fill="#4E8FD0"><circle cx="10" cy="7.5" r="5"/><path d="M2 19Q2 13 10 13Q18 13 18 19Z"/></svg></div><div><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;">Mike Kim</div><div style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:2px;">mike.kim@gmail.com</div></div></div>
+              <div><span style="background:#F4F3FB;color:#9C9AB2;border-radius:5px;padding:3px 10px;font:700 12px/1 Nunito,sans-serif;">Free</span></div>
+              <div><span style="background:#D8F0E6;color:#3FA98A;border-radius:999px;padding:4px 10px;font:700 11px/1 Nunito,sans-serif;">Active</span></div>
+              <div style="font:400 12px/1 Nunito,sans-serif;color:#6F6E86;">Mar 8, 2026</div>
+              <div style="font:400 12px/1 Nunito,sans-serif;color:#6F6E86;">Jun 21</div>
+              <div style="display:flex;gap:6px;"><div style="background:#E7E4FB;color:#6B6FC9;border-radius:8px;padding:5px 12px;font:700 11px/1 Nunito,sans-serif;cursor:pointer;">View</div><div style="background:#F4F3FB;color:#6F6E86;border-radius:8px;padding:5px 10px;font:600 11px/1 Nunito,sans-serif;cursor:pointer;">···</div></div>
+            </div>
+            <!-- Row 5 -->
+            <div style="display:grid;grid-template-columns:2fr 1.2fr 1fr 1fr 1fr 1.4fr;padding:12px 20px;align-items:center;">
+              <div style="display:flex;gap:10px;align-items:center;"><div style="width:32px;height:32px;background:#FBE0EA;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;"><svg width="16" height="16" viewBox="0 0 20 20" fill="#D46E97"><circle cx="10" cy="7.5" r="5"/><path d="M2 19Q2 13 10 13Q18 13 18 19Z"/></svg></div><div><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;">Anna Müller</div><div style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:2px;">anna@gmail.com</div></div></div>
+              <div><span style="background:#E7E4FB;color:#6B6FC9;border-radius:5px;padding:3px 10px;font:700 12px/1 Nunito,sans-serif;">Family</span></div>
+              <div><span style="background:#D8F0E6;color:#3FA98A;border-radius:999px;padding:4px 10px;font:700 11px/1 Nunito,sans-serif;">Active</span></div>
+              <div style="font:400 12px/1 Nunito,sans-serif;color:#6F6E86;">Apr 19, 2026</div>
+              <div style="font:400 12px/1 Nunito,sans-serif;color:#6F6E86;">Jun 22</div>
+              <div style="display:flex;gap:6px;"><div style="background:#E7E4FB;color:#6B6FC9;border-radius:8px;padding:5px 12px;font:700 11px/1 Nunito,sans-serif;cursor:pointer;">View</div><div style="background:#F4F3FB;color:#6F6E86;border-radius:8px;padding:5px 10px;font:600 11px/1 Nunito,sans-serif;cursor:pointer;">···</div></div>
+            </div>
+          </div>
+          <!-- GDPR note -->
+          <div style="margin-top:14px;display:flex;align-items:center;gap:8px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9C9AB2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg><span style="font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;">GDPR erasure deletes account + billing only — child data lives on the user's device.</span></div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ═══════════════════════════════════════════════════════
+         SCREEN 4 — BILLING CONTROL
+    ═══════════════════════════════════════════════════════ -->
+    <div>
+      <div style="font:700 11px/1 Nunito,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#6B6FC9;margin-bottom:14px;">Admin · 04 — Subscription &amp; Billing Control</div>
+      <div style="width:1440px;border-radius:20px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.5);display:flex;background:#F8F7FF;">
+
+        <!-- Sidebar: Billing active -->
+        <div style="width:240px;background:#fff;border-right:1px solid rgba(51,50,74,.07);display:flex;flex-direction:column;flex:none;">
+          <div style="padding:24px 20px 20px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(51,50,74,.06);">
+            <div style="color:#76a878;"><img src="logo-tree.svg" width="28" height="32" alt="Everly" style="display:block;object-fit:contain;"/></div>
+            <div><div style="font:700 15px/1 Quicksand,sans-serif;color:#33324A;">Everly</div><div style="font:400 10px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:3px;">Admin Console</div></div>
+          </div>
+          <div style="padding:16px 12px;flex:1;display:flex;flex-direction:column;gap:2px;">
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9C9AB2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span style="font:600 13px/1 Nunito,sans-serif;color:#6F6E86;">Dashboard</span></div>
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9C9AB2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><span style="font:600 13px/1 Nunito,sans-serif;color:#6F6E86;">Users</span></div>
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#E7E4FB;border-radius:12px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B6FC9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg><span style="font:700 13px/1 Nunito,sans-serif;color:#6B6FC9;">Billing</span></div>
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9C9AB2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg><span style="font:600 13px/1 Nunito,sans-serif;color:#6F6E86;">Config &amp; Flags</span></div>
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9C9AB2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span style="font:600 13px/1 Nunito,sans-serif;color:#6F6E86;">Audit Log</span></div>
+          </div>
+          <div style="padding:16px 20px;border-top:1px solid rgba(51,50,74,.06);display:flex;align-items:center;gap:10px;"><div style="width:32px;height:32px;background:#E7E4FB;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;"><svg width="16" height="16" viewBox="0 0 20 20" fill="#6B6FC9"><circle cx="10" cy="7.5" r="5"/><path d="M2 19Q2 13 10 13Q18 13 18 19Z"/></svg></div><div><div style="font:700 12px/1 Nunito,sans-serif;color:#33324A;">Admin</div><div style="font:400 10px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:2px;">Superadmin</div></div></div>
+        </div>
+
+        <!-- Main content -->
+        <div style="flex:1;padding:28px 32px;overflow:hidden;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+            <div><div style="font:700 22px/1 Quicksand,sans-serif;color:#33324A;">Billing Control</div><div style="font:400 13px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:5px;">Stripe-reconciled · Synced just now</div></div>
+            <div style="background:#D8F0E6;color:#3FA98A;border-radius:10px;padding:8px 16px;font:700 12px/1 Nunito,sans-serif;display:flex;align-items:center;gap:6px;"><div style="width:7px;height:7px;background:#3FA98A;border-radius:50%;"></div>Stripe connected</div>
+          </div>
+          <!-- Billing health cards -->
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;">
+            <div style="background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(51,50,74,.06);padding:18px;"><div style="font:400 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">Dunning queue</div><div style="font:700 28px/1 Quicksand,sans-serif;color:#D46E97;margin-bottom:6px;">47</div><div style="font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;">Failed payments</div></div>
+            <div style="background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(51,50,74,.06);padding:18px;"><div style="font:400 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">At risk MRR</div><div style="font:700 28px/1 Quicksand,sans-serif;color:#33324A;margin-bottom:6px;">€187</div><div style="font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;">0.8% of MRR</div></div>
+            <div style="background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(51,50,74,.06);padding:18px;"><div style="font:400 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">Refunds · June</div><div style="font:700 28px/1 Quicksand,sans-serif;color:#33324A;margin-bottom:6px;">3</div><div style="font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;">€31.97 total</div></div>
+            <div style="background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(51,50,74,.06);padding:18px;"><div style="font:400 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">Recovery rate</div><div style="font:700 28px/1 Quicksand,sans-serif;color:#3FA98A;margin-bottom:6px;">68%</div><div style="font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;">Dunning recovered</div></div>
+          </div>
+          <!-- Dunning queue -->
+          <div style="font:700 14px/1 Nunito,sans-serif;color:#33324A;margin-bottom:12px;">Dunning Queue <span style="background:#FBE0EA;color:#D46E97;border-radius:999px;padding:3px 9px;font:700 11px/1 Nunito,sans-serif;margin-left:8px;">47 need action</span></div>
+          <div style="background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(51,50,74,.06);overflow:hidden;margin-bottom:20px;">
+            <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1.2fr 1fr 1.6fr;padding:10px 20px;background:#F8F7FF;border-bottom:1px solid rgba(51,50,74,.05);">
+              <div style="font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;">User</div>
+              <div style="font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;">Plan</div>
+              <div style="font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;">Amount</div>
+              <div style="font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;">Failed</div>
+              <div style="font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;">Attempt</div>
+              <div style="font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;">Actions</div>
+            </div>
+            <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1.2fr 1fr 1.6fr;padding:12px 20px;align-items:center;border-bottom:1px solid rgba(51,50,74,.04);">
+              <div><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;">James O'Brien</div><div style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:2px;">james@outlook.com</div></div>
+              <div><span style="background:#E7E4FB;color:#6B6FC9;border-radius:5px;padding:3px 8px;font:700 11px/1 Nunito,sans-serif;">Pro</span></div>
+              <div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;">€3.99</div>
+              <div style="font:400 12px/1 Nunito,sans-serif;color:#D46E97;">Jun 20 · Card declined</div>
+              <div><span style="background:#FBF1CE;color:#C9A33B;border-radius:999px;padding:3px 10px;font:700 11px/1 Nunito,sans-serif;">2 / 3</span></div>
+              <div style="display:flex;gap:6px;"><div style="background:#6B6FC9;color:#fff;border-radius:7px;padding:5px 12px;font:700 11px/1 Nunito,sans-serif;cursor:pointer;">Retry</div><div style="background:#F4F3FB;color:#6F6E86;border-radius:7px;padding:5px 10px;font:600 11px/1 Nunito,sans-serif;cursor:pointer;">Contact</div><div style="color:#E98FB3;font:700 11px/1 Nunito,sans-serif;cursor:pointer;padding:5px 4px;">Cancel</div></div>
+            </div>
+            <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1.2fr 1fr 1.6fr;padding:12px 20px;align-items:center;border-bottom:1px solid rgba(51,50,74,.04);">
+              <div><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;">Thomas Weber</div><div style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:2px;">t.weber@gmail.com</div></div>
+              <div><span style="background:#E7E4FB;color:#6B6FC9;border-radius:5px;padding:3px 8px;font:700 11px/1 Nunito,sans-serif;">Family</span></div>
+              <div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;">€4.99</div>
+              <div style="font:400 12px/1 Nunito,sans-serif;color:#D46E97;">Jun 23 · Insufficient funds</div>
+              <div><span style="background:#FBE0EA;color:#D46E97;border-radius:999px;padding:3px 10px;font:700 11px/1 Nunito,sans-serif;">1 / 3</span></div>
+              <div style="display:flex;gap:6px;"><div style="background:#6B6FC9;color:#fff;border-radius:7px;padding:5px 12px;font:700 11px/1 Nunito,sans-serif;cursor:pointer;">Retry</div><div style="background:#F4F3FB;color:#6F6E86;border-radius:7px;padding:5px 10px;font:600 11px/1 Nunito,sans-serif;cursor:pointer;">Contact</div><div style="color:#E98FB3;font:700 11px/1 Nunito,sans-serif;cursor:pointer;padding:5px 4px;">Cancel</div></div>
+            </div>
+            <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1.2fr 1fr 1.6fr;padding:12px 20px;align-items:center;">
+              <div><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;">Chloe Martin</div><div style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:2px;">chloe@icloud.com</div></div>
+              <div><span style="background:#E7E4FB;color:#6B6FC9;border-radius:5px;padding:3px 8px;font:700 11px/1 Nunito,sans-serif;">Pro</span></div>
+              <div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;">€3.99</div>
+              <div style="font:400 12px/1 Nunito,sans-serif;color:#D46E97;">Jun 23 · Expired card</div>
+              <div><span style="background:#FBE0EA;color:#D46E97;border-radius:999px;padding:3px 10px;font:700 11px/1 Nunito,sans-serif;">1 / 3</span></div>
+              <div style="display:flex;gap:6px;"><div style="background:#6B6FC9;color:#fff;border-radius:7px;padding:5px 12px;font:700 11px/1 Nunito,sans-serif;cursor:pointer;">Retry</div><div style="background:#F4F3FB;color:#6F6E86;border-radius:7px;padding:5px 10px;font:600 11px/1 Nunito,sans-serif;cursor:pointer;">Contact</div><div style="color:#E98FB3;font:700 11px/1 Nunito,sans-serif;cursor:pointer;padding:5px 4px;">Cancel</div></div>
+            </div>
+          </div>
+          <!-- Recent transactions -->
+          <div style="font:700 14px/1 Nunito,sans-serif;color:#33324A;margin-bottom:12px;">Recent Transactions</div>
+          <div style="background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(51,50,74,.06);overflow:hidden;">
+            <div style="display:grid;grid-template-columns:2fr 1fr 1.2fr 1.2fr 1.5fr 1fr;padding:10px 20px;background:#F8F7FF;border-bottom:1px solid rgba(51,50,74,.05);">
+              <div style="font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;">User</div>
+              <div style="font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;">Amount</div>
+              <div style="font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;">Type</div>
+              <div style="font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;">Date</div>
+              <div style="font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;">Stripe ID</div>
+              <div style="font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;">Status</div>
+            </div>
+            <div style="display:grid;grid-template-columns:2fr 1fr 1.2fr 1.2fr 1.5fr 1fr;padding:11px 20px;align-items:center;border-bottom:1px solid rgba(51,50,74,.04);"><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;">Anna Müller</div><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;">€4.99</div><div><span style="background:#D8F0E6;color:#3FA98A;border-radius:999px;padding:3px 10px;font:700 11px/1 Nunito,sans-serif;">Renewal</span></div><div style="font:400 12px/1 Nunito,sans-serif;color:#6F6E86;">Jun 23</div><div style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;font-family:monospace;">ch_3P8...</div><div><span style="background:#D8F0E6;color:#3FA98A;border-radius:999px;padding:3px 8px;font:700 10px/1 Nunito,sans-serif;">Paid</span></div></div>
+            <div style="display:grid;grid-template-columns:2fr 1fr 1.2fr 1.2fr 1.5fr 1fr;padding:11px 20px;align-items:center;border-bottom:1px solid rgba(51,50,74,.04);"><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;">New user_31204</div><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;">€4.99</div><div><span style="background:#E7E4FB;color:#6B6FC9;border-radius:999px;padding:3px 10px;font:700 11px/1 Nunito,sans-serif;">New sub</span></div><div style="font:400 12px/1 Nunito,sans-serif;color:#6F6E86;">Jun 23</div><div style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;font-family:monospace;">ch_3P9...</div><div><span style="background:#D8F0E6;color:#3FA98A;border-radius:999px;padding:3px 8px;font:700 10px/1 Nunito,sans-serif;">Paid</span></div></div>
+            <div style="display:grid;grid-template-columns:2fr 1fr 1.2fr 1.2fr 1.5fr 1fr;padding:11px 20px;align-items:center;border-bottom:1px solid rgba(51,50,74,.04);"><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;">User_28901</div><div style="font:700 13px/1 Nunito,sans-serif;color:#E98FB3;">-€3.99</div><div><span style="background:#FBE0EA;color:#D46E97;border-radius:999px;padding:3px 10px;font:700 11px/1 Nunito,sans-serif;">Refund</span></div><div style="font:400 12px/1 Nunito,sans-serif;color:#6F6E86;">Jun 22</div><div style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;font-family:monospace;">re_3N1...</div><div><span style="background:#FBE0EA;color:#D46E97;border-radius:999px;padding:3px 8px;font:700 10px/1 Nunito,sans-serif;">Refunded</span></div></div>
+            <div style="display:grid;grid-template-columns:2fr 1fr 1.2fr 1.2fr 1.5fr 1fr;padding:11px 20px;align-items:center;"><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;">User_31108</div><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;">€149.99</div><div><span style="background:#FBF1CE;color:#C9A33B;border-radius:999px;padding:3px 10px;font:700 11px/1 Nunito,sans-serif;">Lifetime</span></div><div style="font:400 12px/1 Nunito,sans-serif;color:#6F6E86;">Jun 22</div><div style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;font-family:monospace;">ch_3P7...</div><div><span style="background:#D8F0E6;color:#3FA98A;border-radius:999px;padding:3px 8px;font:700 10px/1 Nunito,sans-serif;">Paid</span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ═══════════════════════════════════════════════════════
+         SCREEN 5 — AUDIT LOG + RBAC
+    ═══════════════════════════════════════════════════════ -->
+    <div>
+      <div style="font:700 11px/1 Nunito,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#6B6FC9;margin-bottom:14px;">Admin · 05 — Admin Auth, RBAC &amp; Audit Log</div>
+      <div style="width:1440px;border-radius:20px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.5);display:flex;background:#F8F7FF;">
+
+        <!-- Sidebar: Audit Log active -->
+        <div style="width:240px;background:#fff;border-right:1px solid rgba(51,50,74,.07);display:flex;flex-direction:column;flex:none;">
+          <div style="padding:24px 20px 20px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(51,50,74,.06);">
+            <div style="color:#76a878;"><img src="logo-tree.svg" width="28" height="32" alt="Everly" style="display:block;object-fit:contain;"/></div>
+            <div><div style="font:700 15px/1 Quicksand,sans-serif;color:#33324A;">Everly</div><div style="font:400 10px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:3px;">Admin Console</div></div>
+          </div>
+          <div style="padding:16px 12px;flex:1;display:flex;flex-direction:column;gap:2px;">
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9C9AB2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span style="font:600 13px/1 Nunito,sans-serif;color:#6F6E86;">Dashboard</span></div>
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9C9AB2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><span style="font:600 13px/1 Nunito,sans-serif;color:#6F6E86;">Users</span></div>
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9C9AB2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg><span style="font:600 13px/1 Nunito,sans-serif;color:#6F6E86;">Billing</span></div>
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9C9AB2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg><span style="font:600 13px/1 Nunito,sans-serif;color:#6F6E86;">Config &amp; Flags</span></div>
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#E7E4FB;border-radius:12px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B6FC9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span style="font:700 13px/1 Nunito,sans-serif;color:#6B6FC9;">Audit Log</span></div>
+          </div>
+          <div style="padding:16px 20px;border-top:1px solid rgba(51,50,74,.06);display:flex;align-items:center;gap:10px;"><div style="width:32px;height:32px;background:#E7E4FB;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;"><svg width="16" height="16" viewBox="0 0 20 20" fill="#6B6FC9"><circle cx="10" cy="7.5" r="5"/><path d="M2 19Q2 13 10 13Q18 13 18 19Z"/></svg></div><div><div style="font:700 12px/1 Nunito,sans-serif;color:#33324A;">Admin</div><div style="font:400 10px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:2px;">Superadmin</div></div></div>
+        </div>
+
+        <!-- Main content -->
+        <div style="flex:1;padding:28px 32px;overflow:hidden;display:flex;flex-direction:column;gap:22px;">
+          <!-- Header -->
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div><div style="font:700 22px/1 Quicksand,sans-serif;color:#33324A;">Audit Log &amp; RBAC</div><div style="font:400 13px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:5px;">Append-only · Immutable · All admin actions logged</div></div>
+            <div style="background:#FBF1CE;color:#C9A33B;border-radius:10px;padding:8px 16px;font:700 12px/1 Nunito,sans-serif;display:flex;align-items:center;gap:6px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Tamper-proof store</div>
+          </div>
+
+          <!-- Admin accounts + RBAC -->
+          <div>
+            <div style="font:700 14px/1 Nunito,sans-serif;color:#33324A;margin-bottom:12px;">Admin Accounts &amp; Roles</div>
+            <div style="background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(51,50,74,.06);overflow:hidden;">
+              <div style="display:grid;grid-template-columns:2fr 1.2fr 1fr 1fr 1.2fr 1.2fr;padding:10px 20px;background:#F8F7FF;border-bottom:1px solid rgba(51,50,74,.05);">
+                <div style="font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;">Admin</div>
+                <div style="font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;">Role</div>
+                <div style="font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;">2FA</div>
+                <div style="font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;">Last login</div>
+                <div style="font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;">Permissions</div>
+                <div style="font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;">Actions</div>
+              </div>
+              <div style="display:grid;grid-template-columns:2fr 1.2fr 1fr 1fr 1.2fr 1.2fr;padding:12px 20px;align-items:center;border-bottom:1px solid rgba(51,50,74,.04);">
+                <div><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;">admin@everly.app</div><div style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:2px;">You · Active now</div></div>
+                <div><span style="background:#6B6FC9;color:#fff;border-radius:5px;padding:3px 10px;font:700 11px/1 Nunito,sans-serif;">Superadmin</span></div>
+                <div><span style="background:#D8F0E6;color:#3FA98A;border-radius:999px;padding:3px 10px;font:700 11px/1 Nunito,sans-serif;">✓ On</span></div>
+                <div style="font:400 12px/1 Nunito,sans-serif;color:#6F6E86;">Just now</div>
+                <div style="font:400 12px/1 Nunito,sans-serif;color:#6F6E86;">Full access</div>
+                <div style="font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;">—</div>
+              </div>
+              <div style="display:grid;grid-template-columns:2fr 1.2fr 1fr 1fr 1.2fr 1.2fr;padding:12px 20px;align-items:center;border-bottom:1px solid rgba(51,50,74,.04);">
+                <div><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;">support@everly.app</div><div style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:2px;">Last: Jun 22 16:00</div></div>
+                <div><span style="background:#D8F0E6;color:#3FA98A;border-radius:5px;padding:3px 10px;font:700 11px/1 Nunito,sans-serif;">Support</span></div>
+                <div><span style="background:#D8F0E6;color:#3FA98A;border-radius:999px;padding:3px 10px;font:700 11px/1 Nunito,sans-serif;">✓ On</span></div>
+                <div style="font:400 12px/1 Nunito,sans-serif;color:#6F6E86;">Jun 22</div>
+                <div style="font:400 12px/1 Nunito,sans-serif;color:#6F6E86;">Read + trial mgmt</div>
+                <div style="display:flex;gap:5px;"><div style="background:#F4F3FB;color:#6F6E86;border-radius:7px;padding:4px 10px;font:600 11px/1 Nunito,sans-serif;cursor:pointer;">Edit</div></div>
+              </div>
+              <div style="display:grid;grid-template-columns:2fr 1.2fr 1fr 1fr 1.2fr 1.2fr;padding:12px 20px;align-items:center;">
+                <div><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;">billing@everly.app</div><div style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:2px;">Last: Jun 20 11:22</div></div>
+                <div><span style="background:#FBF1CE;color:#C9A33B;border-radius:5px;padding:3px 10px;font:700 11px/1 Nunito,sans-serif;">Billing</span></div>
+                <div><span style="background:#FBE0EA;color:#D46E97;border-radius:999px;padding:3px 10px;font:700 11px/1 Nunito,sans-serif;">⚠ Off</span></div>
+                <div style="font:400 12px/1 Nunito,sans-serif;color:#6F6E86;">Jun 20</div>
+                <div style="font:400 12px/1 Nunito,sans-serif;color:#6F6E86;">Billing only</div>
+                <div style="display:flex;gap:5px;"><div style="background:#FBE0EA;color:#D46E97;border-radius:7px;padding:4px 10px;font:700 11px/1 Nunito,sans-serif;cursor:pointer;">Enforce 2FA</div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Audit log -->
+          <div>
+            <div style="font:700 14px/1 Nunito,sans-serif;color:#33324A;margin-bottom:12px;">Audit Log <span style="font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;margin-left:8px;">Showing latest 50 · Export available</span></div>
+            <div style="background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(51,50,74,.06);overflow:hidden;">
+              <div style="display:grid;grid-template-columns:1.4fr 1.4fr 2fr 2fr 1fr;padding:10px 20px;background:#F8F7FF;border-bottom:1px solid rgba(51,50,74,.05);">
+                <div style="font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;">Timestamp</div>
+                <div style="font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;">Admin</div>
+                <div style="font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;">Action</div>
+                <div style="font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;">Target</div>
+                <div style="font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;">IP</div>
+              </div>
+              <!-- Row 1: user action (lilac) -->
+              <div style="display:grid;grid-template-columns:1.4fr 1.4fr 2fr 2fr 1fr;padding:11px 20px;align-items:center;border-bottom:1px solid rgba(51,50,74,.04);">
+                <div style="font:400 12px/1 Nunito,sans-serif;color:#6F6E86;font-family:monospace;font-size:11px;">2026-06-23 09:41:22</div>
+                <div style="font:600 12px/1 Nunito,sans-serif;color:#33324A;">admin@everly.app</div>
+                <div style="display:flex;gap:6px;align-items:center;"><span style="background:#E7E4FB;color:#6B6FC9;border-radius:5px;padding:3px 8px;font:700 10px/1 Nunito,sans-serif;white-space:nowrap;">User</span><span style="font:400 12px/1 Nunito,sans-serif;color:#33324A;">Trial extended +5 days</span></div>
+                <div style="font:400 12px/1 Nunito,sans-serif;color:#6F6E86;">user_31204 (sarah@icloud.com)</div>
+                <div style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;font-family:monospace;">192.168.1.1</div>
+              </div>
+              <!-- Row 2: config (butter) -->
+              <div style="display:grid;grid-template-columns:1.4fr 1.4fr 2fr 2fr 1fr;padding:11px 20px;align-items:center;border-bottom:1px solid rgba(51,50,74,.04);">
+                <div style="font:400 12px/1 Nunito,sans-serif;color:#6F6E86;font-family:monospace;font-size:11px;">2026-06-23 09:14:05</div>
+                <div style="font:600 12px/1 Nunito,sans-serif;color:#33324A;">admin@everly.app</div>
+                <div style="display:flex;gap:6px;align-items:center;"><span style="background:#FBF1CE;color:#C9A33B;border-radius:5px;padding:3px 8px;font:700 10px/1 Nunito,sans-serif;white-space:nowrap;">Config</span><span style="font:400 12px/1 Nunito,sans-serif;color:#33324A;">Feature flag rollout updated</span></div>
+                <div style="font:400 12px/1 Nunito,sans-serif;color:#6F6E86;">snap_cloud_parse → 75%</div>
+                <div style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;font-family:monospace;">192.168.1.1</div>
+              </div>
+              <!-- Row 3: billing (mint) -->
+              <div style="display:grid;grid-template-columns:1.4fr 1.4fr 2fr 2fr 1fr;padding:11px 20px;align-items:center;border-bottom:1px solid rgba(51,50,74,.04);">
+                <div style="font:400 12px/1 Nunito,sans-serif;color:#6F6E86;font-family:monospace;font-size:11px;">2026-06-22 16:44:18</div>
+                <div style="font:600 12px/1 Nunito,sans-serif;color:#33324A;">admin@everly.app</div>
+                <div style="display:flex;gap:6px;align-items:center;"><span style="background:#D8F0E6;color:#3FA98A;border-radius:5px;padding:3px 8px;font:700 10px/1 Nunito,sans-serif;white-space:nowrap;">Billing</span><span style="font:400 12px/1 Nunito,sans-serif;color:#33324A;">Refund issued</span></div>
+                <div style="font:400 12px/1 Nunito,sans-serif;color:#6F6E86;">user_28901 · €3.99 · ch_3N1...</div>
+                <div style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;font-family:monospace;">192.168.1.1</div>
+              </div>
+              <!-- Row 4: user action (lilac) -->
+              <div style="display:grid;grid-template-columns:1.4fr 1.4fr 2fr 2fr 1fr;padding:11px 20px;align-items:center;border-bottom:1px solid rgba(51,50,74,.04);">
+                <div style="font:400 12px/1 Nunito,sans-serif;color:#6F6E86;font-family:monospace;font-size:11px;">2026-06-22 15:01:44</div>
+                <div style="font:600 12px/1 Nunito,sans-serif;color:#33324A;">support@everly.app</div>
+                <div style="display:flex;gap:6px;align-items:center;"><span style="background:#E7E4FB;color:#6B6FC9;border-radius:5px;padding:3px 8px;font:700 10px/1 Nunito,sans-serif;white-space:nowrap;">User</span><span style="font:400 12px/1 Nunito,sans-serif;color:#33324A;">Plan changed Pro → Free</span></div>
+                <div style="font:400 12px/1 Nunito,sans-serif;color:#6F6E86;">user_28901 (cancelled)</div>
+                <div style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;font-family:monospace;">10.0.0.1</div>
+              </div>
+              <!-- Row 5: config (butter) -->
+              <div style="display:grid;grid-template-columns:1.4fr 1.4fr 2fr 2fr 1fr;padding:11px 20px;align-items:center;border-bottom:1px solid rgba(51,50,74,.04);">
+                <div style="font:400 12px/1 Nunito,sans-serif;color:#6F6E86;font-family:monospace;font-size:11px;">2026-06-22 14:22:09</div>
+                <div style="font:600 12px/1 Nunito,sans-serif;color:#33324A;">admin@everly.app</div>
+                <div style="display:flex;gap:6px;align-items:center;"><span style="background:#FBF1CE;color:#C9A33B;border-radius:5px;padding:3px 8px;font:700 10px/1 Nunito,sans-serif;white-space:nowrap;">Config</span><span style="font:400 12px/1 Nunito,sans-serif;color:#33324A;">Config value updated</span></div>
+                <div style="font:400 12px/1 Nunito,sans-serif;color:#6F6E86;">trial_length_days: 7 → 10</div>
+                <div style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;font-family:monospace;">192.168.1.1</div>
+              </div>
+              <!-- Row 6: user - GDPR -->
+              <div style="display:grid;grid-template-columns:1.4fr 1.4fr 2fr 2fr 1fr;padding:11px 20px;align-items:center;">
+                <div style="font:400 12px/1 Nunito,sans-serif;color:#6F6E86;font-family:monospace;font-size:11px;">2026-06-21 10:05:30</div>
+                <div style="font:600 12px/1 Nunito,sans-serif;color:#33324A;">admin@everly.app</div>
+                <div style="display:flex;gap:6px;align-items:center;"><span style="background:#FBE0EA;color:#D46E97;border-radius:5px;padding:3px 8px;font:700 10px/1 Nunito,sans-serif;white-space:nowrap;">GDPR</span><span style="font:400 12px/1 Nunito,sans-serif;color:#33324A;">Account + billing erased</span></div>
+                <div style="font:400 12px/1 Nunito,sans-serif;color:#6F6E86;">user_29001 · erasure complete</div>
+                <div style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;font-family:monospace;">192.168.1.1</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

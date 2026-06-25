@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <style>body{margin:0;}*{box-sizing:border-box;}</style>
+</helmet>
+
+<div style="width:max-content;min-width:100%;min-height:100vh;background:#C4C0D8;padding:56px 48px;font-family:Nunito,sans-serif;">
+
+  <div style="margin-bottom:48px;">
+    <div style="font:700 11px/1 Nunito,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#7A76A0;margin-bottom:10px;">Everly · UI Screen Designs</div>
+    <div style="font:700 30px/1.1 Quicksand,sans-serif;color:#1E1C3A;">App UI — Key Screens</div>
+    <div style="font:400 14px/1 Nunito,sans-serif;color:#6E6A90;margin-top:8px;">390px mobile · Periwinkle #6B6FC9 · Quicksand + Nunito · Faceless silhouettes</div>
+  </div>
+
+  <div style="display:flex;gap:48px;align-items:flex-start;">
+
+
+    <!-- ═══════════════════════════════
+         02 — TODAY / DASHBOARD
+    ═══════════════════════════════ -->
+    <div style="flex:none;width:390px;">
+      <div style="font:700 11px/1 Nunito,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#4A4670;margin-bottom:12px;">02 · Today</div>
+      <div style="width:390px;border-radius:44px;overflow:hidden;box-shadow:0 28px 72px rgba(20,18,50,.25);">
+        <div style="background:#F4F3FB;display:flex;flex-direction:column;">
+
+          <!-- status bar -->
+          <div style="padding:14px 26px 8px;display:flex;justify-content:space-between;align-items:center;color:#33324A;">
+            <span style="font:700 14px/1 Nunito,sans-serif;">9:41</span>
+            <div style="display:flex;gap:5px;align-items:center;">
+              <svg width="16" height="11" viewBox="0 0 16 11" fill="#33324A"><rect x="0" y="6" width="3" height="5" rx=".7"/><rect x="4.5" y="4" width="3" height="7" rx=".7"/><rect x="9" y="2" width="3" height="9" rx=".7"/><rect x="13.5" y="0" width="2.5" height="11" rx=".7"/></svg>
+              <svg width="15" height="11" viewBox="0 0 15 11" fill="none" stroke="#33324A" stroke-linecap="round"><circle cx="7.5" cy="10.2" r=".9" fill="#33324A" stroke="none"/><path d="M4.5 7.5Q7.5 5 10.5 7.5" stroke-width="1.4"/><path d="M2 4.8Q7.5 1 13 4.8" stroke-width="1.4"/></svg>
+              <svg width="23" height="12" viewBox="0 0 23 12" fill="none"><rect x=".6" y=".6" width="18.8" height="10.8" rx="2.8" stroke="#33324A" stroke-width="1.2"/><rect x="2" y="2" width="14" height="8" rx="1.5" fill="#33324A"/><path d="M20 4v4" stroke="#33324A" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </div>
+          </div>
+
+          <!-- greeting -->
+          <div style="padding:16px 24px 6px;">
+            <div style="font:700 22px/1.1 Quicksand,sans-serif;color:#33324A;">Good morning, Emma</div>
+            <div style="font:400 13px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:5px;">Monday, June 23</div>
+          </div>
+
+          <!-- child pills -->
+          <div style="padding:14px 24px 0;display:flex;gap:10px;">
+            <div style="display:flex;align-items:center;gap:8px;background:#D8F0E6;border-radius:999px;padding:8px 14px 8px 8px;flex:none;">
+              <div style="width:32px;height:32px;background:#3FA98A;border-radius:50%;display:flex;align-items:center;justify-content:center;">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="white"><circle cx="10" cy="8" r="4.5"/><path d="M3 19Q3 14 10 14Q17 14 17 19Z"/></svg>
+              </div>
+              <div><div style="font:700 13px/1 Nunito,sans-serif;color:#3FA98A;">Oliver</div><div style="font:400 10px/1 Nunito,sans-serif;color:#3FA98A;opacity:.75;margin-top:3px;">4 months</div></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;background:#fff;border:1.5px solid rgba(51,50,74,.09);border-radius:999px;padding:8px 14px 8px 8px;flex:none;">
+              <div style="width:32px;height:32px;background:#E7E4FB;border-radius:50%;display:flex;align-items:center;justify-content:center;">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="#6B6FC9"><circle cx="10" cy="8" r="4.5"/><path d="M3 19Q3 14 10 14Q17 14 17 19Z"/></svg>
+              </div>
+              <div><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;">Mia</div><div style="font:400 10px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:3px;">6 years</div></div>
+            </div>
+          </div>
+
+          <!-- what's next -->
+          <div style="padding:20px 20px 16px;">
+            <div style="font:700 11px/1 Nunito,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#9C9AB2;margin-bottom:12px;padding-left:4px;">What's next</div>
+
+            <div style="background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(51,50,74,.07);padding:14px 16px;display:flex;gap:12px;align-items:center;margin-bottom:8px;">
+              <div style="width:40px;height:40px;background:#D8F0E6;border-radius:12px;display:flex;align-items:center;justify-content:center;flex:none;color:#3FA98A;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2h8"/><path d="M9 2v3a5.5 5.5 0 0 0-3 4.9V19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-9.1A5.5 5.5 0 0 0 15 5V2"/></svg></div>
+              <div style="flex:1;min-width:0;"><div style="font:700 14px/1 Nunito,sans-serif;color:#33324A;margin-bottom:3px;">Last feed · Left side</div><div style="font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;">Oliver · 5:23 am · 12 min</div></div>
+              <div style="background:#E7E4FB;color:#6B6FC9;border-radius:999px;padding:5px 11px;font:700 11px/1 Nunito,sans-serif;white-space:nowrap;flex:none;">2h 10m</div>
+            </div>
+
+            <div style="background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(51,50,74,.07);padding:14px 16px;display:flex;gap:12px;align-items:center;margin-bottom:8px;">
+              <div style="width:40px;height:40px;background:#E7E4FB;border-radius:12px;display:flex;align-items:center;justify-content:center;flex:none;color:#6B6FC9;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
+              <div style="flex:1;min-width:0;"><div style="font:700 14px/1 Nunito,sans-serif;color:#33324A;margin-bottom:3px;">Mia · Swim practice</div><div style="font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;">Today · 16:30 · St Mary's Pool</div></div>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9C9AB2" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+            </div>
+
+            <div style="background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(51,50,74,.07);padding:14px 16px;display:flex;gap:12px;align-items:center;">
+              <div style="width:40px;height:40px;background:#FBE0EA;border-radius:12px;display:flex;align-items:center;justify-content:center;flex:none;color:#D46E97;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 3l10 10-4 4L7 7z"/><path d="M7 7L3 11l4 4M5 15l-2 4M15 5l4-2"/></svg></div>
+              <div style="flex:1;min-width:0;"><div style="font:700 14px/1 Nunito,sans-serif;color:#33324A;margin-bottom:3px;">Oliver · 6-in-1 vaccine</div><div style="font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;">Due in 9 days · Dr. Brennan</div></div>
+              <div style="background:#FBE0EA;color:#D46E97;border-radius:999px;padding:5px 11px;font:700 11px/1 Nunito,sans-serif;white-space:nowrap;flex:none;">9 days</div>
+            </div>
+          </div>
+
+          <!-- bottom nav -->
+          <div style="background:#fff;border-top:1px solid rgba(51,50,74,.06);padding:10px 8px 28px;display:flex;justify-content:space-around;align-items:center;margin-top:4px;">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="width:44px;height:32px;background:#E7E4FB;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#6B6FC9;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg></div><span style="font:600 9px/1 Nunito,sans-serif;color:#6B6FC9;letter-spacing:.04em;">Today</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="width:44px;height:32px;display:flex;align-items:center;justify-content:center;color:#9C9AB2;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div><span style="font:600 9px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.04em;">Calendar</span></div>
+            <div style="width:52px;height:52px;background:#6B6FC9;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(107,111,201,.4);margin-top:-18px;flex:none;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="width:44px;height:32px;display:flex;align-items:center;justify-content:center;color:#9C9AB2;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="7" r="4"/><path d="M2 20c0-3.31 3.13-6 7-6s7 2.69 7 6"/><circle cx="19" cy="9" r="2.5"/><path d="M16 20c0-2.21 1.35-4 3-4s3 1.79 3 4"/></svg></div><span style="font:600 9px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.04em;">Family</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="width:44px;height:32px;display:flex;align-items:center;justify-content:center;color:#9C9AB2;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></div><span style="font:600 9px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.04em;">Settings</span></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ═══════════════════════════════
+         03 — NIGHT LOG (DARK)
+    ═══════════════════════════════ -->
+    <div style="flex:none;width:390px;">
+      <div style="font:700 11px/1 Nunito,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#4A4670;margin-bottom:12px;">03 · Night Log</div>
+      <div style="width:390px;border-radius:44px;overflow:hidden;box-shadow:0 28px 72px rgba(10,8,30,.45);">
+        <div style="background:#262539;display:flex;flex-direction:column;">
+
+          <!-- status bar dark -->
+          <div style="padding:14px 26px 8px;display:flex;justify-content:space-between;align-items:center;color:#EDEBFA;">
+            <span style="font:700 14px/1 Nunito,sans-serif;">3:14</span>
+            <div style="display:flex;gap:5px;align-items:center;">
+              <svg width="16" height="11" viewBox="0 0 16 11" fill="#EDEBFA"><rect x="0" y="6" width="3" height="5" rx=".7"/><rect x="4.5" y="4" width="3" height="7" rx=".7"/><rect x="9" y="2" width="3" height="9" rx=".7"/><rect x="13.5" y="0" width="2.5" height="11" rx=".7"/></svg>
+              <svg width="15" height="11" viewBox="0 0 15 11" fill="none" stroke="#EDEBFA" stroke-linecap="round"><circle cx="7.5" cy="10.2" r=".9" fill="#EDEBFA" stroke="none"/><path d="M4.5 7.5Q7.5 5 10.5 7.5" stroke-width="1.4"/><path d="M2 4.8Q7.5 1 13 4.8" stroke-width="1.4"/></svg>
+              <svg width="23" height="12" viewBox="0 0 23 12" fill="none"><rect x=".6" y=".6" width="18.8" height="10.8" rx="2.8" stroke="#EDEBFA" stroke-width="1.2" opacity=".4"/><rect x="2" y="2" width="7" height="8" rx="1.5" fill="#EDEBFA"/><path d="M20 4v4" stroke="#EDEBFA" stroke-width="1.5" stroke-linecap="round" opacity=".4"/></svg>
+            </div>
+          </div>
+
+          <!-- title -->
+          <div style="padding:10px 26px 18px;display:flex;align-items:center;gap:10px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9C9AB2" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <div style="font:700 18px/1 Quicksand,sans-serif;color:#EDEBFA;">Night log</div>
+            <div style="font:400 12px/1 Nunito,sans-serif;color:#6F6E86;margin-left:auto;">Oliver · 4 mo</div>
+          </div>
+
+          <!-- wake-window banner -->
+          <div style="margin:0 20px 16px;background:linear-gradient(90deg,#5A5EB8,#7B7FCC);border-radius:16px;padding:14px 18px;display:flex;align-items:center;gap:12px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            <div><div style="font:700 13px/1 Nunito,sans-serif;color:#fff;">Wake window</div><div style="font:400 12px/1.4 Nunito,sans-serif;color:rgba(255,255,255,.7);margin-top:3px;">Next nap in ~35 min</div></div>
+            <div style="margin-left:auto;background:rgba(255,255,255,.18);border-radius:999px;padding:4px 10px;font:700 10px/1 Nunito,sans-serif;color:#fff;white-space:nowrap;">Active</div>
+          </div>
+
+          <!-- 2×2 tiles -->
+          <div style="padding:0 20px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div style="background:#312F49;border-radius:18px;padding:22px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;">
+              <div style="color:#D8F0E6;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2h8"/><path d="M9 2v3a5.5 5.5 0 0 0-3 4.9V19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-9.1A5.5 5.5 0 0 0 15 5V2"/></svg></div>
+              <div style="font:700 15px/1 Nunito,sans-serif;color:#EDEBFA;">Feed</div>
+              <div style="font:400 11px/1 Nunito,sans-serif;color:#6F6E86;">5:23 am · Left</div>
+            </div>
+            <div style="background:#312F49;border-radius:18px;padding:22px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;">
+              <div style="color:#E7E4FB;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></div>
+              <div style="font:700 15px/1 Nunito,sans-serif;color:#EDEBFA;">Sleep</div>
+              <div style="font:400 11px/1 Nunito,sans-serif;color:#6F6E86;">14h 20m today</div>
+            </div>
+            <div style="background:#312F49;border-radius:18px;padding:22px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;">
+              <div style="color:#FBF1CE;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8l4-4 4 4 4-4 4 4v8l-4 4-4-4-4 4-4-4V8z"/></svg></div>
+              <div style="font:700 15px/1 Nunito,sans-serif;color:#EDEBFA;">Diaper</div>
+              <div style="font:400 11px/1 Nunito,sans-serif;color:#6F6E86;">Wet · 4:10 am</div>
+            </div>
+            <div style="background:#312F49;border-radius:18px;padding:22px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;">
+              <div style="color:#FBE0EA;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></div>
+              <div style="font:700 15px/1 Nunito,sans-serif;color:#EDEBFA;">Pump</div>
+              <div style="font:400 11px/1 Nunito,sans-serif;color:#6F6E86;">60 ml stash</div>
+            </div>
+          </div>
+
+          <!-- tallies -->
+          <div style="margin:16px 20px 32px;background:#312F49;border-radius:16px;padding:14px 10px;display:flex;justify-content:space-around;align-items:center;">
+            <div style="text-align:center;"><div style="font:800 18px/1 Quicksand,sans-serif;color:#EDEBFA;">6</div><div style="font:400 9px/1 Nunito,sans-serif;color:#6F6E86;margin-top:4px;letter-spacing:.06em;text-transform:uppercase;">feeds</div></div>
+            <div style="width:1px;height:28px;background:rgba(255,255,255,.07);"></div>
+            <div style="text-align:center;"><div style="font:800 18px/1 Quicksand,sans-serif;color:#EDEBFA;">14h</div><div style="font:400 9px/1 Nunito,sans-serif;color:#6F6E86;margin-top:4px;letter-spacing:.06em;text-transform:uppercase;">sleep</div></div>
+            <div style="width:1px;height:28px;background:rgba(255,255,255,.07);"></div>
+            <div style="text-align:center;"><div style="font:800 18px/1 Quicksand,sans-serif;color:#EDEBFA;">4</div><div style="font:400 9px/1 Nunito,sans-serif;color:#6F6E86;margin-top:4px;letter-spacing:.06em;text-transform:uppercase;">wet</div></div>
+            <div style="width:1px;height:28px;background:rgba(255,255,255,.07);"></div>
+            <div style="text-align:center;"><div style="font:800 18px/1 Quicksand,sans-serif;color:#EDEBFA;">720</div><div style="font:400 9px/1 Nunito,sans-serif;color:#6F6E86;margin-top:4px;letter-spacing:.06em;text-transform:uppercase;">ml</div></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ═══════════════════════════════
+         04 — CALENDAR
+    ═══════════════════════════════ -->
+    <div style="flex:none;width:390px;">
+      <div style="font:700 11px/1 Nunito,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#4A4670;margin-bottom:12px;">04 · Calendar</div>
+      <div style="width:390px;border-radius:44px;overflow:hidden;box-shadow:0 28px 72px rgba(20,18,50,.23);">
+        <div style="background:#F4F3FB;display:flex;flex-direction:column;">
+
+          <!-- status bar -->
+          <div style="padding:14px 26px 8px;display:flex;justify-content:space-between;align-items:center;color:#33324A;">
+            <span style="font:700 14px/1 Nunito,sans-serif;">9:41</span>
+            <div style="display:flex;gap:5px;align-items:center;">
+              <svg width="16" height="11" viewBox="0 0 16 11" fill="#33324A"><rect x="0" y="6" width="3" height="5" rx=".7"/><rect x="4.5" y="4" width="3" height="7" rx=".7"/><rect x="9" y="2" width="3" height="9" rx=".7"/><rect x="13.5" y="0" width="2.5" height="11" rx=".7"/></svg>
+              <svg width="15" height="11" viewBox="0 0 15 11" fill="none" stroke="#33324A" stroke-linecap="round"><circle cx="7.5" cy="10.2" r=".9" fill="#33324A" stroke="none"/><path d="M4.5 7.5Q7.5 5 10.5 7.5" stroke-width="1.4"/><path d="M2 4.8Q7.5 1 13 4.8" stroke-width="1.4"/></svg>
+              <svg width="23" height="12" viewBox="0 0 23 12" fill="none"><rect x=".6" y=".6" width="18.8" height="10.8" rx="2.8" stroke="#33324A" stroke-width="1.2"/><rect x="2" y="2" width="14" height="8" rx="1.5" fill="#33324A"/><path d="M20 4v4" stroke="#33324A" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </div>
+          </div>
+
+          <!-- weather alert (calendar-integrated) -->
+          <div style="margin:8px 16px 0;background:#DCEBFA;border-radius:14px;padding:11px 14px;display:flex;gap:10px;align-items:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4E8FD0" stroke-width="2" stroke-linecap="round"><path d="M20 17.58A5 5 0 0 0 18 8h-1.26A8 8 0 1 0 4 16.25"/><line x1="8" y1="19" x2="8" y2="21"/><line x1="12" y1="19" x2="12" y2="21"/><line x1="16" y1="19" x2="16" y2="21"/></svg><span style="font:600 12px/1.4 Nunito,sans-serif;color:#2A5080;">Rain forecast for Mia's Sports Day (Fri 27) — pack waterproofs</span></div>
+          <!-- calendar card -->
+          <div style="margin:8px 16px 0;background:#fff;border-radius:22px;box-shadow:0 3px 16px rgba(51,50,74,.07);padding:20px 18px 16px;">
+            <!-- month nav -->
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+              <div style="width:32px;height:32px;background:#F4F3FB;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#6F6E86;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div>
+              <div style="font:700 17px/1 Quicksand,sans-serif;color:#33324A;">June 2026</div>
+              <div style="width:32px;height:32px;background:#F4F3FB;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#6F6E86;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+            </div>
+            <!-- view pills -->
+            <div style="display:flex;gap:6px;margin-bottom:14px;">
+              <div style="background:#6B6FC9;color:#fff;border-radius:999px;padding:6px 16px;font:700 11px/1 Nunito,sans-serif;">Month</div>
+              <div style="background:#F4F3FB;color:#6F6E86;border-radius:999px;padding:6px 14px;font:600 11px/1 Nunito,sans-serif;border:1px solid rgba(51,50,74,.08);">Week</div>
+              <div style="background:#F4F3FB;color:#6F6E86;border-radius:999px;padding:6px 14px;font:600 11px/1 Nunito,sans-serif;border:1px solid rgba(51,50,74,.08);">Agenda</div>
+            </div>
+            <!-- day headers -->
+            <div style="display:grid;grid-template-columns:repeat(7,1fr);text-align:center;margin-bottom:6px;">
+              <div style="font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;">M</div><div style="font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;">T</div><div style="font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;">W</div><div style="font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;">T</div><div style="font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;">F</div><div style="font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;opacity:.4;">S</div><div style="font:700 10px/1 Nunito,sans-serif;color:#9C9AB2;opacity:.4;">S</div>
+            </div>
+            <!-- date grid (June 2026: Mon 1 → Sun 30) -->
+            <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:1px;text-align:center;">
+              <!-- row 1: 1–7 -->
+              <div style="padding:5px 1px;"><div style="font:400 12px/1 Nunito,sans-serif;color:#33324A;padding:4px;">1</div></div>
+              <div style="padding:5px 1px;"><div style="font:400 12px/1 Nunito,sans-serif;color:#33324A;padding:4px;">2</div></div>
+              <div style="padding:5px 1px;"><div style="font:400 12px/1 Nunito,sans-serif;color:#33324A;padding:4px;">3</div></div>
+              <div style="padding:5px 1px;"><div style="font:400 12px/1 Nunito,sans-serif;color:#33324A;padding:4px;">4</div></div>
+              <div style="padding:5px 1px;"><div style="font:400 12px/1 Nunito,sans-serif;color:#33324A;padding:4px;">5</div></div>
+              <div style="padding:5px 1px;"><div style="font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;padding:4px;">6</div></div>
+              <div style="padding:5px 1px;"><div style="font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;padding:4px;">7</div></div>
+              <!-- row 2: 8–14 -->
+              <div style="padding:5px 1px;"><div style="font:400 12px/1 Nunito,sans-serif;color:#33324A;padding:4px;">8</div></div>
+              <div style="padding:5px 1px;background:rgba(216,240,230,.55);border-radius:5px;"><div style="font:400 12px/1 Nunito,sans-serif;color:#33324A;padding:4px;">9</div><div style="display:flex;gap:2px;justify-content:center;margin-top:1px;"><div style="width:4px;height:4px;background:#3FA98A;border-radius:50%;"></div></div></div>
+              <div style="padding:5px 1px;background:rgba(216,240,230,.55);border-radius:5px;"><div style="font:400 12px/1 Nunito,sans-serif;color:#33324A;padding:4px;">10</div></div>
+              <div style="padding:5px 1px;background:rgba(216,240,230,.55);border-radius:5px;"><div style="font:400 12px/1 Nunito,sans-serif;color:#33324A;padding:4px;">11</div><div style="display:flex;gap:2px;justify-content:center;margin-top:1px;"><div style="width:4px;height:4px;background:#6B6FC9;border-radius:50%;"></div></div></div>
+              <div style="padding:5px 1px;background:rgba(216,240,230,.55);border-radius:5px;"><div style="font:400 12px/1 Nunito,sans-serif;color:#33324A;padding:4px;">12</div></div>
+              <div style="padding:5px 1px;background:rgba(216,240,230,.3);border-radius:5px;"><div style="font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;padding:4px;">13</div></div>
+              <div style="padding:5px 1px;background:rgba(216,240,230,.3);border-radius:5px;"><div style="font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;padding:4px;">14</div></div>
+              <!-- row 3: 15–21 -->
+              <div style="padding:5px 1px;"><div style="font:400 12px/1 Nunito,sans-serif;color:#33324A;padding:4px;">15</div></div>
+              <div style="padding:5px 1px;"><div style="font:400 12px/1 Nunito,sans-serif;color:#33324A;padding:4px;">16</div><div style="display:flex;gap:2px;justify-content:center;margin-top:1px;"><div style="width:4px;height:4px;background:#3FA98A;border-radius:50%;"></div></div></div>
+              <div style="padding:5px 1px;"><div style="font:400 12px/1 Nunito,sans-serif;color:#33324A;padding:4px;">17</div></div>
+              <div style="padding:5px 1px;"><div style="font:400 12px/1 Nunito,sans-serif;color:#33324A;padding:4px;">18</div></div>
+              <div style="padding:5px 1px;"><div style="font:400 12px/1 Nunito,sans-serif;color:#33324A;padding:4px;">19</div></div>
+              <div style="padding:5px 1px;"><div style="font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;padding:4px;">20</div></div>
+              <div style="padding:5px 1px;"><div style="font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;padding:4px;">21</div></div>
+              <!-- row 4: 22–28, today=23 · with weather glyphs -->
+              <div style="padding:4px 1px;"><div style="font:400 12px/1 Nunito,sans-serif;color:#33324A;">22</div><div style="font:400 9px/1;margin-top:2px;">⛅</div></div>
+              <div style="padding:3px 1px;"><div style="width:24px;height:24px;background:#6B6FC9;border-radius:50%;display:flex;align-items:center;justify-content:center;font:700 12px/1 Nunito,sans-serif;color:#fff;margin:0 auto;">23</div><div style="font:400 9px/1;margin-top:1px;">☀️</div><div style="display:flex;gap:2px;justify-content:center;margin-top:1px;"><div style="width:4px;height:4px;background:#3FA98A;border-radius:50%;"></div><div style="width:4px;height:4px;background:#6B6FC9;border-radius:50%;"></div></div></div>
+              <div style="padding:4px 1px;"><div style="font:400 12px/1 Nunito,sans-serif;color:#33324A;">24</div><div style="font:400 9px/1;margin-top:2px;">☀️</div></div>
+              <div style="padding:4px 1px;"><div style="font:400 12px/1 Nunito,sans-serif;color:#33324A;">25</div><div style="font:400 9px/1;margin-top:2px;">⛅</div><div style="display:flex;gap:2px;justify-content:center;margin-top:1px;"><div style="width:4px;height:4px;background:#D46E97;border-radius:50%;"></div></div></div>
+              <div style="padding:4px 1px;"><div style="font:400 12px/1 Nunito,sans-serif;color:#33324A;">26</div><div style="font:400 9px/1;margin-top:2px;">⛅</div></div>
+              <div style="padding:4px 1px;background:rgba(220,235,250,.5);border-radius:5px;"><div style="font:700 12px/1 Nunito,sans-serif;color:#4E8FD0;">27</div><div style="font:400 9px/1;margin-top:2px;">🌧️</div></div>
+              <div style="padding:4px 1px;"><div style="font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;">28</div><div style="font:400 9px/1;margin-top:2px;">⛅</div></div>
+              <!-- row 5: 29–30 -->
+              <div style="padding:5px 1px;"><div style="font:400 12px/1 Nunito,sans-serif;color:#33324A;padding:4px;">29</div></div>
+              <div style="padding:5px 1px;"><div style="font:400 12px/1 Nunito,sans-serif;color:#33324A;padding:4px;">30</div></div>
+              <div></div><div></div><div></div><div></div><div></div>
+            </div>
+          </div>
+
+          <!-- today events -->
+          <div style="padding:16px 20px 8px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding:0 4px;"><span style="font:700 11px/1 Nunito,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#9C9AB2;">Today · June 23</span><span style="display:flex;align-items:center;gap:5px;background:#fff;border-radius:999px;padding:4px 10px;box-shadow:0 2px 8px rgba(51,50,74,.06);font:700 11px/1 Nunito,sans-serif;color:#4E8FD0;">⛅ Dublin 18°</span></div>
+            <div style="background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(51,50,74,.07);padding:14px 16px;display:flex;gap:12px;align-items:center;margin-bottom:8px;">
+              <div style="width:40px;height:40px;background:#D8F0E6;border-radius:12px;display:flex;align-items:center;justify-content:center;flex:none;color:#3FA98A;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></div>
+              <div style="flex:1;"><div style="font:700 14px/1 Nunito,sans-serif;color:#33324A;margin-bottom:3px;">Oliver · 6-month checkup</div><div style="font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;">09:00 · Dr. Brennan</div></div>
+              <div style="width:8px;height:8px;background:#3FA98A;border-radius:50%;flex:none;"></div>
+            </div>
+            <div style="background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(51,50,74,.07);padding:14px 16px;display:flex;gap:12px;align-items:center;">
+              <div style="width:40px;height:40px;background:#E7E4FB;border-radius:12px;display:flex;align-items:center;justify-content:center;flex:none;color:#6B6FC9;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div>
+              <div style="flex:1;"><div style="font:700 14px/1 Nunito,sans-serif;color:#33324A;margin-bottom:3px;">Mia · Piano lesson</div><div style="font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;">15:30 · Music school</div></div>
+              <div style="width:8px;height:8px;background:#6B6FC9;border-radius:50%;flex:none;"></div>
+            </div>
+          </div>
+
+          <!-- bottom nav -->
+          <div style="background:#fff;border-top:1px solid rgba(51,50,74,.06);padding:10px 8px 28px;display:flex;justify-content:space-around;align-items:center;margin-top:12px;">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="width:44px;height:32px;display:flex;align-items:center;justify-content:center;color:#9C9AB2;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg></div><span style="font:600 9px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.04em;">Today</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="width:44px;height:32px;background:#E7E4FB;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#6B6FC9;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div><span style="font:600 9px/1 Nunito,sans-serif;color:#6B6FC9;letter-spacing:.04em;">Calendar</span></div>
+            <div style="width:52px;height:52px;background:#6B6FC9;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(107,111,201,.4);margin-top:-18px;flex:none;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="width:44px;height:32px;display:flex;align-items:center;justify-content:center;color:#9C9AB2;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="7" r="4"/><path d="M2 20c0-3.31 3.13-6 7-6s7 2.69 7 6"/><circle cx="19" cy="9" r="2.5"/><path d="M16 20c0-2.21 1.35-4 3-4s3 1.79 3 4"/></svg></div><span style="font:600 9px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.04em;">Family</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="width:44px;height:32px;display:flex;align-items:center;justify-content:center;color:#9C9AB2;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></div><span style="font:600 9px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.04em;">Settings</span></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ═══════════════════════════════
+         05 — HEALTH HUB
+    ═══════════════════════════════ -->
+    <div style="flex:none;width:390px;">
+      <div style="font:700 11px/1 Nunito,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#4A4670;margin-bottom:12px;">05 · Health Hub</div>
+      <div style="width:390px;border-radius:44px;overflow:hidden;box-shadow:0 28px 72px rgba(20,18,50,.22);">
+        <div style="background:#F4F3FB;display:flex;flex-direction:column;">
+
+          <!-- status bar -->
+          <div style="padding:14px 26px 8px;display:flex;justify-content:space-between;align-items:center;color:#33324A;">
+            <span style="font:700 14px/1 Nunito,sans-serif;">9:41</span>
+            <div style="display:flex;gap:5px;align-items:center;">
+              <svg width="16" height="11" viewBox="0 0 16 11" fill="#33324A"><rect x="0" y="6" width="3" height="5" rx=".7"/><rect x="4.5" y="4" width="3" height="7" rx=".7"/><rect x="9" y="2" width="3" height="9" rx=".7"/><rect x="13.5" y="0" width="2.5" height="11" rx=".7"/></svg>
+              <svg width="15" height="11" viewBox="0 0 15 11" fill="none" stroke="#33324A" stroke-linecap="round"><circle cx="7.5" cy="10.2" r=".9" fill="#33324A" stroke="none"/><path d="M4.5 7.5Q7.5 5 10.5 7.5" stroke-width="1.4"/><path d="M2 4.8Q7.5 1 13 4.8" stroke-width="1.4"/></svg>
+              <svg width="23" height="12" viewBox="0 0 23 12" fill="none"><rect x=".6" y=".6" width="18.8" height="10.8" rx="2.8" stroke="#33324A" stroke-width="1.2"/><rect x="2" y="2" width="14" height="8" rx="1.5" fill="#33324A"/><path d="M20 4v4" stroke="#33324A" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </div>
+          </div>
+
+          <!-- header -->
+          <div style="padding:14px 24px 14px;display:flex;align-items:center;justify-content:space-between;">
+            <div><div style="font:700 22px/1 Quicksand,sans-serif;color:#33324A;">Health</div><div style="font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:5px;">Records &amp; reminders</div></div>
+            <div style="display:flex;align-items:center;gap:6px;background:#D8F0E6;border-radius:999px;padding:6px 14px 6px 6px;">
+              <div style="width:24px;height:24px;background:#3FA98A;border-radius:50%;display:flex;align-items:center;justify-content:center;"><svg width="12" height="12" viewBox="0 0 20 20" fill="white"><circle cx="10" cy="8" r="4.5"/><path d="M3 19Q3 14 10 14Q17 14 17 19Z"/></svg></div>
+              <span style="font:700 12px/1 Nunito,sans-serif;color:#3FA98A;">Oliver</span>
+            </div>
+          </div>
+
+          <!-- privacy note -->
+          <div style="margin:0 20px 14px;background:#E7E4FB;border-radius:14px;padding:10px 14px;display:flex;align-items:center;gap:10px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B6FC9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+            <span style="font:500 12px/1.4 Nunito,sans-serif;color:#54579E;">Health data stays on this device. Never shared or uploaded.</span>
+          </div>
+
+          <!-- health records -->
+          <div style="padding:0 20px;display:flex;flex-direction:column;gap:8px;">
+
+            <!-- vaccine (rose, urgent) -->
+            <div style="background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(51,50,74,.07);padding:16px;">
+              <div style="display:flex;gap:12px;align-items:flex-start;">
+                <div style="width:40px;height:40px;background:#FBE0EA;border-radius:12px;display:flex;align-items:center;justify-content:center;flex:none;color:#D46E97;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 3l10 10-4 4L7 7z"/><path d="M7 7L3 11l4 4M5 15l-2 4M15 5l4-2"/></svg></div>
+                <div style="flex:1;"><div style="font:700 14px/1 Nunito,sans-serif;color:#33324A;margin-bottom:4px;">6-in-1 vaccine</div><div style="font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;">DTaP-IPV-Hib-HepB · Dr. Brennan</div></div>
+                <div style="background:#FBE0EA;color:#D46E97;border-radius:999px;padding:5px 10px;font:700 11px/1 Nunito,sans-serif;white-space:nowrap;flex:none;">9 days</div>
+              </div>
+            </div>
+
+            <!-- medication (mint, ok) -->
+            <div style="background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(51,50,74,.07);padding:16px;">
+              <div style="display:flex;gap:12px;align-items:center;">
+                <div style="width:40px;height:40px;background:#D8F0E6;border-radius:12px;display:flex;align-items:center;justify-content:center;flex:none;color:#3FA98A;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 20H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v7.5"/><path d="M8 6v4M12 6v4M16 6v4"/><circle cx="18" cy="18" r="4"/><path d="M18 16v4M16 18h4"/></svg></div>
+                <div style="flex:1;"><div style="font:700 14px/1 Nunito,sans-serif;color:#33324A;margin-bottom:4px;">Vitamin D drops · 0.5 ml</div><div style="font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;">Daily · 08:00 · Reminder set</div></div>
+                <div style="width:28px;height:28px;background:#D8F0E6;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3FA98A" stroke-width="2.5" stroke-linecap="round"><path d="M5 13l4 4L19 7"/></svg></div>
+              </div>
+            </div>
+
+            <!-- growth chart (butter/gold) -->
+            <div style="background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(51,50,74,.07);padding:16px;">
+              <div style="display:flex;gap:12px;align-items:flex-start;">
+                <div style="width:40px;height:40px;background:#FBF1CE;border-radius:12px;display:flex;align-items:center;justify-content:center;flex:none;color:#C9A33B;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+                <div style="flex:1;">
+                  <div style="font:700 14px/1 Nunito,sans-serif;color:#33324A;margin-bottom:6px;">Weight · 6.4 kg</div>
+                  <svg width="100" height="24" viewBox="0 0 100 24" fill="none" style="display:block;margin-bottom:5px;">
+                    <path d="M0 20L16 18L32 16L48 12L64 9L80 7L100 5" stroke="#C9A33B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity=".7"/>
+                    <path d="M0 20L16 18L32 16L48 12L64 9L80 7L100 5L100 24L0 24Z" fill="#FBF1CE" opacity=".4"/>
+                    <circle cx="100" cy="5" r="3" fill="#C9A33B"/>
+                  </svg>
+                  <div style="font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;">75th percentile · Jun 10</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- PDF button -->
+          <div style="padding:18px 20px 6px;">
+            <div style="background:#6B6FC9;color:#fff;padding:17px 24px;border-radius:15px;font:800 16px/1 Nunito,sans-serif;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 6px 20px rgba(107,111,201,.35);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8M10 9H8"/></svg>
+              Generate Pediatrician PDF
+            </div>
+            <div style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;text-align:center;margin-top:10px;">Created on-device · Never uploaded</div>
+          </div>
+
+          <!-- bottom nav -->
+          <div style="background:#fff;border-top:1px solid rgba(51,50,74,.06);padding:10px 8px 28px;display:flex;justify-content:space-around;align-items:center;margin-top:14px;">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="width:44px;height:32px;display:flex;align-items:center;justify-content:center;color:#9C9AB2;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg></div><span style="font:600 9px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.04em;">Today</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="width:44px;height:32px;display:flex;align-items:center;justify-content:center;color:#9C9AB2;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div><span style="font:600 9px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.04em;">Calendar</span></div>
+            <div style="width:52px;height:52px;background:#6B6FC9;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(107,111,201,.4);margin-top:-18px;flex:none;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="width:44px;height:32px;background:#E7E4FB;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#6B6FC9;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="7" r="4"/><path d="M2 20c0-3.31 3.13-6 7-6s7 2.69 7 6"/><circle cx="19" cy="9" r="2.5"/><path d="M16 20c0-2.21 1.35-4 3-4s3 1.79 3 4"/></svg></div><span style="font:600 9px/1 Nunito,sans-serif;color:#6B6FC9;letter-spacing:.04em;">Family</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="width:44px;height:32px;display:flex;align-items:center;justify-content:center;color:#9C9AB2;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></div><span style="font:600 9px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.04em;">Settings</span></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ═══════════════════════════════
+         06 — CHILD PROFILE
+    ═══════════════════════════════ -->
+    <div style="flex:none;width:390px;">
+      <div style="font:700 11px/1 Nunito,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#4A4670;margin-bottom:12px;">06 · Child Profile</div>
+      <div style="width:390px;border-radius:44px;overflow:hidden;box-shadow:0 28px 72px rgba(20,18,50,.22);">
+        <div style="background:#F4F3FB;display:flex;flex-direction:column;">
+          <div style="padding:14px 26px 8px;display:flex;justify-content:space-between;align-items:center;color:#33324A;"><span style="font:700 14px/1 Nunito,sans-serif;">9:41</span><div style="display:flex;gap:5px;align-items:center;"><svg width="16" height="11" viewBox="0 0 16 11" fill="#33324A"><rect x="0" y="6" width="3" height="5" rx=".7"/><rect x="4.5" y="4" width="3" height="7" rx=".7"/><rect x="9" y="2" width="3" height="9" rx=".7"/><rect x="13.5" y="0" width="2.5" height="11" rx=".7"/></svg><svg width="15" height="11" viewBox="0 0 15 11" fill="none" stroke="#33324A" stroke-linecap="round"><circle cx="7.5" cy="10.2" r=".9" fill="#33324A" stroke="none"/><path d="M4.5 7.5Q7.5 5 10.5 7.5" stroke-width="1.4"/><path d="M2 4.8Q7.5 1 13 4.8" stroke-width="1.4"/></svg><svg width="23" height="12" viewBox="0 0 23 12" fill="none"><rect x=".6" y=".6" width="18.8" height="10.8" rx="2.8" stroke="#33324A" stroke-width="1.2"/><rect x="2" y="2" width="14" height="8" rx="1.5" fill="#33324A"/><path d="M20 4v4" stroke="#33324A" stroke-width="1.5" stroke-linecap="round"/></svg></div></div>
+          <div style="padding:12px 24px 16px;display:flex;align-items:center;gap:14px;">
+            <div style="width:56px;height:56px;background:#D8F0E6;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;"><svg width="28" height="28" viewBox="0 0 20 20" fill="#3FA98A"><circle cx="10" cy="7.5" r="5.5"/><path d="M1.5 19Q1.5 13 10 13Q18.5 13 18.5 19Z"/></svg></div>
+            <div><div style="font:700 22px/1 Quicksand,sans-serif;color:#33324A;">Oliver</div><div style="font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:5px;">Jun 23, 2026 · 4 months</div></div>
+            <div style="margin-left:auto;background:#6B6FC9;color:#fff;border-radius:999px;padding:7px 16px;font:700 12px/1 Nunito,sans-serif;white-space:nowrap;">Newborn</div>
+          </div>
+          <!-- stage spine -->
+          <div style="padding:0 20px 16px;">
+            <div style="display:flex;background:#fff;border-radius:16px;box-shadow:0 3px 16px rgba(51,50,74,.07);overflow:hidden;">
+              <div style="flex:1;padding:10px 4px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;"><svg viewBox="0 0 12 15" fill="#C8C6DC" width="10" height="13"><circle cx="6" cy="4" r="3.2"/><path d="M1.5 13Q1.5 9.5 6 9.5Q9.5 9.5 10.5 11Q11.5 13 9 13Z"/></svg><div style="font:700 8px/1 Nunito,sans-serif;color:#C8C6DC;">Expecting</div></div><div style="flex:1;padding:10px 4px;background:#E7E4FB;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;border-left:1px solid rgba(51,50,74,.08);"><svg viewBox="0 0 12 16" fill="#6B6FC9" width="10" height="14"><ellipse cx="6" cy="5.5" rx="4" ry="5"/><path d="M1.5 15Q1.5 11 6 11Q10.5 11 10.5 15Z"/></svg><div style="font:700 8px/1 Nunito,sans-serif;color:#6B6FC9;">Newborn</div></div>
+              <div style="flex:1;padding:12px 6px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;border-left:1px solid rgba(51,50,74,.06);"><svg viewBox="0 0 14 18" fill="#9C9AB2" width="12" height="16"><ellipse cx="7" cy="6" rx="4.5" ry="5.5"/><path d="M1.5 17Q1.5 12 7 12Q12.5 12 12.5 17Z"/></svg><div style="font:700 9px/1 Nunito,sans-serif;color:#9C9AB2;">Baby</div></div>
+              <div style="flex:1;padding:12px 6px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;border-left:1px solid rgba(51,50,74,.06);"><svg viewBox="0 0 15 19" fill="#C8C6DC" width="13" height="17"><ellipse cx="7.5" cy="6.5" rx="5" ry="6"/><path d="M1.5 18Q1.5 13 7.5 13Q13.5 13 13.5 18Z"/></svg><div style="font:700 9px/1 Nunito,sans-serif;color:#C8C6DC;">Preschool</div></div>
+              <div style="flex:1;padding:12px 6px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;border-left:1px solid rgba(51,50,74,.06);"><svg viewBox="0 0 16 21" fill="#C8C6DC" width="14" height="18"><ellipse cx="8" cy="6.5" rx="5.5" ry="6"/><path d="M1.5 20Q1.5 13.5 8 13.5Q14.5 13.5 14.5 20Z"/></svg><div style="font:700 9px/1 Nunito,sans-serif;color:#C8C6DC;">School</div></div>
+              <div style="flex:1;padding:12px 6px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;border-left:1px solid rgba(51,50,74,.06);"><svg viewBox="0 0 17 23" fill="#C8C6DC" width="15" height="20"><ellipse cx="8.5" cy="7" rx="5.5" ry="6.5"/><path d="M1.5 22Q1.5 14.5 8.5 14.5Q15.5 14.5 15.5 22Z"/></svg><div style="font:700 9px/1 Nunito,sans-serif;color:#C8C6DC;">Teen</div></div>
+            </div>
+          </div>
+          <!-- stat tiles -->
+          <div style="padding:0 20px 16px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+            <div style="background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(51,50,74,.07);padding:16px 10px;text-align:center;"><div style="font:700 26px/1 Quicksand,sans-serif;color:#33324A;">6</div><div style="font:400 9px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:5px;letter-spacing:.07em;text-transform:uppercase;">Feeds</div><div style="font:400 10px/1 Nunito,sans-serif;color:#3FA98A;margin-top:5px;">720 ml</div></div>
+            <div style="background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(51,50,74,.07);padding:16px 10px;text-align:center;"><div style="font:700 26px/1 Quicksand,sans-serif;color:#33324A;">14h</div><div style="font:400 9px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:5px;letter-spacing:.07em;text-transform:uppercase;">Sleep</div><div style="font:400 10px/1 Nunito,sans-serif;color:#6B6FC9;margin-top:5px;">↑ 20m avg</div></div>
+            <div style="background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(51,50,74,.07);padding:16px 10px;text-align:center;"><div style="font:700 26px/1 Quicksand,sans-serif;color:#33324A;">75th</div><div style="font:400 9px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:5px;letter-spacing:.07em;text-transform:uppercase;">Growth</div><div style="font:400 10px/1 Nunito,sans-serif;color:#C9A33B;margin-top:5px;">6.4 kg</div></div>
+          </div>
+          <!-- recent logs -->
+          <div style="padding:0 20px 16px;">
+            <div style="font:700 11px/1 Nunito,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#9C9AB2;margin-bottom:10px;padding-left:4px;">Recent</div>
+            <div style="background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(51,50,74,.07);overflow:hidden;">
+              <div style="padding:14px 16px;display:flex;gap:12px;align-items:center;border-bottom:1px solid rgba(51,50,74,.05);"><div style="width:36px;height:36px;background:#D8F0E6;border-radius:11px;display:flex;align-items:center;justify-content:center;flex:none;color:#3FA98A;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2h8"/><path d="M9 2v3a5.5 5.5 0 0 0-3 4.9V19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-9.1A5.5 5.5 0 0 0 15 5V2"/></svg></div><div style="flex:1;"><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;margin-bottom:2px;">Feed · Left side</div><div style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;">5:23 am · 12 min · ~90 ml</div></div></div>
+              <div style="padding:14px 16px;display:flex;gap:12px;align-items:center;border-bottom:1px solid rgba(51,50,74,.05);"><div style="width:36px;height:36px;background:#E7E4FB;border-radius:11px;display:flex;align-items:center;justify-content:center;flex:none;color:#6B6FC9;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></div><div style="flex:1;"><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;margin-bottom:2px;">Sleep · 2h 10m</div><div style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;">3:10 am – 5:20 am</div></div></div>
+              <div style="padding:14px 16px;display:flex;gap:12px;align-items:center;"><div style="width:36px;height:36px;background:#FBF1CE;border-radius:11px;display:flex;align-items:center;justify-content:center;flex:none;color:#C9A33B;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8l4-4 4 4 4-4 4 4v8l-4 4-4-4-4 4-4-4V8z"/></svg></div><div style="flex:1;"><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;margin-bottom:2px;">Diaper · Wet</div><div style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;">4:10 am</div></div></div>
+            </div>
+          </div>
+          <div style="background:#fff;border-top:1px solid rgba(51,50,74,.06);padding:10px 8px 28px;display:flex;justify-content:space-around;align-items:center;"><div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="width:44px;height:32px;display:flex;align-items:center;justify-content:center;color:#9C9AB2;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg></div><span style="font:600 9px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.04em;">Today</span></div><div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="width:44px;height:32px;display:flex;align-items:center;justify-content:center;color:#9C9AB2;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div><span style="font:600 9px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.04em;">Calendar</span></div><div style="width:52px;height:52px;background:#6B6FC9;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(107,111,201,.4);margin-top:-18px;flex:none;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div><div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="width:44px;height:32px;background:#E7E4FB;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#6B6FC9;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="7" r="4"/><path d="M2 20c0-3.31 3.13-6 7-6s7 2.69 7 6"/><circle cx="19" cy="9" r="2.5"/><path d="M16 20c0-2.21 1.35-4 3-4s3 1.79 3 4"/></svg></div><span style="font:600 9px/1 Nunito,sans-serif;color:#6B6FC9;letter-spacing:.04em;">Family</span></div><div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="width:44px;height:32px;display:flex;align-items:center;justify-content:center;color:#9C9AB2;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></div><span style="font:600 9px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.04em;">Settings</span></div></div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ═══════════════════════════════
+         07 — RHYTHM RING
+    ═══════════════════════════════ -->
+    <div style="flex:none;width:390px;">
+      <div style="font:700 11px/1 Nunito,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#4A4670;margin-bottom:12px;">07 · Rhythm Ring</div>
+      <div style="width:390px;border-radius:44px;overflow:hidden;box-shadow:0 28px 72px rgba(20,18,50,.22);">
+        <div style="background:#F4F3FB;display:flex;flex-direction:column;">
+          <div style="padding:14px 26px 8px;display:flex;justify-content:space-between;align-items:center;color:#33324A;"><span style="font:700 14px/1 Nunito,sans-serif;">9:41</span><div style="display:flex;gap:5px;align-items:center;"><svg width="16" height="11" viewBox="0 0 16 11" fill="#33324A"><rect x="0" y="6" width="3" height="5" rx=".7"/><rect x="4.5" y="4" width="3" height="7" rx=".7"/><rect x="9" y="2" width="3" height="9" rx=".7"/><rect x="13.5" y="0" width="2.5" height="11" rx=".7"/></svg><svg width="15" height="11" viewBox="0 0 15 11" fill="none" stroke="#33324A" stroke-linecap="round"><circle cx="7.5" cy="10.2" r=".9" fill="#33324A" stroke="none"/><path d="M4.5 7.5Q7.5 5 10.5 7.5" stroke-width="1.4"/><path d="M2 4.8Q7.5 1 13 4.8" stroke-width="1.4"/></svg><svg width="23" height="12" viewBox="0 0 23 12" fill="none"><rect x=".6" y=".6" width="18.8" height="10.8" rx="2.8" stroke="#33324A" stroke-width="1.2"/><rect x="2" y="2" width="14" height="8" rx="1.5" fill="#33324A"/><path d="M20 4v4" stroke="#33324A" stroke-width="1.5" stroke-linecap="round"/></svg></div></div>
+          <div style="padding:10px 24px 4px;display:flex;align-items:center;justify-content:space-between;"><div style="font:700 18px/1 Quicksand,sans-serif;color:#33324A;">Oliver's Rhythm</div><div style="display:flex;align-items:center;gap:5px;background:#D8F0E6;border-radius:999px;padding:5px 12px 5px 5px;"><div style="width:20px;height:20px;background:#3FA98A;border-radius:50%;display:flex;align-items:center;justify-content:center;"><svg width="10" height="10" viewBox="0 0 20 20" fill="white"><circle cx="10" cy="7.5" r="5"/><path d="M2 19Q2 13 10 13Q18 13 18 19Z"/></svg></div><span style="font:700 11px/1 Nunito,sans-serif;color:#3FA98A;">Oliver</span></div></div>
+          <!-- ring card -->
+          <div style="margin:12px 20px 0;background:#fff;border-radius:22px;box-shadow:0 3px 16px rgba(51,50,74,.07);padding:16px;">
+            <div style="position:relative;display:flex;justify-content:center;">
+              <svg viewBox="0 0 260 260" width="248" height="248" style="display:block;">
+                <circle cx="130" cy="130" r="92.5" fill="none" stroke="rgba(51,50,74,.06)" stroke-width="35"/>
+                <path d="M75 35 A110 110 0 0 1 236 159 L203 149 A75 75 0 0 0 93 65 Z" fill="#E7E4FB"/>
+                <path d="M240 130 A110 110 0 0 1 232 172 L199 159 A75 75 0 0 0 205 130 Z" fill="#D8F0E6"/>
+                <path d="M197 217 A110 110 0 0 1 158 236 L149 202 A75 75 0 0 0 176 189 Z" fill="#D8F0E6"/>
+                <path d="M101 236 A110 110 0 0 1 63 217 L84 189 A75 75 0 0 0 111 202 Z" fill="#D8F0E6"/>
+                <path d="M28 172 A110 110 0 0 1 20 130 L55 130 A75 75 0 0 0 61 159 Z" fill="#D8F0E6"/>
+                <path d="M34 75 A110 110 0 0 1 63 43 L84 71 A75 75 0 0 0 65 92 Z" fill="#D8F0E6"/>
+                <circle cx="210" cy="176" r="8" fill="#FCE6D8" stroke="white" stroke-width="2.5"/>
+                <circle cx="130" cy="222" r="8" fill="#FCE6D8" stroke="white" stroke-width="2.5"/>
+                <circle cx="50" cy="176" r="8" fill="#FCE6D8" stroke="white" stroke-width="2.5"/>
+                <circle cx="130" cy="20" r="2" fill="#9C9AB2" opacity=".2"/>
+                <circle cx="240" cy="130" r="2" fill="#9C9AB2" opacity=".2"/>
+                <circle cx="130" cy="240" r="2" fill="#9C9AB2" opacity=".2"/>
+                <circle cx="20" cy="130" r="2" fill="#9C9AB2" opacity=".2"/>
+              </svg>
+              <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;">
+                <div style="font:700 24px/1 Quicksand,sans-serif;color:#33324A;">14h 20m</div>
+                <div style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:4px;">total sleep</div>
+                <div style="font:700 11px/1 Nunito,sans-serif;color:#6B6FC9;margin-top:5px;">↑ 20m vs avg</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:16px;justify-content:center;margin-top:14px;">
+              <div style="display:flex;align-items:center;gap:5px;"><div style="width:10px;height:10px;background:#E7E4FB;border-radius:3px;"></div><span style="font:400 11px/1 Nunito,sans-serif;color:#6F6E86;">Sleep</span></div>
+              <div style="display:flex;align-items:center;gap:5px;"><div style="width:10px;height:10px;background:#D8F0E6;border-radius:3px;"></div><span style="font:400 11px/1 Nunito,sans-serif;color:#6F6E86;">Feeds</span></div>
+              <div style="display:flex;align-items:center;gap:5px;"><div style="width:10px;height:10px;background:#FCE6D8;border-radius:50%;"></div><span style="font:400 11px/1 Nunito,sans-serif;color:#6F6E86;">Diapers</span></div>
+            </div>
+          </div>
+          <!-- stat sparkline cards -->
+          <div style="padding:12px 20px 16px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+            <div style="background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(51,50,74,.07);padding:14px 10px;"><div style="font:400 9px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px;">Avg sleep</div><div style="font:700 18px/1 Quicksand,sans-serif;color:#33324A;margin-bottom:7px;">13.8h</div><svg width="68" height="18" viewBox="0 0 68 18" fill="none"><path d="M0 12 L11 10 L22 13 L33 8 L44 7 L55 5 L68 4" stroke="#E7E4FB" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <div style="background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(51,50,74,.07);padding:14px 10px;"><div style="font:400 9px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px;">Feeds/day</div><div style="font:700 18px/1 Quicksand,sans-serif;color:#33324A;margin-bottom:7px;">6.2</div><svg width="68" height="18" viewBox="0 0 68 18" fill="none"><path d="M0 10 L11 8 L22 12 L33 6 L44 9 L55 7 L68 5" stroke="#D8F0E6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <div style="background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(51,50,74,.07);padding:14px 10px;"><div style="font:400 9px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px;">Growth</div><div style="font:700 18px/1 Quicksand,sans-serif;color:#33324A;margin-bottom:7px;">75th</div><svg width="68" height="18" viewBox="0 0 68 18" fill="none"><path d="M0 14 L11 12 L22 11 L33 9 L44 7 L55 6 L68 4" stroke="#FBF1CE" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          </div>
+          <div style="background:#fff;border-top:1px solid rgba(51,50,74,.06);padding:10px 8px 28px;display:flex;justify-content:space-around;align-items:center;"><div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="width:44px;height:32px;background:#E7E4FB;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#6B6FC9;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg></div><span style="font:600 9px/1 Nunito,sans-serif;color:#6B6FC9;letter-spacing:.04em;">Today</span></div><div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="width:44px;height:32px;display:flex;align-items:center;justify-content:center;color:#9C9AB2;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div><span style="font:600 9px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.04em;">Calendar</span></div><div style="width:52px;height:52px;background:#6B6FC9;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(107,111,201,.4);margin-top:-18px;flex:none;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div><div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="width:44px;height:32px;display:flex;align-items:center;justify-content:center;color:#9C9AB2;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="7" r="4"/><path d="M2 20c0-3.31 3.13-6 7-6s7 2.69 7 6"/><circle cx="19" cy="9" r="2.5"/><path d="M16 20c0-2.21 1.35-4 3-4s3 1.79 3 4"/></svg></div><span style="font:600 9px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.04em;">Family</span></div><div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="width:44px;height:32px;display:flex;align-items:center;justify-content:center;color:#9C9AB2;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></div><span style="font:600 9px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.04em;">Settings</span></div></div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ═══════════════════════════════
+         08 — ROUTINES & CHORES
+    ═══════════════════════════════ -->
+    <div style="flex:none;width:390px;">
+      <div style="font:700 11px/1 Nunito,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#4A4670;margin-bottom:12px;">08 · Routines &amp; Chores</div>
+      <div style="width:390px;border-radius:44px;overflow:hidden;box-shadow:0 28px 72px rgba(20,18,50,.22);">
+        <div style="background:#F4F3FB;display:flex;flex-direction:column;">
+          <div style="padding:14px 26px 8px;display:flex;justify-content:space-between;align-items:center;color:#33324A;"><span style="font:700 14px/1 Nunito,sans-serif;">9:41</span><div style="display:flex;gap:5px;align-items:center;"><svg width="16" height="11" viewBox="0 0 16 11" fill="#33324A"><rect x="0" y="6" width="3" height="5" rx=".7"/><rect x="4.5" y="4" width="3" height="7" rx=".7"/><rect x="9" y="2" width="3" height="9" rx=".7"/><rect x="13.5" y="0" width="2.5" height="11" rx=".7"/></svg><svg width="15" height="11" viewBox="0 0 15 11" fill="none" stroke="#33324A" stroke-linecap="round"><circle cx="7.5" cy="10.2" r=".9" fill="#33324A" stroke="none"/><path d="M4.5 7.5Q7.5 5 10.5 7.5" stroke-width="1.4"/><path d="M2 4.8Q7.5 1 13 4.8" stroke-width="1.4"/></svg><svg width="23" height="12" viewBox="0 0 23 12" fill="none"><rect x=".6" y=".6" width="18.8" height="10.8" rx="2.8" stroke="#33324A" stroke-width="1.2"/><rect x="2" y="2" width="14" height="8" rx="1.5" fill="#33324A"/><path d="M20 4v4" stroke="#33324A" stroke-width="1.5" stroke-linecap="round"/></svg></div></div>
+          <div style="padding:12px 24px 14px;display:flex;align-items:center;justify-content:space-between;">
+            <div style="font:700 20px/1 Quicksand,sans-serif;color:#33324A;">Routines</div>
+            <div style="display:flex;align-items:center;gap:5px;background:#E7E4FB;border-radius:999px;padding:5px 12px 5px 5px;"><div style="width:20px;height:20px;background:#6B6FC9;border-radius:50%;display:flex;align-items:center;justify-content:center;"><svg width="10" height="10" viewBox="0 0 20 20" fill="white"><circle cx="10" cy="7.5" r="5"/><path d="M2 19Q2 13 10 13Q18 13 18 19Z"/></svg></div><span style="font:700 11px/1 Nunito,sans-serif;color:#6B6FC9;">Mia · 6yr</span></div>
+          </div>
+          <!-- tabs -->
+          <div style="padding:0 24px 14px;display:flex;gap:6px;">
+            <div style="background:#6B6FC9;color:#fff;border-radius:999px;padding:7px 18px;font:700 12px/1 Nunito,sans-serif;">Morning</div>
+            <div style="background:#fff;color:#6F6E86;border-radius:999px;padding:7px 16px;font:600 12px/1 Nunito,sans-serif;border:1px solid rgba(51,50,74,.08);">Evening</div>
+            <div style="background:#fff;color:#6F6E86;border-radius:999px;padding:7px 16px;font:600 12px/1 Nunito,sans-serif;border:1px solid rgba(51,50,74,.08);">Chores</div>
+          </div>
+          <!-- routine step tiles -->
+          <div style="padding:0 20px 16px;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div style="background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(51,50,74,.07);padding:16px;display:flex;gap:12px;align-items:center;">
+              <div style="width:40px;height:40px;background:#FBF1CE;border-radius:13px;display:flex;align-items:center;justify-content:center;flex:none;color:#C9A33B;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></div>
+              <div><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;">Wake up</div><div style="font:400 10px/1.3 Nunito,sans-serif;color:#9C9AB2;margin-top:3px;">7:00 am</div></div>
+              <div style="width:20px;height:20px;background:#D8F0E6;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-left:auto;flex:none;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#3FA98A" stroke-width="2.5" stroke-linecap="round"><path d="M5 13l4 4L19 7"/></svg></div>
+            </div>
+            <div style="background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(51,50,74,.07);padding:16px;display:flex;gap:12px;align-items:center;">
+              <div style="width:40px;height:40px;background:#DCEBFA;border-radius:13px;display:flex;align-items:center;justify-content:center;flex:none;color:#4E8FD0;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></div>
+              <div><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;">Wash face</div><div style="font:400 10px/1.3 Nunito,sans-serif;color:#9C9AB2;margin-top:3px;">7:10 am</div></div>
+              <div style="width:20px;height:20px;background:#D8F0E6;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-left:auto;flex:none;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#3FA98A" stroke-width="2.5" stroke-linecap="round"><path d="M5 13l4 4L19 7"/></svg></div>
+            </div>
+            <div style="background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(51,50,74,.07);padding:16px;display:flex;gap:12px;align-items:center;">
+              <div style="width:40px;height:40px;background:#E7E4FB;border-radius:13px;display:flex;align-items:center;justify-content:center;flex:none;color:#6B6FC9;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.57a2 2 0 0 0-1.34-2.23z"/></svg></div>
+              <div><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;">Get dressed</div><div style="font:400 10px/1.3 Nunito,sans-serif;color:#9C9AB2;margin-top:3px;">7:20 am</div></div>
+              <div style="width:20px;height:20px;background:#F4F3FB;border-radius:50%;border:1.5px solid rgba(51,50,74,.1);flex:none;margin-left:auto;"></div>
+            </div>
+            <div style="background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(51,50,74,.07);padding:16px;display:flex;gap:12px;align-items:center;">
+              <div style="width:40px;height:40px;background:#FBE0EA;border-radius:13px;display:flex;align-items:center;justify-content:center;flex:none;color:#D46E97;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg></div>
+              <div><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;">Breakfast</div><div style="font:400 10px/1.3 Nunito,sans-serif;color:#9C9AB2;margin-top:3px;">7:30 am</div></div>
+              <div style="width:20px;height:20px;background:#F4F3FB;border-radius:50%;border:1.5px solid rgba(51,50,74,.1);flex:none;margin-left:auto;"></div>
+            </div>
+          </div>
+          <!-- chore board section -->
+          <div style="padding:0 20px 8px;">
+            <div style="font:700 11px/1 Nunito,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#9C9AB2;margin-bottom:10px;padding-left:4px;">Chores today</div>
+            <div style="background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(51,50,74,.07);overflow:hidden;">
+              <div style="padding:13px 16px;display:flex;gap:12px;align-items:center;border-bottom:1px solid rgba(51,50,74,.05);"><div style="width:36px;height:36px;background:#E7E4FB;border-radius:11px;display:flex;align-items:center;justify-content:center;flex:none;color:#6B6FC9;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></div><div style="flex:1;"><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;">Tidy bedroom</div></div><div style="display:flex;align-items:center;gap:5px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="#E9C46A"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg><span style="font:700 11px/1 Nunito,sans-serif;color:#9C9AB2;">+15</span></div><div style="background:#D8F0E6;color:#3FA98A;border-radius:999px;padding:4px 10px;font:700 10px/1 Nunito,sans-serif;margin-left:4px;">Done</div></div>
+              <div style="padding:13px 16px;display:flex;gap:12px;align-items:center;border-bottom:1px solid rgba(51,50,74,.05);"><div style="width:36px;height:36px;background:#E7E4FB;border-radius:11px;display:flex;align-items:center;justify-content:center;flex:none;color:#6B6FC9;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18M3 9h18M3 15h18M3 21h18"/></svg></div><div style="flex:1;"><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;">Set the table</div></div><div style="display:flex;align-items:center;gap:5px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="#E9C46A"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg><span style="font:700 11px/1 Nunito,sans-serif;color:#9C9AB2;">+10</span></div><div style="background:#F4F3FB;color:#9C9AB2;border-radius:999px;padding:4px 10px;font:700 10px/1 Nunito,sans-serif;border:1px solid rgba(51,50,74,.08);margin-left:4px;">To do</div></div>
+              <div style="padding:13px 16px;display:flex;gap:12px;align-items:center;"><div style="width:36px;height:36px;background:#FBF1CE;border-radius:11px;display:flex;align-items:center;justify-content:center;flex:none;color:#C9A33B;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><div style="flex:1;"><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;">Walk Biscuit</div></div><div style="display:flex;align-items:center;gap:5px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="#E9C46A"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg><span style="font:700 11px/1 Nunito,sans-serif;color:#9C9AB2;">+20</span></div><div style="background:#FBF1CE;color:#C9A33B;border-radius:999px;padding:4px 10px;font:700 10px/1 Nunito,sans-serif;margin-left:4px;white-space:nowrap;">Late +8</div></div>
+            </div>
+          </div>
+          <!-- points balance -->
+          <div style="margin:8px 20px 16px;background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(51,50,74,.07);padding:16px;display:flex;align-items:center;gap:12px;">
+            <div style="width:40px;height:40px;background:#FBF1CE;border-radius:12px;display:flex;align-items:center;justify-content:center;flex:none;"><svg width="20" height="20" viewBox="0 0 24 24" fill="#E9C46A"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></div>
+            <div style="flex:1;"><div style="font:700 14px/1 Nunito,sans-serif;color:#33324A;">Mia's Balance</div><div style="font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:3px;">45 pts · €6.50 earned</div></div>
+            <div style="background:#6B6FC9;color:#fff;border-radius:999px;padding:8px 16px;font:700 12px/1 Nunito,sans-serif;white-space:nowrap;">Redeem</div>
+          </div>
+          <div style="background:#fff;border-top:1px solid rgba(51,50,74,.06);padding:10px 8px 28px;display:flex;justify-content:space-around;align-items:center;"><div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="width:44px;height:32px;background:#E7E4FB;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#6B6FC9;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg></div><span style="font:600 9px/1 Nunito,sans-serif;color:#6B6FC9;letter-spacing:.04em;">Today</span></div><div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="width:44px;height:32px;display:flex;align-items:center;justify-content:center;color:#9C9AB2;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div><span style="font:600 9px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.04em;">Calendar</span></div><div style="width:52px;height:52px;background:#6B6FC9;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(107,111,201,.4);margin-top:-18px;flex:none;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div><div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="width:44px;height:32px;display:flex;align-items:center;justify-content:center;color:#9C9AB2;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="7" r="4"/><path d="M2 20c0-3.31 3.13-6 7-6s7 2.69 7 6"/><circle cx="19" cy="9" r="2.5"/><path d="M16 20c0-2.21 1.35-4 3-4s3 1.79 3 4"/></svg></div><span style="font:600 9px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.04em;">Family</span></div><div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="width:44px;height:32px;display:flex;align-items:center;justify-content:center;color:#9C9AB2;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></div><span style="font:600 9px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.04em;">Settings</span></div></div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ═══════════════════════════════
+         09 — CO-PARENT
+    ═══════════════════════════════ -->
+    <div style="flex:none;width:390px;">
+      <div style="font:700 11px/1 Nunito,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#4A4670;margin-bottom:12px;">09 · Co-Parent</div>
+      <div style="width:390px;border-radius:44px;overflow:hidden;box-shadow:0 28px 72px rgba(20,18,50,.22);">
+        <div style="background:#F4F3FB;display:flex;flex-direction:column;">
+          <div style="padding:14px 26px 8px;display:flex;justify-content:space-between;align-items:center;color:#33324A;"><span style="font:700 14px/1 Nunito,sans-serif;">9:41</span><div style="display:flex;gap:5px;align-items:center;"><svg width="16" height="11" viewBox="0 0 16 11" fill="#33324A"><rect x="0" y="6" width="3" height="5" rx=".7"/><rect x="4.5" y="4" width="3" height="7" rx=".7"/><rect x="9" y="2" width="3" height="9" rx=".7"/><rect x="13.5" y="0" width="2.5" height="11" rx=".7"/></svg><svg width="15" height="11" viewBox="0 0 15 11" fill="none" stroke="#33324A" stroke-linecap="round"><circle cx="7.5" cy="10.2" r=".9" fill="#33324A" stroke="none"/><path d="M4.5 7.5Q7.5 5 10.5 7.5" stroke-width="1.4"/><path d="M2 4.8Q7.5 1 13 4.8" stroke-width="1.4"/></svg><svg width="23" height="12" viewBox="0 0 23 12" fill="none"><rect x=".6" y=".6" width="18.8" height="10.8" rx="2.8" stroke="#33324A" stroke-width="1.2"/><rect x="2" y="2" width="14" height="8" rx="1.5" fill="#33324A"/><path d="M20 4v4" stroke="#33324A" stroke-width="1.5" stroke-linecap="round"/></svg></div></div>
+          <div style="padding:12px 24px 14px;display:flex;align-items:center;justify-content:space-between;"><div style="font:700 20px/1 Quicksand,sans-serif;color:#33324A;">Co-parent</div><div style="display:flex;align-items:center;gap:5px;background:#D8F0E6;border-radius:999px;padding:5px 12px 5px 5px;"><div style="width:20px;height:20px;background:#3FA98A;border-radius:50%;display:flex;align-items:center;justify-content:center;"><svg width="10" height="10" viewBox="0 0 20 20" fill="white"><circle cx="10" cy="7.5" r="5"/><path d="M2 19Q2 13 10 13Q18 13 18 19Z"/></svg></div><span style="font:700 11px/1 Nunito,sans-serif;color:#3FA98A;">Oliver</span></div></div>
+          <!-- two parent silhouettes -->
+          <div style="margin:0 20px 16px;background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(51,50,74,.07);padding:18px;display:flex;justify-content:space-between;align-items:center;">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+              <div style="width:48px;height:48px;background:#D8F0E6;border-radius:50%;display:flex;align-items:center;justify-content:center;"><svg width="24" height="24" viewBox="0 0 20 20" fill="#3FA98A"><circle cx="10" cy="7.5" r="5.5"/><path d="M1.5 19Q1.5 13 10 13Q18.5 13 18.5 19Z"/></svg></div>
+              <div style="font:700 13px/1 Nunito,sans-serif;color:#3FA98A;">You</div>
+              <div style="font:400 10px/1 Nunito,sans-serif;color:#9C9AB2;">Primary</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:6px;opacity:.4;"><div style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;">this week</div><div style="width:2px;height:28px;background:#E7E4FB;"></div></div>
+            <div style="font:700 12px/1 Nunito,sans-serif;color:#9C9AB2;">Oliver stays:</div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+              <div style="width:48px;height:48px;background:#FCE6D8;border-radius:50%;display:flex;align-items:center;justify-content:center;"><svg width="24" height="24" viewBox="0 0 20 20" fill="#D9824F"><circle cx="10" cy="7.5" r="5.5"/><path d="M1.5 19Q1.5 13 10 13Q18.5 13 18.5 19Z"/></svg></div>
+              <div style="font:700 13px/1 Nunito,sans-serif;color:#D9824F;">Sam</div>
+              <div style="font:400 10px/1 Nunito,sans-serif;color:#9C9AB2;">Co-parent</div>
+            </div>
+          </div>
+          <!-- custody week strip -->
+          <div style="padding:0 20px 16px;">
+            <div style="font:700 11px/1 Nunito,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#9C9AB2;margin-bottom:10px;padding-left:4px;">June custody</div>
+            <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;">
+              <div style="background:#D8F0E6;border-radius:10px;padding:10px 3px;text-align:center;"><div style="font:700 9px/1 Nunito,sans-serif;color:#3FA98A;">M</div><div style="font:600 11px/1 Nunito,sans-serif;color:#3FA98A;margin-top:4px;">23</div></div>
+              <div style="background:#D8F0E6;border-radius:10px;padding:10px 3px;text-align:center;"><div style="font:700 9px/1 Nunito,sans-serif;color:#3FA98A;">T</div><div style="font:600 11px/1 Nunito,sans-serif;color:#3FA98A;margin-top:4px;">24</div></div>
+              <div style="background:#D8F0E6;border-radius:10px;padding:10px 3px;text-align:center;"><div style="font:700 9px/1 Nunito,sans-serif;color:#3FA98A;">W</div><div style="font:600 11px/1 Nunito,sans-serif;color:#3FA98A;margin-top:4px;">25</div></div>
+              <div style="background:#FCE6D8;border-radius:10px;padding:10px 3px;text-align:center;"><div style="font:700 9px/1 Nunito,sans-serif;color:#D9824F;">T</div><div style="font:600 11px/1 Nunito,sans-serif;color:#D9824F;margin-top:4px;">26</div></div>
+              <div style="background:#FCE6D8;border-radius:10px;padding:10px 3px;text-align:center;"><div style="font:700 9px/1 Nunito,sans-serif;color:#D9824F;">F</div><div style="font:600 11px/1 Nunito,sans-serif;color:#D9824F;margin-top:4px;">27</div></div>
+              <div style="background:#FCE6D8;border-radius:10px;padding:10px 3px;text-align:center;opacity:.5;"><div style="font:700 9px/1 Nunito,sans-serif;color:#D9824F;">S</div><div style="font:600 11px/1 Nunito,sans-serif;color:#D9824F;margin-top:4px;">28</div></div>
+              <div style="background:#D8F0E6;border-radius:10px;padding:10px 3px;text-align:center;opacity:.5;"><div style="font:700 9px/1 Nunito,sans-serif;color:#3FA98A;">S</div><div style="font:600 11px/1 Nunito,sans-serif;color:#3FA98A;margin-top:4px;">29</div></div>
+            </div>
+          </div>
+          <!-- expenses -->
+          <div style="padding:0 20px 8px;">
+            <div style="font:700 11px/1 Nunito,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#9C9AB2;margin-bottom:10px;padding-left:4px;">Expenses</div>
+            <div style="background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(51,50,74,.07);overflow:hidden;">
+              <div style="padding:14px 16px;display:flex;gap:12px;align-items:center;border-bottom:1px solid rgba(51,50,74,.05);">
+                <div style="width:36px;height:36px;background:#FBE0EA;border-radius:11px;display:flex;align-items:center;justify-content:center;flex:none;color:#D46E97;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+                <div style="flex:1;"><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;">Doctor visit · €90</div><div style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;">50/50 split · Jun 15</div></div>
+                <div style="background:#FBE0EA;color:#D46E97;border-radius:999px;padding:4px 10px;font:700 10px/1 Nunito,sans-serif;white-space:nowrap;">Sam owes €45</div>
+              </div>
+              <div style="padding:14px 16px;display:flex;gap:12px;align-items:center;">
+                <div style="width:36px;height:36px;background:#D8F0E6;border-radius:11px;display:flex;align-items:center;justify-content:center;flex:none;color:#3FA98A;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+                <div style="flex:1;"><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;">Nursery fees · €240</div><div style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;">Split agreed · Jun 1</div></div>
+                <div style="background:#D8F0E6;color:#3FA98A;border-radius:999px;padding:4px 10px;font:700 10px/1 Nunito,sans-serif;">Settled ✓</div>
+              </div>
+            </div>
+          </div>
+          <!-- balance gauge -->
+          <div style="margin:8px 20px;background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(51,50,74,.07);padding:16px;">
+            <div style="font:700 12px/1 Nunito,sans-serif;color:#33324A;margin-bottom:10px;">Running balance</div>
+            <div style="height:10px;border-radius:999px;overflow:hidden;display:flex;margin-bottom:8px;">
+              <div style="flex:1;background:#D8F0E6;"></div>
+              <div style="width:2px;background:#F4F3FB;"></div>
+              <div style="flex:1;background:#FCE6D8;"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;"><span style="font:400 11px/1 Nunito,sans-serif;color:#3FA98A;">You paid €45</span><span style="font:700 11px/1 Nunito,sans-serif;color:#D9824F;">Sam owes €22.50</span></div>
+          </div>
+          <div style="padding:0 20px 16px;"><div style="background:#6B6FC9;color:#fff;padding:15px;border-radius:14px;font:800 15px/1 Nunito,sans-serif;text-align:center;box-shadow:0 4px 16px rgba(107,111,201,.3);">Settle Up · €22.50</div></div>
+          <div style="background:#fff;border-top:1px solid rgba(51,50,74,.06);padding:10px 8px 28px;display:flex;justify-content:space-around;align-items:center;"><div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="width:44px;height:32px;background:#E7E4FB;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#6B6FC9;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg></div><span style="font:600 9px/1 Nunito,sans-serif;color:#6B6FC9;letter-spacing:.04em;">Today</span></div><div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="width:44px;height:32px;display:flex;align-items:center;justify-content:center;color:#9C9AB2;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div><span style="font:600 9px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.04em;">Calendar</span></div><div style="width:52px;height:52px;background:#6B6FC9;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(107,111,201,.4);margin-top:-18px;flex:none;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div><div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="width:44px;height:32px;display:flex;align-items:center;justify-content:center;color:#9C9AB2;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="7" r="4"/><path d="M2 20c0-3.31 3.13-6 7-6s7 2.69 7 6"/><circle cx="19" cy="9" r="2.5"/><path d="M16 20c0-2.21 1.35-4 3-4s3 1.79 3 4"/></svg></div><span style="font:600 9px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.04em;">Family</span></div><div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="width:44px;height:32px;display:flex;align-items:center;justify-content:center;color:#9C9AB2;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></div><span style="font:600 9px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.04em;">Settings</span></div></div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ═══════════════════════════════
+         10 — LIFELONG TIMELINE
+    ═══════════════════════════════ -->
+    <div style="flex:none;width:390px;">
+      <div style="font:700 11px/1 Nunito,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#4A4670;margin-bottom:12px;">10 · Lifelong Timeline</div>
+      <div style="width:390px;border-radius:44px;overflow:hidden;box-shadow:0 28px 72px rgba(20,18,50,.22);">
+        <div style="background:#F4F3FB;display:flex;flex-direction:column;">
+          <div style="padding:14px 26px 8px;display:flex;justify-content:space-between;align-items:center;color:#33324A;"><span style="font:700 14px/1 Nunito,sans-serif;">9:41</span><div style="display:flex;gap:5px;align-items:center;"><svg width="16" height="11" viewBox="0 0 16 11" fill="#33324A"><rect x="0" y="6" width="3" height="5" rx=".7"/><rect x="4.5" y="4" width="3" height="7" rx=".7"/><rect x="9" y="2" width="3" height="9" rx=".7"/><rect x="13.5" y="0" width="2.5" height="11" rx=".7"/></svg><svg width="15" height="11" viewBox="0 0 15 11" fill="none" stroke="#33324A" stroke-linecap="round"><circle cx="7.5" cy="10.2" r=".9" fill="#33324A" stroke="none"/><path d="M4.5 7.5Q7.5 5 10.5 7.5" stroke-width="1.4"/><path d="M2 4.8Q7.5 1 13 4.8" stroke-width="1.4"/></svg><svg width="23" height="12" viewBox="0 0 23 12" fill="none"><rect x=".6" y=".6" width="18.8" height="10.8" rx="2.8" stroke="#33324A" stroke-width="1.2"/><rect x="2" y="2" width="14" height="8" rx="1.5" fill="#33324A"/><path d="M20 4v4" stroke="#33324A" stroke-width="1.5" stroke-linecap="round"/></svg></div></div>
+          <div style="padding:12px 24px 16px;display:flex;align-items:center;justify-content:space-between;"><div><div style="font:700 20px/1 Quicksand,sans-serif;color:#33324A;">Oliver's story</div><div style="font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:5px;">4 months · 12 moments</div></div><div style="width:36px;height:36px;background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(51,50,74,.08);display:flex;align-items:center;justify-content:center;color:#6B6FC9;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div></div>
+          <!-- timeline entries -->
+          <div style="padding:0 20px 16px;position:relative;">
+            <!-- spine line -->
+            <div style="position:absolute;left:36px;top:0;bottom:0;width:2px;background:linear-gradient(to bottom,#6B6FC9,rgba(107,111,201,.2));border-radius:999px;"></div>
+            <!-- Milestone 1 -->
+            <div style="display:flex;gap:14px;align-items:flex-start;margin-bottom:14px;position:relative;">
+              <div style="width:28px;height:28px;background:#6B6FC9;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;z-index:1;margin-top:8px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="white"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></div>
+              <div style="flex:1;background:#fff;border-radius:16px;box-shadow:0 3px 16px rgba(51,50,74,.07);padding:14px 16px;">
+                <div style="font:400 10px/1 Nunito,sans-serif;color:#9C9AB2;margin-bottom:5px;">6 weeks · May 4</div>
+                <div style="font:700 14px/1 Nunito,sans-serif;color:#33324A;margin-bottom:3px;">First smile ✨</div>
+                <div style="font:400 12px/1.4 Nunito,sans-serif;color:#6F6E86;">Oliver gave his first big smile — unprompted, 6:14am.</div>
+              </div>
+            </div>
+            <!-- Milestone 2 -->
+            <div style="display:flex;gap:14px;align-items:flex-start;margin-bottom:14px;position:relative;">
+              <div style="width:28px;height:28px;background:#E7E4FB;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;z-index:1;margin-top:8px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="#6B6FC9" stroke="none"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></div>
+              <div style="flex:1;background:#fff;border-radius:16px;box-shadow:0 3px 16px rgba(51,50,74,.07);padding:14px 16px;">
+                <div style="font:400 10px/1 Nunito,sans-serif;color:#9C9AB2;margin-bottom:5px;">3 weeks · Apr 13</div>
+                <div style="font:700 14px/1 Nunito,sans-serif;color:#33324A;margin-bottom:3px;">First bath at home</div>
+                <div style="display:flex;gap:6px;margin-top:8px;"><div style="width:48px;height:36px;background:#E7E4FB;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#6B6FC9;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M8 8V5a2 2 0 0 1 4 0v3"/></svg></div><div style="width:48px;height:36px;background:#D8F0E6;border-radius:8px;"></div></div>
+              </div>
+            </div>
+            <!-- Milestone 3 -->
+            <div style="display:flex;gap:14px;align-items:flex-start;margin-bottom:14px;position:relative;">
+              <div style="width:28px;height:28px;background:#E7E4FB;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;z-index:1;margin-top:8px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6B6FC9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg></div>
+              <div style="flex:1;background:#fff;border-radius:16px;box-shadow:0 3px 16px rgba(51,50,74,.07);padding:14px 16px;">
+                <div style="font:400 10px/1 Nunito,sans-serif;color:#9C9AB2;margin-bottom:5px;">17 weeks · Jun 18</div>
+                <div style="font:700 14px/1 Nunito,sans-serif;color:#33324A;margin-bottom:3px;">First solids — sweet potato</div>
+                <div style="font:400 12px/1.4 Nunito,sans-serif;color:#6F6E86;">Not sure about it. Made the face.</div>
+              </div>
+            </div>
+            <!-- Add milestone button -->
+            <div style="display:flex;gap:14px;align-items:center;margin-bottom:14px;position:relative;">
+              <div style="width:28px;height:28px;background:#F4F3FB;border-radius:50%;border:2px dashed #C8C6DC;display:flex;align-items:center;justify-content:center;flex:none;z-index:1;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9C9AB2" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+              <div style="font:600 13px/1 Nunito,sans-serif;color:#9C9AB2;">Add a memory…</div>
+            </div>
+          </div>
+          <!-- keepsake button -->
+          <div style="padding:0 20px 20px;">
+            <div style="border:1.5px solid #6B6FC9;color:#6B6FC9;padding:15px;border-radius:14px;font:700 15px/1 Nunito,sans-serif;display:flex;align-items:center;justify-content:center;gap:9px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Create Keepsake Book</div>
+          </div>
+          <div style="background:#fff;border-top:1px solid rgba(51,50,74,.06);padding:10px 8px 28px;display:flex;justify-content:space-around;align-items:center;"><div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="width:44px;height:32px;display:flex;align-items:center;justify-content:center;color:#9C9AB2;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg></div><span style="font:600 9px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.04em;">Today</span></div><div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="width:44px;height:32px;display:flex;align-items:center;justify-content:center;color:#9C9AB2;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div><span style="font:600 9px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.04em;">Calendar</span></div><div style="width:52px;height:52px;background:#6B6FC9;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(107,111,201,.4);margin-top:-18px;flex:none;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div><div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="width:44px;height:32px;background:#E7E4FB;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#6B6FC9;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="7" r="4"/><path d="M2 20c0-3.31 3.13-6 7-6s7 2.69 7 6"/><circle cx="19" cy="9" r="2.5"/><path d="M16 20c0-2.21 1.35-4 3-4s3 1.79 3 4"/></svg></div><span style="font:600 9px/1 Nunito,sans-serif;color:#6B6FC9;letter-spacing:.04em;">Family</span></div><div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="width:44px;height:32px;display:flex;align-items:center;justify-content:center;color:#9C9AB2;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></div><span style="font:600 9px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.04em;">Settings</span></div></div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ═══════════════════════════════
+         11 — PAYWALL / PLANS
+    ═══════════════════════════════ -->
+    <div style="flex:none;width:390px;">
+      <div style="font:700 11px/1 Nunito,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#4A4670;margin-bottom:12px;">11 · Plans</div>
+      <div style="width:390px;border-radius:44px;overflow:hidden;box-shadow:0 28px 72px rgba(20,18,50,.22);">
+        <div style="background:#F4F3FB;display:flex;flex-direction:column;">
+          <div style="padding:14px 26px 8px;display:flex;justify-content:space-between;align-items:center;color:#33324A;"><span style="font:700 14px/1 Nunito,sans-serif;">9:41</span><div style="display:flex;gap:5px;align-items:center;"><svg width="16" height="11" viewBox="0 0 16 11" fill="#33324A"><rect x="0" y="6" width="3" height="5" rx=".7"/><rect x="4.5" y="4" width="3" height="7" rx=".7"/><rect x="9" y="2" width="3" height="9" rx=".7"/><rect x="13.5" y="0" width="2.5" height="11" rx=".7"/></svg><svg width="15" height="11" viewBox="0 0 15 11" fill="none" stroke="#33324A" stroke-linecap="round"><circle cx="7.5" cy="10.2" r=".9" fill="#33324A" stroke="none"/><path d="M4.5 7.5Q7.5 5 10.5 7.5" stroke-width="1.4"/><path d="M2 4.8Q7.5 1 13 4.8" stroke-width="1.4"/></svg><svg width="23" height="12" viewBox="0 0 23 12" fill="none"><rect x=".6" y=".6" width="18.8" height="10.8" rx="2.8" stroke="#33324A" stroke-width="1.2"/><rect x="2" y="2" width="14" height="8" rx="1.5" fill="#33324A"/><path d="M20 4v4" stroke="#33324A" stroke-width="1.5" stroke-linecap="round"/></svg></div></div>
+          <div style="padding:12px 24px 20px;text-align:center;">
+            <div style="font:700 26px/1.1 Quicksand,sans-serif;color:#33324A;margin-bottom:6px;">Keep going — track Oliver too</div>
+            <div style="font:400 13px/1.5 Nunito,sans-serif;color:#6F6E86;"><b style="color:#3A9B8A;">Mum&amp;Me is always free.</b> This unlocks baby tracking &amp; the rest of the family.</div>
+          </div>
+          <!-- plans -->
+          <div style="padding:0 20px;display:flex;flex-direction:column;gap:8px;">
+            <!-- Free -->
+            <div style="background:#fff;border-radius:18px;border:1.5px solid rgba(51,50,74,.08);padding:16px;">
+              <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;"><div style="display:flex;align-items:center;gap:7px;"><div style="font:700 15px/1 Nunito,sans-serif;color:#33324A;">Mum&amp;Me + Safety</div><span style="background:#D4EDE7;color:#2C8475;border-radius:999px;padding:3px 9px;font:700 9px/1 Nunito,sans-serif;">Free forever</span></div><div style="font:700 22px/1 Quicksand,sans-serif;color:#33324A;">€0</div></div>
+              <div style="display:flex;flex-direction:column;gap:5px;"><div style="display:flex;gap:7px;align-items:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#3FA98A" stroke-width="2.5" stroke-linecap="round"><path d="M5 13l4 4L19 7"/></svg><span style="font:400 12px/1 Nunito,sans-serif;color:#6F6E86;">Pregnancy + postpartum + maternal arc</span></div><div style="display:flex;gap:7px;align-items:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#3FA98A" stroke-width="2.5" stroke-linecap="round"><path d="M5 13l4 4L19 7"/></svg><span style="font:400 12px/1 Nunito,sans-serif;color:#6F6E86;">Kick counter, contractions, EPDS — never gated</span></div><div style="display:flex;gap:7px;align-items:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9C9AB2" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14"/></svg><span style="font:600 12px/1 Nunito,sans-serif;color:#3A9B8A;">You're already here</span></div></div>
+            </div>
+            <!-- Pro (highlighted) -->
+            <div style="background:#F0EFFF;border-radius:18px;border:2px solid #6B6FC9;padding:16px;position:relative;">
+              <div style="position:absolute;top:-1px;right:16px;background:#6B6FC9;color:#fff;border-radius:0 0 10px 10px;padding:4px 12px;font:700 10px/1 Nunito,sans-serif;">RECOMMENDED</div>
+              <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;margin-top:6px;"><div style="font:700 15px/1 Nunito,sans-serif;color:#33324A;">Everly Pro</div><div><span style="font:700 22px/1 Quicksand,sans-serif;color:#6B6FC9;">€3.99</span><span style="font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;">/mo</span></div></div>
+              <div style="display:flex;flex-direction:column;gap:5px;"><div style="display:flex;gap:7px;align-items:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="#6B6FC9"><path d="M5 13l4 4L19 7" fill="none" stroke="#6B6FC9" stroke-width="2.5" stroke-linecap="round"/></svg><span style="font:600 12px/1 Nunito,sans-serif;color:#33324A;">Unlimited children</span></div><div style="display:flex;gap:7px;align-items:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6B6FC9" stroke-width="2.5" stroke-linecap="round"><path d="M5 13l4 4L19 7"/></svg><span style="font:600 12px/1 Nunito,sans-serif;color:#33324A;">Snap to Schedule · Health Hub</span></div><div style="display:flex;gap:7px;align-items:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6B6FC9" stroke-width="2.5" stroke-linecap="round"><path d="M5 13l4 4L19 7"/></svg><span style="font:600 12px/1 Nunito,sans-serif;color:#33324A;">Routines · Timeline export</span></div></div>
+            </div>
+            <!-- Family -->
+            <div style="background:#fff;border-radius:18px;border:1.5px solid rgba(51,50,74,.08);padding:16px;">
+              <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;"><div style="font:700 15px/1 Nunito,sans-serif;color:#33324A;">Family</div><div><span style="font:700 22px/1 Quicksand,sans-serif;color:#33324A;">€4.99</span><span style="font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;">/mo</span></div></div>
+              <div style="display:flex;flex-direction:column;gap:5px;"><div style="display:flex;gap:7px;align-items:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#3FA98A" stroke-width="2.5" stroke-linecap="round"><path d="M5 13l4 4L19 7"/></svg><span style="font:400 12px/1 Nunito,sans-serif;color:#6F6E86;">Everything in Pro</span></div><div style="display:flex;gap:7px;align-items:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#3FA98A" stroke-width="2.5" stroke-linecap="round"><path d="M5 13l4 4L19 7"/></svg><span style="font:400 12px/1 Nunito,sans-serif;color:#6F6E86;">Multi-caregiver · Co-parent mode</span></div></div>
+            </div>
+            <!-- Lifetime -->
+            <div style="background:#fff;border-radius:18px;border:1.5px solid #E9C46A;padding:16px;position:relative;">
+              <div style="position:absolute;top:-1px;right:16px;background:#E9C46A;color:#7A5A00;border-radius:0 0 10px 10px;padding:4px 10px;font:700 10px/1 Nunito,sans-serif;">BEST VALUE</div>
+              <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;margin-top:6px;"><div style="font:700 15px/1 Nunito,sans-serif;color:#33324A;">Lifetime</div><div style="font:700 22px/1 Quicksand,sans-serif;color:#C9A33B;">€149.99</div></div>
+              <div style="font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;">One-time · All features · Forever</div>
+            </div>
+          </div>
+          <!-- CTA -->
+          <div style="padding:16px 20px 8px;"><div style="background:#6B6FC9;color:#fff;padding:17px;border-radius:15px;font:800 16px/1 Nunito,sans-serif;text-align:center;box-shadow:0 6px 20px rgba(107,111,201,.35);">Start 30-day free trial</div></div>
+          <div style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;text-align:center;padding:8px 20px 24px;">Mum&amp;Me &amp; safety free forever · No card needed · No account</div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ═══════════════════════════════
+         12 — SETTINGS
+    ═══════════════════════════════ -->
+    <div style="flex:none;width:390px;">
+      <div style="font:700 11px/1 Nunito,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#4A4670;margin-bottom:12px;">12 · Settings</div>
+      <div style="width:390px;border-radius:44px;overflow:hidden;box-shadow:0 28px 72px rgba(20,18,50,.22);">
+        <div style="background:#F4F3FB;display:flex;flex-direction:column;">
+          <div style="padding:14px 26px 8px;display:flex;justify-content:space-between;align-items:center;color:#33324A;"><span style="font:700 14px/1 Nunito,sans-serif;">9:41</span><div style="display:flex;gap:5px;align-items:center;"><svg width="16" height="11" viewBox="0 0 16 11" fill="#33324A"><rect x="0" y="6" width="3" height="5" rx=".7"/><rect x="4.5" y="4" width="3" height="7" rx=".7"/><rect x="9" y="2" width="3" height="9" rx=".7"/><rect x="13.5" y="0" width="2.5" height="11" rx=".7"/></svg><svg width="15" height="11" viewBox="0 0 15 11" fill="none" stroke="#33324A" stroke-linecap="round"><circle cx="7.5" cy="10.2" r=".9" fill="#33324A" stroke="none"/><path d="M4.5 7.5Q7.5 5 10.5 7.5" stroke-width="1.4"/><path d="M2 4.8Q7.5 1 13 4.8" stroke-width="1.4"/></svg><svg width="23" height="12" viewBox="0 0 23 12" fill="none"><rect x=".6" y=".6" width="18.8" height="10.8" rx="2.8" stroke="#33324A" stroke-width="1.2"/><rect x="2" y="2" width="14" height="8" rx="1.5" fill="#33324A"/><path d="M20 4v4" stroke="#33324A" stroke-width="1.5" stroke-linecap="round"/></svg></div></div>
+          <div style="padding:12px 24px 20px;"><div style="font:700 24px/1 Quicksand,sans-serif;color:#33324A;">Settings</div></div>
+          <!-- Account card -->
+          <div style="margin:0 20px 8px;background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(51,50,74,.07);padding:16px;display:flex;align-items:center;gap:14px;">
+            <div style="width:52px;height:52px;background:#E7E4FB;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;"><svg width="26" height="26" viewBox="0 0 20 20" fill="#6B6FC9"><circle cx="10" cy="7.5" r="5.5"/><path d="M1.5 19Q1.5 13 10 13Q18.5 13 18.5 19Z"/></svg></div>
+            <div style="flex:1;"><div style="font:700 16px/1 Nunito,sans-serif;color:#33324A;">Emma Wilson</div><div style="font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:4px;">emma@gmail.com</div></div>
+            <div style="background:#E7E4FB;color:#6B6FC9;border-radius:999px;padding:5px 12px;font:700 11px/1 Nunito,sans-serif;">Pro</div>
+          </div>
+          <!-- Plan & Billing -->
+          <div style="margin:0 20px 16px;background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(51,50,74,.07);overflow:hidden;">
+            <div style="padding:14px 16px;display:flex;justify-content:space-between;align-items:center;"><div style="display:flex;gap:10px;align-items:center;"><div style="width:34px;height:34px;background:#FBF1CE;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#C9A33B;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div><div><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;">Plan &amp; Billing</div><div style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:3px;">Pro · €3.99/mo · Renews Jul 23</div></div></div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9C9AB2" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+          </div>
+          <!-- Preferences -->
+          <div style="padding:0 20px 8px;"><div style="font:700 11px/1 Nunito,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#9C9AB2;margin-bottom:8px;padding-left:4px;">Preferences</div></div>
+          <div style="margin:0 20px 16px;background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(51,50,74,.07);overflow:hidden;">
+            <div style="padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(51,50,74,.05);"><div style="display:flex;gap:10px;align-items:center;"><div style="width:34px;height:34px;background:#E7E4FB;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#6B6FC9;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;">Language</div></div><div style="display:flex;align-items:center;gap:6px;"><span style="font:400 13px/1 Nunito,sans-serif;color:#9C9AB2;">English</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9C9AB2" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div></div>
+            <div style="padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(51,50,74,.05);"><div style="display:flex;gap:10px;align-items:center;"><div style="width:34px;height:34px;background:#D8F0E6;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#3FA98A;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></svg></div><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;">Currency</div></div><div style="display:flex;align-items:center;gap:6px;"><span style="font:400 13px/1 Nunito,sans-serif;color:#9C9AB2;">EUR €</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9C9AB2" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div></div>
+            <div style="padding:14px 16px;display:flex;justify-content:space-between;align-items:center;">
+              <div style="display:flex;gap:10px;align-items:center;"><div style="width:34px;height:34px;background:#262539;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#EDEBFA;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></div><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;">Night mode</div></div>
+              <div style="width:44px;height:24px;background:#6B6FC9;border-radius:999px;position:relative;flex:none;"><div style="width:20px;height:20px;background:white;border-radius:50%;position:absolute;right:2px;top:2px;box-shadow:0 1px 4px rgba(0,0,0,.2);"></div></div>
+            </div>
+          </div>
+          <!-- Notifications -->
+          <div style="padding:0 20px 8px;"><div style="font:700 11px/1 Nunito,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#9C9AB2;margin-bottom:8px;padding-left:4px;">Notifications</div></div>
+          <div style="margin:0 20px 16px;background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(51,50,74,.07);overflow:hidden;">
+            <div style="padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(51,50,74,.05);"><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;">Wake-window reminders</div><div style="width:44px;height:24px;background:#6B6FC9;border-radius:999px;position:relative;flex:none;"><div style="width:20px;height:20px;background:white;border-radius:50%;position:absolute;right:2px;top:2px;box-shadow:0 1px 4px rgba(0,0,0,.2);"></div></div></div>
+            <div style="padding:14px 16px;display:flex;justify-content:space-between;align-items:center;"><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;">Vaccine due reminders</div><div style="width:44px;height:24px;background:#6B6FC9;border-radius:999px;position:relative;flex:none;"><div style="width:20px;height:20px;background:white;border-radius:50%;position:absolute;right:2px;top:2px;box-shadow:0 1px 4px rgba(0,0,0,.2);"></div></div></div>
+          </div>
+          <!-- Data & Privacy -->
+          <div style="padding:0 20px 8px;"><div style="font:700 11px/1 Nunito,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#9C9AB2;margin-bottom:8px;padding-left:4px;">Data &amp; Privacy</div></div>
+          <div style="margin:0 20px 8px;background:#E7E4FB;border-radius:18px;padding:14px 16px;display:flex;gap:10px;align-items:flex-start;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6B6FC9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+            <div><div style="font:700 13px/1 Nunito,sans-serif;color:#54579E;margin-bottom:4px;">Your data lives on this device</div><div style="font:400 11px/1.5 Nunito,sans-serif;color:#6B6FC9;">No cloud, no tracking. You control everything.</div></div>
+          </div>
+          <div style="margin:8px 20px 16px;background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(51,50,74,.07);overflow:hidden;">
+            <div style="padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(51,50,74,.05);"><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;">Export all data</div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9C9AB2" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+            <div style="padding:14px 16px;display:flex;justify-content:space-between;align-items:center;"><div style="font:700 13px/1 Nunito,sans-serif;color:#E98FB3;">Delete all local data</div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E98FB3" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+          </div>
+          <div style="background:#fff;border-top:1px solid rgba(51,50,74,.06);padding:10px 8px 28px;display:flex;justify-content:space-around;align-items:center;"><div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="width:44px;height:32px;display:flex;align-items:center;justify-content:center;color:#9C9AB2;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg></div><span style="font:600 9px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.04em;">Today</span></div><div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="width:44px;height:32px;display:flex;align-items:center;justify-content:center;color:#9C9AB2;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div><span style="font:600 9px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.04em;">Calendar</span></div><div style="width:52px;height:52px;background:#6B6FC9;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(107,111,201,.4);margin-top:-18px;flex:none;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div><div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="width:44px;height:32px;display:flex;align-items:center;justify-content:center;color:#9C9AB2;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="7" r="4"/><path d="M2 20c0-3.31 3.13-6 7-6s7 2.69 7 6"/><circle cx="19" cy="9" r="2.5"/><path d="M16 20c0-2.21 1.35-4 3-4s3 1.79 3 4"/></svg></div><span style="font:600 9px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.04em;">Family</span></div><div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="width:44px;height:32px;background:#E7E4FB;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#6B6FC9;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></div><span style="font:600 9px/1 Nunito,sans-serif;color:#6B6FC9;letter-spacing:.04em;">Settings</span></div></div>
+        </div>
+      </div>
+    </div>
+
+
+
+
+    <!-- ═══════════════════════════════
+         13 — CHILD PROFILE · SCHOOL AGE
+    ═══════════════════════════════ -->
+    <div style="flex:none;width:390px;">
+      <div style="font:700 11px/1 Nunito,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#4A4670;margin-bottom:12px;">13 · Child Profile · School Age</div>
+      <div style="width:390px;border-radius:44px;overflow:hidden;box-shadow:0 28px 72px rgba(20,18,50,.22);">
+        <div style="background:#F4F3FB;display:flex;flex-direction:column;">
+          <div style="padding:14px 26px 8px;display:flex;justify-content:space-between;align-items:center;color:#33324A;"><span style="font:700 14px/1 Nunito,sans-serif;">9:41</span><div style="display:flex;gap:5px;align-items:center;"><svg width="16" height="11" viewBox="0 0 16 11" fill="#33324A"><rect x="0" y="6" width="3" height="5" rx=".7"/><rect x="4.5" y="4" width="3" height="7" rx=".7"/><rect x="9" y="2" width="3" height="9" rx=".7"/><rect x="13.5" y="0" width="2.5" height="11" rx=".7"/></svg><svg width="15" height="11" viewBox="0 0 15 11" fill="none" stroke="#33324A" stroke-linecap="round"><circle cx="7.5" cy="10.2" r=".9" fill="#33324A" stroke="none"/><path d="M4.5 7.5Q7.5 5 10.5 7.5" stroke-width="1.4"/><path d="M2 4.8Q7.5 1 13 4.8" stroke-width="1.4"/></svg><svg width="23" height="12" viewBox="0 0 23 12" fill="none"><rect x=".6" y=".6" width="18.8" height="10.8" rx="2.8" stroke="#33324A" stroke-width="1.2"/><rect x="2" y="2" width="14" height="8" rx="1.5" fill="#33324A"/><path d="M20 4v4" stroke="#33324A" stroke-width="1.5" stroke-linecap="round"/></svg></div></div>
+          <!-- header: Mia, school -->
+          <div style="padding:12px 24px 16px;display:flex;align-items:center;gap:14px;">
+            <div style="width:56px;height:56px;background:#E7E4FB;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;"><svg width="28" height="32" viewBox="0 0 20 22" fill="#6B6FC9"><circle cx="10" cy="6.5" r="5.5"/><path d="M1.5 21Q1.5 14 10 14Q18.5 14 18.5 21Z"/></svg></div>
+            <div><div style="font:700 22px/1 Quicksand,sans-serif;color:#33324A;">Mia</div><div style="font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:5px;">Mar 15, 2020 · 6 years</div></div>
+            <div style="margin-left:auto;background:#6B6FC9;color:#fff;border-radius:999px;padding:7px 16px;font:700 12px/1 Nunito,sans-serif;">School</div>
+          </div>
+          <!-- stage spine: School active -->
+          <div style="padding:0 20px 16px;">
+            <div style="display:flex;background:#fff;border-radius:16px;box-shadow:0 3px 16px rgba(51,50,74,.07);overflow:hidden;">
+              <div style="flex:1;padding:10px 4px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;border-right:1px solid rgba(51,50,74,.06);"><svg viewBox="0 0 12 15" fill="#C8C6DC" width="10" height="13"><circle cx="6" cy="4" r="3.2"/><path d="M1.5 13Q1.5 9.5 6 9.5Q9.5 9.5 10.5 11Q11.5 13 9 13Z"/></svg><div style="font:700 8px/1 Nunito,sans-serif;color:#C8C6DC;">Expecting</div></div><div style="flex:1;padding:10px 4px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;border-right:1px solid rgba(51,50,74,.06);"><svg viewBox="0 0 12 16" fill="#C8C6DC" width="10" height="14"><ellipse cx="6" cy="5.5" rx="4" ry="5"/><path d="M1.5 15Q1.5 11 6 11Q10.5 11 10.5 15Z"/></svg><div style="font:700 8px/1 Nunito,sans-serif;color:#C8C6DC;">Newborn</div></div>
+              <div style="flex:1;padding:12px 6px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;border-right:1px solid rgba(51,50,74,.06);"><svg viewBox="0 0 14 18" fill="#C8C6DC" width="12" height="16"><ellipse cx="7" cy="6" rx="4.5" ry="5.5"/><path d="M1.5 17Q1.5 12 7 12Q12.5 12 12.5 17Z"/></svg><div style="font:700 9px/1 Nunito,sans-serif;color:#C8C6DC;">Baby</div></div>
+              <div style="flex:1;padding:12px 6px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;border-right:1px solid rgba(51,50,74,.06);"><svg viewBox="0 0 15 19" fill="#C8C6DC" width="13" height="17"><ellipse cx="7.5" cy="6.5" rx="5" ry="6"/><path d="M1.5 18Q1.5 13 7.5 13Q13.5 13 13.5 18Z"/></svg><div style="font:700 9px/1 Nunito,sans-serif;color:#C8C6DC;">Preschool</div></div>
+              <div style="flex:1;padding:12px 6px;background:#E7E4FB;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;border-right:1px solid rgba(51,50,74,.08);"><svg viewBox="0 0 16 21" fill="#6B6FC9" width="14" height="18"><ellipse cx="8" cy="6.5" rx="5.5" ry="6"/><path d="M1.5 20Q1.5 13.5 8 13.5Q14.5 13.5 14.5 20Z"/></svg><div style="font:700 9px/1 Nunito,sans-serif;color:#6B6FC9;">School</div></div>
+              <div style="flex:1;padding:12px 6px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;"><svg viewBox="0 0 17 23" fill="#C8C6DC" width="15" height="20"><ellipse cx="8.5" cy="7" rx="5.5" ry="6.5"/><path d="M1.5 22Q1.5 14.5 8.5 14.5Q15.5 14.5 15.5 22Z"/></svg><div style="font:700 9px/1 Nunito,sans-serif;color:#C8C6DC;">Teen</div></div>
+            </div>
+          </div>
+          <!-- school-age stats -->
+          <div style="padding:0 20px 16px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+            <div style="background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(51,50,74,.07);padding:16px 10px;text-align:center;"><div style="font:700 26px/1 Quicksand,sans-serif;color:#33324A;">2</div><div style="font:400 9px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:5px;letter-spacing:.07em;text-transform:uppercase;">Homework</div><div style="font:400 10px/1 Nunito,sans-serif;color:#E98FB3;margin-top:5px;">due Fri</div></div>
+            <div style="background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(51,50,74,.07);padding:16px 10px;text-align:center;"><div style="font:700 26px/1 Quicksand,sans-serif;color:#33324A;">1</div><div style="font:400 9px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:5px;letter-spacing:.07em;text-transform:uppercase;">Activity</div><div style="font:400 10px/1 Nunito,sans-serif;color:#6B6FC9;margin-top:5px;">today</div></div>
+            <div style="background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(51,50,74,.07);padding:16px 10px;text-align:center;"><div style="font:700 26px/1 Quicksand,sans-serif;color:#33324A;">1/3</div><div style="font:400 9px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:5px;letter-spacing:.07em;text-transform:uppercase;">Chores</div><div style="font:400 10px/1 Nunito,sans-serif;color:#C9A33B;margin-top:5px;">done</div></div>
+          </div>
+          <!-- today's activity -->
+          <div style="padding:0 20px 16px;">
+            <div style="font:700 11px/1 Nunito,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#9C9AB2;margin-bottom:10px;padding-left:4px;">Today</div>
+            <div style="background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(51,50,74,.07);overflow:hidden;">
+              <div style="padding:14px 16px;display:flex;gap:12px;align-items:center;border-bottom:1px solid rgba(51,50,74,.05);"><div style="width:36px;height:36px;background:#E7E4FB;border-radius:11px;display:flex;align-items:center;justify-content:center;flex:none;color:#6B6FC9;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div><div style="flex:1;"><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;margin-bottom:2px;">Piano lesson</div><div style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;">15:30 · Music school</div></div><div style="background:#E7E4FB;color:#6B6FC9;border-radius:999px;padding:4px 10px;font:700 10px/1 Nunito,sans-serif;">Today</div></div>
+              <div style="padding:14px 16px;display:flex;gap:12px;align-items:center;border-bottom:1px solid rgba(51,50,74,.05);"><div style="width:36px;height:36px;background:#FBE0EA;border-radius:11px;display:flex;align-items:center;justify-content:center;flex:none;color:#D46E97;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div><div style="flex:1;"><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;margin-bottom:2px;">Science homework</div><div style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;">Due Fri · Chapter 4</div></div><div style="background:#FBE0EA;color:#D46E97;border-radius:999px;padding:4px 10px;font:700 10px/1 Nunito,sans-serif;">Fri</div></div>
+              <div style="padding:14px 16px;display:flex;gap:12px;align-items:center;"><div style="width:36px;height:36px;background:#D8F0E6;border-radius:11px;display:flex;align-items:center;justify-content:center;flex:none;color:#3FA98A;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></div><div style="flex:1;"><div style="font:700 13px/1 Nunito,sans-serif;color:#33324A;margin-bottom:2px;">Swim practice</div><div style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;">Yesterday · 45 min</div></div><div style="background:#D8F0E6;color:#3FA98A;border-radius:999px;padding:4px 10px;font:700 10px/1 Nunito,sans-serif;">Done ✓</div></div>
+            </div>
+          </div>
+          <div style="background:#fff;border-top:1px solid rgba(51,50,74,.06);padding:10px 8px 28px;display:flex;justify-content:space-around;align-items:center;"><div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="width:44px;height:32px;display:flex;align-items:center;justify-content:center;color:#9C9AB2;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg></div><span style="font:600 9px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.04em;">Today</span></div><div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="width:44px;height:32px;display:flex;align-items:center;justify-content:center;color:#9C9AB2;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div><span style="font:600 9px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.04em;">Calendar</span></div><div style="width:52px;height:52px;background:#6B6FC9;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(107,111,201,.4);margin-top:-18px;flex:none;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div><div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="width:44px;height:32px;background:#E7E4FB;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#6B6FC9;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="7" r="4"/><path d="M2 20c0-3.31 3.13-6 7-6s7 2.69 7 6"/><circle cx="19" cy="9" r="2.5"/><path d="M16 20c0-2.21 1.35-4 3-4s3 1.79 3 4"/></svg></div><span style="font:600 9px/1 Nunito,sans-serif;color:#6B6FC9;letter-spacing:.04em;">Family</span></div><div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="width:44px;height:32px;display:flex;align-items:center;justify-content:center;color:#9C9AB2;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></div><span style="font:600 9px/1 Nunito,sans-serif;color:#9C9AB2;letter-spacing:.04em;">Settings</span></div></div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ═══════════════════════════════
+         14 — NIGHT LOG · LIGHT MODE
+    ═══════════════════════════════ -->
+    <div style="flex:none;width:390px;">
+      <div style="font:700 11px/1 Nunito,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#4A4670;margin-bottom:12px;">14 · Night Log · Light Mode</div>
+      <div style="width:390px;border-radius:44px;overflow:hidden;box-shadow:0 28px 72px rgba(20,18,50,.18);">
+        <div style="background:#F4F3FB;display:flex;flex-direction:column;">
+          <!-- status bar light -->
+          <div style="padding:14px 26px 8px;display:flex;justify-content:space-between;align-items:center;color:#33324A;"><span style="font:700 14px/1 Nunito,sans-serif;">3:14</span><div style="display:flex;gap:5px;align-items:center;"><svg width="16" height="11" viewBox="0 0 16 11" fill="#33324A"><rect x="0" y="6" width="3" height="5" rx=".7"/><rect x="4.5" y="4" width="3" height="7" rx=".7"/><rect x="9" y="2" width="3" height="9" rx=".7"/><rect x="13.5" y="0" width="2.5" height="11" rx=".7"/></svg><svg width="15" height="11" viewBox="0 0 15 11" fill="none" stroke="#33324A" stroke-linecap="round"><circle cx="7.5" cy="10.2" r=".9" fill="#33324A" stroke="none"/><path d="M4.5 7.5Q7.5 5 10.5 7.5" stroke-width="1.4"/><path d="M2 4.8Q7.5 1 13 4.8" stroke-width="1.4"/></svg><svg width="23" height="12" viewBox="0 0 23 12" fill="none"><rect x=".6" y=".6" width="18.8" height="10.8" rx="2.8" stroke="#33324A" stroke-width="1.2"/><rect x="2" y="2" width="14" height="8" rx="1.5" fill="#33324A"/><path d="M20 4v4" stroke="#33324A" stroke-width="1.5" stroke-linecap="round"/></svg></div></div>
+          <!-- title -->
+          <div style="padding:10px 26px 18px;display:flex;align-items:center;gap:10px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9C9AB2" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <div style="font:700 18px/1 Quicksand,sans-serif;color:#33324A;">Night log</div>
+            <div style="font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;margin-left:auto;">Oliver · 4 mo</div>
+          </div>
+          <!-- wake-window banner (same periwinkle) -->
+          <div style="margin:0 20px 16px;background:linear-gradient(90deg,#5A5EB8,#7B7FCC);border-radius:16px;padding:14px 18px;display:flex;align-items:center;gap:12px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><div><div style="font:700 13px/1 Nunito,sans-serif;color:#fff;">Wake window</div><div style="font:400 12px/1.4 Nunito,sans-serif;color:rgba(255,255,255,.7);margin-top:3px;">Next nap in ~35 min</div></div><div style="margin-left:auto;background:rgba(255,255,255,.2);border-radius:999px;padding:4px 10px;font:700 10px/1 Nunito,sans-serif;color:#fff;white-space:nowrap;">Active</div></div>
+          <!-- 2×2 tiles: WHITE with soft shadow (light mode) -->
+          <div style="padding:0 20px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div style="background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(51,50,74,.08);padding:22px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;">
+              <div style="color:#3FA98A;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2h8"/><path d="M9 2v3a5.5 5.5 0 0 0-3 4.9V19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-9.1A5.5 5.5 0 0 0 15 5V2"/></svg></div>
+              <div style="font:700 15px/1 Nunito,sans-serif;color:#33324A;">Feed</div>
+              <div style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;">5:23 am · Left</div>
+            </div>
+            <div style="background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(51,50,74,.08);padding:22px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;">
+              <div style="color:#6B6FC9;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></div>
+              <div style="font:700 15px/1 Nunito,sans-serif;color:#33324A;">Sleep</div>
+              <div style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;">14h 20m today</div>
+            </div>
+            <div style="background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(51,50,74,.08);padding:22px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;">
+              <div style="color:#C9A33B;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8l4-4 4 4 4-4 4 4v8l-4 4-4-4-4 4-4-4V8z"/></svg></div>
+              <div style="font:700 15px/1 Nunito,sans-serif;color:#33324A;">Diaper</div>
+              <div style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;">Wet · 4:10 am</div>
+            </div>
+            <div style="background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(51,50,74,.08);padding:22px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;">
+              <div style="color:#D46E97;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></div>
+              <div style="font:700 15px/1 Nunito,sans-serif;color:#33324A;">Pump</div>
+              <div style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;">60 ml stash</div>
+            </div>
+          </div>
+          <!-- tallies: light -->
+          <div style="margin:16px 20px 32px;background:#fff;border-radius:16px;box-shadow:0 3px 16px rgba(51,50,74,.07);padding:14px 10px;display:flex;justify-content:space-around;align-items:center;">
+            <div style="text-align:center;"><div style="font:800 18px/1 Quicksand,sans-serif;color:#33324A;">6</div><div style="font:400 9px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:4px;letter-spacing:.06em;text-transform:uppercase;">feeds</div></div>
+            <div style="width:1px;height:28px;background:rgba(51,50,74,.08);"></div>
+            <div style="text-align:center;"><div style="font:800 18px/1 Quicksand,sans-serif;color:#33324A;">14h</div><div style="font:400 9px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:4px;letter-spacing:.06em;text-transform:uppercase;">sleep</div></div>
+            <div style="width:1px;height:28px;background:rgba(51,50,74,.08);"></div>
+            <div style="text-align:center;"><div style="font:800 18px/1 Quicksand,sans-serif;color:#33324A;">4</div><div style="font:400 9px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:4px;letter-spacing:.06em;text-transform:uppercase;">wet</div></div>
+            <div style="width:1px;height:28px;background:rgba(51,50,74,.08);"></div>
+            <div style="text-align:center;"><div style="font:800 18px/1 Quicksand,sans-serif;color:#33324A;">720</div><div style="font:400 9px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:4px;letter-spacing:.06em;text-transform:uppercase;">ml</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── section break ── -->
+    <div style="flex:none;display:flex;align-items:stretch;padding:0 8px;"><div style="width:1px;background:rgba(51,50,74,.12);min-height:200px;"></div></div>
+    <div style="flex:none;width:148px;display:flex;flex-direction:column;justify-content:center;gap:8px;padding-right:8px;">
+      <div style="font:700 10px/1 Nunito,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#6E6A90;">§ Secondary</div>
+      <div style="font:700 22px/1.1 Quicksand,sans-serif;color:#1E1C3A;">Fast-Follow<br/>Screens</div>
+      <div style="font:400 12px/1.5 Nunito,sans-serif;color:#9C9AB2;">Grocery · Digest · Timezone · Wellbeing · Voice · Share</div>
+    </div>
+
+    <!-- S1: GROCERY LIST -->
+    <div style="flex:none;width:390px;">
+      <div style="font:700 11px/1 Nunito,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#4A4670;margin-bottom:12px;">S1 · Grocery List</div>
+      <div style="width:390px;border-radius:44px;overflow:hidden;box-shadow:0 28px 72px rgba(20,18,50,.22);">
+        <div style="background:#F4F3FB;display:flex;flex-direction:column;">
+          <div style="padding:14px 26px 8px;display:flex;justify-content:space-between;align-items:center;color:#33324A;"><span style="font:700 14px/1 Nunito,sans-serif;">9:41</span></div>
+          <div style="padding:10px 24px 14px;display:flex;justify-content:space-between;align-items:center;"><div style="font:700 22px/1 Quicksand,sans-serif;color:#33324A;">Grocery list</div><div style="width:32px;height:32px;background:#E7E4FB;border-radius:50%;display:flex;align-items:center;justify-content:center;"><svg width="15" height="15" viewBox="0 0 20 20" fill="#6B6FC9"><circle cx="10" cy="7.5" r="5"/><path d="M2 19Q2 13 10 13Q18 13 18 19Z"/></svg></div></div>
+          <div style="padding:0 20px 12px;display:flex;gap:6px;"><div style="background:#6B6FC9;color:#fff;border-radius:999px;padding:7px 16px;font:700 12px/1 Nunito,sans-serif;">All</div><div style="background:#fff;color:#6F6E86;border-radius:999px;padding:7px 14px;font:600 12px/1 Nunito,sans-serif;border:1px solid rgba(51,50,74,.08);">Lidl</div><div style="background:#fff;color:#6F6E86;border-radius:999px;padding:7px 14px;font:600 12px/1 Nunito,sans-serif;border:1px solid rgba(51,50,74,.08);">Tesco</div><div style="background:#fff;color:#6F6E86;border-radius:999px;padding:7px 14px;font:600 12px/1 Nunito,sans-serif;border:1px solid rgba(51,50,74,.08);">Pharmacy</div></div>
+          <div style="margin:0 20px 12px;background:#E7E4FB;border-radius:14px;padding:10px 14px;display:flex;align-items:center;gap:10px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B6FC9" stroke-width="2" stroke-linecap="round"><path d="M12 22V10M12 10C12 6 8 3 4 5M12 10C12 6 16 3 20 5"/><circle cx="12" cy="4" r="2" fill="#6B6FC9" stroke="none"/></svg><span style="font:600 12px/1.4 Nunito,sans-serif;color:#54579E;flex:1;">Add items from this week's meal plan?</span><span style="font:700 12px/1 Nunito,sans-serif;color:#6B6FC9;white-space:nowrap;">Add →</span></div>
+          <div style="padding:0 20px;display:flex;flex-direction:column;gap:4px;">
+            <div style="font:700 11px/1 Nunito,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#9C9AB2;padding:5px 4px;">Fresh produce</div>
+            <div style="background:#fff;border-radius:14px;box-shadow:0 2px 8px rgba(51,50,74,.06);overflow:hidden;">
+              <div style="padding:12px 16px;display:flex;gap:12px;align-items:center;border-bottom:1px solid rgba(51,50,74,.04);"><div style="width:22px;height:22px;background:#F4F3FB;border-radius:50%;border:1.5px solid rgba(51,50,74,.12);flex:none;"></div><span style="flex:1;font:600 14px/1 Nunito,sans-serif;color:#33324A;">Bananas</span><span style="font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;">× 6</span></div>
+              <div style="padding:12px 16px;display:flex;gap:12px;align-items:center;border-bottom:1px solid rgba(51,50,74,.04);"><div style="width:22px;height:22px;background:#D8F0E6;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#3FA98A" stroke-width="2.5" stroke-linecap="round"><path d="M5 13l4 4L19 7"/></svg></div><span style="flex:1;font:600 14px/1 Nunito,sans-serif;color:#9C9AB2;text-decoration:line-through;">Apples</span><span style="font:400 12px/1 Nunito,sans-serif;color:#C8C6DC;">× 4</span></div>
+              <div style="padding:12px 16px;display:flex;gap:12px;align-items:center;"><div style="width:22px;height:22px;background:#F4F3FB;border-radius:50%;border:1.5px solid rgba(51,50,74,.12);flex:none;"></div><span style="flex:1;font:600 14px/1 Nunito,sans-serif;color:#33324A;">Avocados</span><span style="font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;">× 2</span></div>
+            </div>
+            <div style="font:700 11px/1 Nunito,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#9C9AB2;padding:5px 4px;">Baby / Oliver</div>
+            <div style="background:#fff;border-radius:14px;box-shadow:0 2px 8px rgba(51,50,74,.06);overflow:hidden;">
+              <div style="padding:12px 16px;display:flex;gap:12px;align-items:center;border-bottom:1px solid rgba(51,50,74,.04);"><div style="width:22px;height:22px;background:#F4F3FB;border-radius:50%;border:1.5px solid rgba(51,50,74,.12);flex:none;"></div><span style="flex:1;font:600 14px/1 Nunito,sans-serif;color:#33324A;">Whole milk</span><span style="font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;">× 2L</span></div>
+              <div style="padding:12px 16px;display:flex;gap:12px;align-items:center;"><div style="width:22px;height:22px;background:#F4F3FB;border-radius:50%;border:1.5px solid rgba(51,50,74,.12);flex:none;"></div><span style="flex:1;font:600 14px/1 Nunito,sans-serif;color:#33324A;">Formula tin</span><div style="background:#D8F0E6;color:#3FA98A;border-radius:999px;padding:3px 8px;font:700 10px/1 Nunito,sans-serif;">Oliver</div></div>
+            </div>
+          </div>
+          <div style="margin:12px 20px;background:#fff;border-radius:14px;padding:12px 16px;display:flex;gap:10px;align-items:center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B6FC9" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span style="font:400 14px/1 Nunito,sans-serif;color:#C8C6DC;">Add item…</span></div>
+          <div style="display:flex;justify-content:flex-end;padding:0 24px 32px;"><div style="width:52px;height:52px;background:#6B6FC9;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(107,111,201,.4);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- S2: WEEKLY DIGEST -->
+    <div style="flex:none;width:390px;">
+      <div style="font:700 11px/1 Nunito,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#4A4670;margin-bottom:12px;">S2 · Weekly Digest</div>
+      <div style="width:390px;border-radius:44px;overflow:hidden;box-shadow:0 28px 72px rgba(10,8,30,.45);">
+        <div style="background:linear-gradient(170deg,#1A1830 0%,#252240 60%,#1E2842 100%);min-height:720px;display:flex;flex-direction:column;align-items:center;padding:60px 28px 44px;position:relative;">
+          <div style="text-align:center;margin-bottom:44px;"><div style="font:300 72px/1 Quicksand,sans-serif;color:#fff;letter-spacing:-.02em;">9:41</div><div style="font:400 16px/1 Nunito,sans-serif;color:rgba(255,255,255,.5);margin-top:8px;">Monday, 23 June</div></div>
+          <div style="width:100%;background:rgba(255,255,255,.13);border-radius:20px;padding:16px 18px;border:1px solid rgba(255,255,255,.1);">
+            <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:12px;">
+              <div style="width:32px;height:32px;background:#76a878;border-radius:9px;display:flex;align-items:center;justify-content:center;flex:none;"><img src="logo-tree-white.svg" width="18" height="20" alt="Everly" style="display:block;object-fit:contain;"/></div>
+              <div style="flex:1;"><div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font:700 13px/1 Nunito,sans-serif;color:#fff;">Everly · Weekly digest</span><span style="font:400 11px/1 Nunito,sans-serif;color:rgba(255,255,255,.45);">now</span></div><div style="font:400 13px/1.5 Nunito,sans-serif;color:rgba(255,255,255,.75);">Your family's week ahead is ready</div></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;padding-top:12px;border-top:1px solid rgba(255,255,255,.1);">
+              <div style="display:flex;gap:8px;align-items:center;"><div style="width:6px;height:6px;background:#D8F0E6;border-radius:50%;flex:none;"></div><span style="font:400 12px/1.4 Nunito,sans-serif;color:rgba(255,255,255,.7);">Oliver · avg 14h sleep ↑ · 6 feeds/day</span></div>
+              <div style="display:flex;gap:8px;align-items:center;"><div style="width:6px;height:6px;background:#E7E4FB;border-radius:50%;flex:none;"></div><span style="font:400 12px/1.4 Nunito,sans-serif;color:rgba(255,255,255,.7);">Mia · 3 events this week · Piano Tue 15:30</span></div>
+              <div style="display:flex;gap:8px;align-items:center;"><div style="width:6px;height:6px;background:#FBE0EA;border-radius:50%;flex:none;"></div><span style="font:400 12px/1.4 Nunito,sans-serif;color:rgba(255,255,255,.7);">⚠ Oliver's vaccine due in 9 days</span></div>
+            </div>
+            <div style="margin-top:12px;background:rgba(107,111,201,.4);border-radius:10px;padding:8px;text-align:center;font:700 13px/1 Nunito,sans-serif;color:#fff;">Tap to open Everly →</div>
+          </div>
+          <div style="position:absolute;bottom:24px;left:50%;transform:translateX(-50%);width:120px;height:5px;background:rgba(255,255,255,.2);border-radius:3px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- S3: MULTI-TIMEZONE -->
+    <div style="flex:none;width:390px;">
+      <div style="font:700 11px/1 Nunito,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#4A4670;margin-bottom:12px;">S3 · Multi-Timezone</div>
+      <div style="width:390px;border-radius:44px;overflow:hidden;box-shadow:0 28px 72px rgba(20,18,50,.22);">
+        <div style="background:#F4F3FB;display:flex;flex-direction:column;">
+          <div style="padding:14px 26px 8px;color:#33324A;"><span style="font:700 14px/1 Nunito,sans-serif;">9:41</span></div>
+          <div style="padding:10px 24px 16px;"><div style="font:700 22px/1 Quicksand,sans-serif;color:#33324A;">Family · Timezones</div><div style="font:400 13px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:5px;">Mon, 23 Jun · 9:41 AM local</div></div>
+          <div style="margin:0 20px 18px;background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(51,50,74,.07);padding:16px 18px;">
+            <div style="font:700 11px/1 Nunito,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#9C9AB2;margin-bottom:12px;">24-hour timeline</div>
+            <div style="position:relative;height:22px;background:#F4F3FB;border-radius:8px;margin-bottom:18px;">
+              <div style="position:absolute;left:25%;top:0;bottom:0;width:1px;background:rgba(51,50,74,.1);"></div><div style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(51,50,74,.1);"></div><div style="position:absolute;left:75%;top:0;bottom:0;width:1px;background:rgba(51,50,74,.1);"></div>
+              <div style="position:absolute;left:40.3%;top:3px;bottom:3px;width:3px;background:#6B6FC9;border-radius:2px;"></div>
+              <div style="position:absolute;left:15.3%;top:3px;bottom:3px;width:3px;background:#E9C46A;border-radius:2px;"></div>
+              <div style="position:absolute;left:2%;bottom:-16px;font:400 9px/1 Nunito,sans-serif;color:#9C9AB2;">0</div><div style="position:absolute;left:25%;bottom:-16px;transform:translateX(-50%);font:400 9px/1 Nunito,sans-serif;color:#9C9AB2;">6am</div><div style="position:absolute;left:50%;bottom:-16px;transform:translateX(-50%);font:400 9px/1 Nunito,sans-serif;color:#9C9AB2;">noon</div><div style="position:absolute;left:75%;bottom:-16px;transform:translateX(-50%);font:400 9px/1 Nunito,sans-serif;color:#9C9AB2;">6pm</div>
+            </div>
+          </div>
+          <div style="padding:0 20px;display:flex;flex-direction:column;gap:8px;">
+            <div style="background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(51,50,74,.07);padding:14px 16px;display:flex;gap:12px;align-items:center;"><div style="width:40px;height:40px;background:#E7E4FB;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;"><svg width="20" height="20" viewBox="0 0 20 20" fill="#6B6FC9"><circle cx="10" cy="7.5" r="5"/><path d="M2 19Q2 13 10 13Q18 13 18 19Z"/></svg></div><div style="flex:1;"><div style="font:700 14px/1 Nunito,sans-serif;color:#33324A;">Emma · Dublin</div><div style="font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:3px;">UTC+1</div></div><div style="font:700 18px/1 Quicksand,sans-serif;color:#6B6FC9;">9:41 AM</div></div>
+            <div style="background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(51,50,74,.07);padding:14px 16px;display:flex;gap:12px;align-items:center;"><div style="width:40px;height:40px;background:#D8F0E6;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;"><svg width="20" height="20" viewBox="0 0 20 20" fill="#3FA98A"><circle cx="10" cy="7.5" r="5"/><path d="M2 19Q2 13 10 13Q18 13 18 19Z"/></svg></div><div style="flex:1;"><div style="font:700 14px/1 Nunito,sans-serif;color:#33324A;">Grandma Ruth · London</div><div style="font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:3px;">UTC+1</div></div><div style="font:700 18px/1 Quicksand,sans-serif;color:#33324A;">9:41 AM</div></div>
+            <div style="background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(51,50,74,.07);padding:14px 16px;display:flex;gap:12px;align-items:center;"><div style="width:40px;height:40px;background:#FBF1CE;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;"><svg width="20" height="20" viewBox="0 0 20 20" fill="#C9A33B"><circle cx="10" cy="7.5" r="5"/><path d="M2 19Q2 13 10 13Q18 13 18 19Z"/></svg></div><div style="flex:1;"><div style="font:700 14px/1 Nunito,sans-serif;color:#33324A;">Dad Dave · Chicago</div><div style="font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:3px;">UTC-6 · Sunday night</div></div><div style="text-align:right;"><div style="font:700 18px/1 Quicksand,sans-serif;color:#C9A33B;">3:41 AM</div><div style="font:400 10px/1 Nunito,sans-serif;color:#C9A33B;margin-top:2px;">😴 Asleep</div></div></div>
+          </div>
+          <div style="margin:12px 20px 32px;background:#FBF1CE;border-radius:14px;padding:11px 14px;font:400 12px/1.5 Nunito,sans-serif;color:#7A5A00;">Best time to call Dave: after 2pm his time (8pm yours)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- S5: WELLBEING NUDGE -->
+    <div style="flex:none;width:390px;">
+      <div style="font:700 11px/1 Nunito,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#4A4670;margin-bottom:12px;">S5 · Wellbeing Nudge</div>
+      <div style="width:390px;border-radius:44px;overflow:hidden;box-shadow:0 28px 72px rgba(20,18,50,.22);">
+        <div style="background:#F4F3FB;display:flex;flex-direction:column;position:relative;min-height:680px;">
+          <div style="opacity:.3;padding:14px 26px 8px;color:#33324A;font:700 14px/1 Nunito,sans-serif;">9:41</div>
+          <div style="opacity:.3;padding:8px 24px;font:700 20px/1 Quicksand,sans-serif;color:#33324A;">Good morning, Emma</div>
+          <div style="opacity:.3;padding:10px 20px;"><div style="background:#fff;border-radius:16px;padding:12px 14px;display:flex;gap:10px;align-items:center;"><div style="width:36px;height:36px;background:#D8F0E6;border-radius:10px;flex:none;"></div><div><div style="height:10px;background:#E7E4FB;border-radius:4px;width:120px;"></div><div style="height:8px;background:#F4F3FB;border-radius:3px;width:80px;margin-top:5px;"></div></div></div></div>
+          <div style="position:absolute;inset:0;background:rgba(26,24,48,.48);border-radius:44px;"></div>
+          <div style="position:absolute;bottom:0;left:0;right:0;background:#fff;border-radius:28px 28px 0 0;padding:20px 24px 40px;">
+            <div style="width:36px;height:4px;background:rgba(51,50,74,.12);border-radius:2px;margin:0 auto 20px;"></div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;"><div style="width:40px;height:40px;background:#D8F0E6;border-radius:13px;display:flex;align-items:center;justify-content:center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3FA98A" stroke-width="2" stroke-linecap="round"><path d="M12 22V10M12 10C12 6 8 3 4 5M12 10C12 6 16 3 20 5"/><circle cx="12" cy="4" r="2.5" fill="#3FA98A" stroke="none"/></svg></div><div><div style="font:700 16px/1 Quicksand,sans-serif;color:#33324A;">A gentle thought</div><div style="font:400 11px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:3px;">Based on Oliver's patterns this week</div></div></div>
+            <div style="background:#F4F3FB;border-radius:16px;padding:16px;margin-bottom:14px;"><p style="font:400 14px/1.65 Nunito,sans-serif;color:#33324A;margin:0;">Oliver has been sleeping better — <strong>+20 min</strong> avg this week. Wake-window reminders are working.</p></div>
+            <p style="font:400 13px/1.6 Nunito,sans-serif;color:#6F6E86;margin:0 0 18px;">Research suggests consistent sleep cues help babies self-settle by 4–6 months.</p>
+            <div style="display:flex;gap:10px;"><div style="flex:1;background:#F4F3FB;border-radius:14px;padding:13px;text-align:center;font:600 14px/1 Nunito,sans-serif;color:#9C9AB2;">Dismiss</div><div style="flex:2;background:#6B6FC9;border-radius:14px;padding:13px;text-align:center;font:700 14px/1 Nunito,sans-serif;color:#fff;">Save this tip</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- S6: VOICE ADD -->
+    <div style="flex:none;width:390px;">
+      <div style="font:700 11px/1 Nunito,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#4A4670;margin-bottom:12px;">S6 · Voice Add</div>
+      <div style="width:390px;border-radius:44px;overflow:hidden;box-shadow:0 28px 72px rgba(10,8,30,.4);">
+        <div style="background:rgba(26,24,48,.96);min-height:680px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;position:relative;">
+          <div style="position:absolute;top:52px;right:28px;font:600 14px/1 Nunito,sans-serif;color:rgba(237,235,250,.45);">Cancel</div>
+          <div style="position:absolute;top:14px;left:26px;font:700 14px/1 Nunito,sans-serif;color:rgba(237,235,250,.6);">3:14</div>
+          <div style="display:flex;flex-direction:column;align-items:center;">
+            <div style="position:relative;width:160px;height:160px;display:flex;align-items:center;justify-content:center;">
+              <div style="position:absolute;inset:0;border-radius:50%;border:1px solid rgba(107,111,201,.14);"></div>
+              <div style="position:absolute;inset:12px;border-radius:50%;border:1px solid rgba(107,111,201,.22);"></div>
+              <div style="position:absolute;inset:24px;border-radius:50%;border:1px solid rgba(107,111,201,.32);"></div>
+              <div style="width:88px;height:88px;background:#6B6FC9;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 0 40px rgba(107,111,201,.5);"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></div>
+            </div>
+            <div style="font:700 18px/1 Quicksand,sans-serif;color:#EDEBFA;margin-top:28px;">Listening…</div>
+            <div style="display:flex;gap:4px;align-items:center;height:36px;margin-top:16px;"><div style="width:4px;height:12px;background:rgba(107,111,201,.4);border-radius:2px;"></div><div style="width:4px;height:22px;background:rgba(107,111,201,.5);border-radius:2px;"></div><div style="width:4px;height:32px;background:#6B6FC9;border-radius:2px;"></div><div style="width:4px;height:20px;background:rgba(107,111,201,.6);border-radius:2px;"></div><div style="width:4px;height:28px;background:#6B6FC9;border-radius:2px;"></div><div style="width:4px;height:14px;background:rgba(107,111,201,.5);border-radius:2px;"></div><div style="width:4px;height:24px;background:#6B6FC9;border-radius:2px;"></div><div style="width:4px;height:18px;background:rgba(107,111,201,.5);border-radius:2px;"></div><div style="width:4px;height:30px;background:#6B6FC9;border-radius:2px;"></div><div style="width:4px;height:10px;background:rgba(107,111,201,.4);border-radius:2px;"></div></div>
+            <div style="margin-top:20px;background:rgba(107,111,201,.2);border-radius:14px;padding:12px 18px;text-align:center;width:100%;"><div style="font:400 14px/1.5 Nunito,sans-serif;color:#EDEBFA;">"Fed Oliver, left side…<span style="opacity:.5;">|</span>"</div></div>
+            <div style="margin-top:14px;text-align:center;"><div style="font:400 11px/1.5 Nunito,sans-serif;color:rgba(237,235,250,.4);">Try: "Log a feed, left side, 12 minutes"</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- S7: WHATSAPP SHARE -->
+    <div style="flex:none;width:390px;">
+      <div style="font:700 11px/1 Nunito,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#4A4670;margin-bottom:12px;">S7 · Share via WhatsApp</div>
+      <div style="width:390px;border-radius:44px;overflow:hidden;box-shadow:0 28px 72px rgba(20,18,50,.22);">
+        <div style="background:#F4F3FB;display:flex;flex-direction:column;position:relative;min-height:680px;">
+          <div style="opacity:.35;padding:14px 26px 8px;color:#33324A;font:700 14px/1 Nunito,sans-serif;">9:41</div>
+          <div style="opacity:.35;padding:8px 24px;font:700 20px/1 Quicksand,sans-serif;color:#33324A;">Oliver's story</div>
+          <div style="opacity:.35;padding:10px 20px;"><div style="background:#fff;border-radius:14px;padding:12px;height:52px;margin-bottom:10px;"></div><div style="background:#fff;border-radius:14px;padding:12px;height:52px;"></div></div>
+          <div style="position:absolute;inset:0;background:rgba(26,24,48,.42);border-radius:44px;"></div>
+          <div style="position:absolute;bottom:0;left:0;right:0;background:#fff;border-radius:24px 24px 0 0;padding:8px 16px 40px;">
+            <div style="width:36px;height:4px;background:rgba(51,50,74,.12);border-radius:2px;margin:12px auto 16px;"></div>
+            <div style="background:#F4F3FB;border-radius:16px;padding:14px 16px;display:flex;gap:12px;align-items:center;margin-bottom:18px;">
+              <div style="width:44px;height:44px;background:#76a878;border-radius:12px;display:flex;align-items:center;justify-content:center;flex:none;"><img src="logo-tree-white.svg" width="24" height="27" alt="Everly" style="display:block;object-fit:contain;"/></div>
+              <div><div style="font:700 14px/1 Nunito,sans-serif;color:#33324A;">Oliver's first smile ✨</div><div style="font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;margin-top:3px;">6 weeks · May 4, 2026 · via Everly</div></div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:14px;">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:5px;"><div style="width:52px;height:52px;background:#25D366;border-radius:16px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 3px rgba(107,111,201,.3);"><svg width="26" height="26" viewBox="0 0 24 24" fill="white"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div><div style="font:600 10px/1 Nunito,sans-serif;color:#6B6FC9;">WhatsApp</div></div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:5px;"><div style="width:52px;height:52px;background:linear-gradient(135deg,#5AF75A,#00C300);border-radius:16px;display:flex;align-items:center;justify-content:center;"><svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><div style="font:400 10px/1 Nunito,sans-serif;color:#33324A;">Messages</div></div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:5px;"><div style="width:52px;height:52px;background:linear-gradient(135deg,#1E9BF0,#0070D0);border-radius:16px;display:flex;align-items:center;justify-content:center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div><div style="font:400 10px/1 Nunito,sans-serif;color:#33324A;">Mail</div></div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:5px;"><div style="width:52px;height:52px;background:#F4F3FB;border-radius:16px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(51,50,74,.1);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#33324A" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></div><div style="font:400 10px/1 Nunito,sans-serif;color:#33324A;">Copy</div></div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:5px;"><div style="width:52px;height:52px;background:#F4F3FB;border-radius:16px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(51,50,74,.1);"><svg width="22" height="22" viewBox="0 0 24 24" fill="#33324A"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></div><div style="font:400 10px/1 Nunito,sans-serif;color:#33324A;">More</div></div>
+            </div>
+            <div style="background:#F4F3FB;border-radius:14px;padding:14px;text-align:center;font:600 15px/1 Nunito,sans-serif;color:#6F6E86;">Cancel</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       TABLET · KIOSK / FRIDGE DISPLAY
+  ══════════════════════════════════════════════════════════════ -->
+  <div style="margin-top:64px;">
+    <div style="font:700 11px/1 Nunito,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#6E6A90;margin-bottom:16px;">Tablet · Kiosk / Fridge Display</div>
+    <div style="font:700 24px/1.1 Quicksand,sans-serif;color:#1E1C3A;margin-bottom:12px;">Family Command Centre</div>
+    <div style="font:400 13px/1 Nunito,sans-serif;color:#6E6A90;margin-bottom:28px;">1024 × 660px landscape · Always-on · Readable across the kitchen</div>
+
+    <div style="font:700 11px/1 Nunito,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#4A4670;margin-bottom:14px;">15 · Kiosk Mode</div>
+    <div style="width:1024px;border-radius:20px;overflow:hidden;box-shadow:0 24px 64px rgba(20,18,50,.24);">
+      <div style="background:#F4F3FB;height:660px;display:flex;flex-direction:column;">
+
+        <!-- Header bar -->
+        <div style="height:58px;background:#fff;border-bottom:1px solid rgba(51,50,74,.07);display:flex;align-items:center;padding:0 28px;justify-content:space-between;flex:none;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="color:#76a878;"><img src="logo-tree.svg" width="26" height="29" alt="Everly" style="display:block;object-fit:contain;"/></div>
+            <div style="font:700 16px/1 Quicksand,sans-serif;color:#33324A;">Everly</div>
+            <div style="width:1px;height:18px;background:rgba(51,50,74,.1);margin:0 10px;"></div>
+            <div style="font:400 12px/1 Nunito,sans-serif;color:#9C9AB2;">Family command centre</div>
+          </div>
+          <div style="font:700 20px/1 Quicksand,sans-serif;color:#33324A;">Monday, 23 June 2026</div>
+          <div style="font:700 32px/1 Quicksand,sans-serif;color:#33324A;">9:41</div>
+        </div>
+
+        <!-- Three-column content -->
+        <div style="flex:1;display:flex;overflow:hidden;">
+
+          <!-- Left: Week Calendar (340px) -->
+          <div style="width:340px;flex:none;padding:22px 20px;border-right:1px solid rgba(51,50,74,.07);">
+            <div style="font:700 12px/1 Nunito,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#9C9AB2;margin-bottom:16px;">This week</div>
+            <!-- 7-day grid -->
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <!-- Mon (today) -->
+              <div style="background:#fff;border-radius:14px;padding:10px 14px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(51,50,74,.06);border:1.5px solid rgba(107,111,201,.25);">
+                <div style="text-align:center;width:36px;flex:none;"><div style="font:700 11px/1 Nunito,sans-serif;color:#6B6FC9;">MON</div><div style="font:800 20px/1 Quicksand,sans-serif;color:#6B6FC9;margin-top:2px;">23</div></div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                  <div style="background:#D8F0E6;color:#3FA98A;border-radius:999px;padding:5px 11px;font:700 11px/1 Nunito,sans-serif;white-space:nowrap;">Oliver · checkup 9am</div>
+                  <div style="background:#E7E4FB;color:#6B6FC9;border-radius:999px;padding:5px 11px;font:700 11px/1 Nunito,sans-serif;white-space:nowrap;">Mia · piano 15:30</div>
+                </div>
+              </div>
+              <!-- Tue -->
+              <div style="background:#fff;border-radius:14px;padding:10px 14px;display:flex;align-items:center;gap:12px;">
+                <div style="text-align:center;width:36px;flex:none;"><div style="font:700 11px/1 Nunito,sans-serif;color:#9C9AB2;">TUE</div><div style="font:800 20px/1 Quicksand,sans-serif;color:#33324A;margin-top:2px;">24</div></div>
+                <div style="display:flex;gap:6px;"><div style="background:#E7E4FB;color:#6B6FC9;border-radius:999px;padding:5px 11px;font:700 11px/1 Nunito,sans-serif;white-space:nowrap;">Mia · swim 16:00</div></div>
+              </div>
+              <!-- Wed -->
+              <div style="background:#fff;border-radius:14px;padding:10px 14px;display:flex;align-items:center;gap:12px;">
+                <div style="text-align:center;width:36px;flex:none;"><div style="font:700 11px/1 Nunito,sans-serif;color:#9C9AB2;">WED</div><div style="font:800 20px/1 Quicksand,sans-serif;color:#33324A;margin-top:2px;">25</div></div>
+                <div style="font:400 12px/1 Nunito,sans-serif;color:#C8C6DC;">No events</div>
+              </div>
+              <!-- Thu -->
+              <div style="background:#fff;border-radius:14px;padding:10px 14px;display:flex;align-items:center;gap:12px;">
+                <div style="text-align:center;width:36px;flex:none;"><div style="font:700 11px/1 Nunito,sans-serif;color:#9C9AB2;">THU</div><div style="font:800 20px/1 Quicksand,sans-serif;color:#33324A;margin-top:2px;">26</div></div>
+                <div style="display:flex;gap:6px;"><div style="background:#FBE0EA;color:#D46E97;border-radius:999px;padding:5px 11px;font:700 11px/1 Nunito,sans-serif;white-space:nowrap;">Mia · homework due</div></div>
+              </div>
+              <!-- Fri -->
+              <div style="background:#fff;border-radius:14px;padding:10px 14px;display:flex;align-items:center;gap:12px;">
+                <div style="text-align:center;width:36px;flex:none;"><div style="font:700 11px/1 Nunito,sans-serif;color:#9C9AB2;">FRI</div><div style="font:800 20px/1 Quicksand,sans-serif;color:#33324A;margin-top:2px;">27</div></div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;"><div style="background:#E7E4FB;color:#6B6FC9;border-radius:999px;padding:5px 11px;font:700 11px/1 Nunito,sans-serif;white-space:nowrap;">Mia · school show</div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Centre: Routines + Chores (388px) -->
+          <div style="flex:1;padding:22px 24px;border-right:1px solid rgba(51,50,74,.07);">
+            <div style="font:700 12px/1 Nunito,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#9C9AB2;margin-bottom:16px;">Morning · Today</div>
+            <!-- Routine steps: large touch targets -->
+            <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
+              <div style="background:#fff;border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:14px;box-shadow:0 2px 8px rgba(51,50,74,.05);">
+                <div style="width:28px;height:28px;background:#D8F0E6;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3FA98A" stroke-width="2.5" stroke-linecap="round"><path d="M5 13l4 4L19 7"/></svg></div>
+                <div style="font:700 15px/1 Nunito,sans-serif;color:#9C9AB2;text-decoration:line-through;">Wake up · 7:00 am</div>
+              </div>
+              <div style="background:#fff;border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:14px;box-shadow:0 2px 8px rgba(51,50,74,.05);">
+                <div style="width:28px;height:28px;background:#D8F0E6;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3FA98A" stroke-width="2.5" stroke-linecap="round"><path d="M5 13l4 4L19 7"/></svg></div>
+                <div style="font:700 15px/1 Nunito,sans-serif;color:#9C9AB2;text-decoration:line-through;">Wash face &amp; brush teeth</div>
+              </div>
+              <div style="background:#fff;border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:14px;box-shadow:0 2px 8px rgba(51,50,74,.05);border:1.5px solid #6B6FC9;">
+                <div style="width:28px;height:28px;background:#E7E4FB;border-radius:50%;flex:none;border:2px solid #6B6FC9;"></div>
+                <div style="font:700 15px/1 Nunito,sans-serif;color:#33324A;">Get dressed · <span style="color:#6B6FC9;">Next up →</span></div>
+              </div>
+              <div style="background:#fff;border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:14px;box-shadow:0 2px 8px rgba(51,50,74,.05);opacity:.5;">
+                <div style="width:28px;height:28px;background:#F4F3FB;border-radius:50%;flex:none;border:2px dashed #C8C6DC;"></div>
+                <div style="font:700 15px/1 Nunito,sans-serif;color:#33324A;">Breakfast</div>
+              </div>
+            </div>
+            <!-- Chores -->
+            <div style="font:700 12px/1 Nunito,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#9C9AB2;margin-bottom:12px;">Chores</div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div style="background:#fff;border-radius:14px;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(51,50,74,.05);">
+                <div style="display:flex;align-items:center;gap:12px;">
+                  <div style="width:24px;height:24px;background:#D8F0E6;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3FA98A" stroke-width="2.5" stroke-linecap="round"><path d="M5 13l4 4L19 7"/></svg></div>
+                  <span style="font:600 14px/1 Nunito,sans-serif;color:#9C9AB2;text-decoration:line-through;">Mia · Tidy bedroom</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:4px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="#E9C46A"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg><span style="font:700 13px/1 Nunito,sans-serif;color:#C9A33B;">+15</span></div>
+              </div>
+              <div style="background:#fff;border-radius:14px;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(51,50,74,.05);">
+                <div style="display:flex;align-items:center;gap:12px;">
+                  <div style="width:24px;height:24px;background:#F4F3FB;border-radius:50%;border:2px solid rgba(51,50,74,.1);flex:none;"></div>
+                  <span style="font:600 14px/1 Nunito,sans-serif;color:#33324A;">Mia · Set the table</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:4px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="#E9C46A"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg><span style="font:700 13px/1 Nunito,sans-serif;color:#C9A33B;">+10</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Up Next (296px) -->
+          <div style="width:296px;flex:none;padding:22px 22px;">
+            <div style="font:700 12px/1 Nunito,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#9C9AB2;margin-bottom:16px;">Up next</div>
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              <!-- Event 1: soon -->
+              <div style="background:#fff;border-radius:16px;padding:18px;box-shadow:0 3px 12px rgba(51,50,74,.07);">
+                <div style="font:700 36px/1 Quicksand,sans-serif;color:#6B6FC9;margin-bottom:6px;">09:00</div>
+                <div style="font:700 15px/1 Nunito,sans-serif;color:#33324A;margin-bottom:6px;">Oliver's checkup</div>
+                <div style="display:flex;gap:6px;"><div style="background:#D8F0E6;color:#3FA98A;border-radius:999px;padding:4px 10px;font:700 11px/1 Nunito,sans-serif;">Oliver</div><div style="background:#E7E4FB;color:#6B6FC9;border-radius:999px;padding:4px 10px;font:700 11px/1 Nunito,sans-serif;">In 19 min</div></div>
+              </div>
+              <!-- Event 2 -->
+              <div style="background:#fff;border-radius:16px;padding:18px;box-shadow:0 3px 12px rgba(51,50,74,.07);">
+                <div style="font:700 36px/1 Quicksand,sans-serif;color:#33324A;margin-bottom:6px;">15:30</div>
+                <div style="font:700 15px/1 Nunito,sans-serif;color:#33324A;margin-bottom:6px;">Piano lesson</div>
+                <div style="display:flex;gap:6px;"><div style="background:#E7E4FB;color:#6B6FC9;border-radius:999px;padding:4px 10px;font:700 11px/1 Nunito,sans-serif;">Mia</div><div style="background:#F4F3FB;color:#9C9AB2;border-radius:999px;padding:4px 10px;font:700 11px/1 Nunito,sans-serif;">Music school</div></div>
+              </div>
+              <!-- Event 3 -->
+              <div style="background:#fff;border-radius:16px;padding:18px;box-shadow:0 3px 12px rgba(51,50,74,.07);opacity:.65;">
+                <div style="font:700 36px/1 Quicksand,sans-serif;color:#33324A;margin-bottom:6px;">Tomorrow</div>
+                <div style="font:700 15px/1 Nunito,sans-serif;color:#33324A;margin-bottom:6px;">Swim practice</div>
+                <div style="display:flex;gap:6px;"><div style="background:#E7E4FB;color:#6B6FC9;border-radius:999px;padding:4px 10px;font:700 11px/1 Nunito,sans-serif;">Mia</div></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
