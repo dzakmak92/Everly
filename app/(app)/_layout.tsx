@@ -30,6 +30,11 @@ function AppTabs() {
       <Tabs.Screen name="health" options={{ title: 'Health', tabBarIcon: ({ color: c, size }) => <Heart size={size} color={c as string} /> }} />
       <Tabs.Screen name="timeline" options={{ title: 'Timeline', tabBarIcon: ({ color: c, size }) => <Clock size={size} color={c as string} /> }} />
       <Tabs.Screen name="settings" options={{ title: 'Settings', tabBarIcon: ({ color: c, size }) => <Settings size={size} color={c as string} /> }} />
+      {/* Non-tab routes (reachable via navigation, hidden from the tab bar). */}
+      <Tabs.Screen name="plans" options={{ href: null }} />
+      <Tabs.Screen name="kick-counter" options={{ href: null }} />
+      <Tabs.Screen name="contractions" options={{ href: null }} />
+      <Tabs.Screen name="admin" options={{ href: null }} />
     </Tabs>
   );
 }

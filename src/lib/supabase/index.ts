@@ -7,4 +7,5 @@ export { supabase, SUPABASE_URL } from './client';
 export * from './types';
 export * from './config';
 export * from './auth';
+export * from './billing';
 export { SupabaseProvider, useSupabase } from './SupabaseProvider';
