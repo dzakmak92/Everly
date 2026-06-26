@@ -44,6 +44,9 @@ function AppTabs() {
       <Tabs.Screen name="timezones" options={{ href: null }} />
       <Tabs.Screen name="insights" options={{ href: null }} />
       <Tabs.Screen name="quick-add" options={{ href: null }} />
+      <Tabs.Screen name="nightlog" options={{ href: null }} />
+      <Tabs.Screen name="rhythm" options={{ href: null }} />
+      <Tabs.Screen name="kiosk" options={{ href: null }} />
       <Tabs.Screen name="child/[id]" options={{ href: null }} />
     </Tabs>
   );
