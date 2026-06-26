@@ -47,6 +47,23 @@ export default function Maternal() {
       </Pressable>
       <Text style={{ fontFamily: font.display700, fontSize: 28, color: color.ink }}>Mum&Me · You</Text>
 
+      {/* Module navigation */}
+      <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 6 }, shadow.card]}>
+        {[
+          { label: 'Trying to conceive', to: '/(app)/mat-preconception' },
+          { label: 'Feeding & sleep (you)', to: '/(app)/mat-care' },
+          { label: 'Pelvic floor & movement', to: '/(app)/mat-pelvic' },
+          { label: 'Your appointments', to: '/(app)/mat-appointments' },
+          { label: 'Your story (timeline)', to: '/(app)/mat-timeline' },
+          { label: 'Pregnant again', to: '/(app)/mat-again' },
+        ].map((row, i) => (
+          <Pressable key={row.to} onPress={() => router.push(row.to as any)} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 13, paddingHorizontal: 12, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: color.hairline }}>
+            <Text style={{ flex: 1, fontFamily: font.body600, fontSize: 15, color: color.ink }}>{row.label}</Text>
+            <Text style={{ fontFamily: font.body700, fontSize: 18, color: color.faint }}>›</Text>
+          </Pressable>
+        ))}
+      </View>
+
       {week == null ? (
         <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 20, gap: 12 }, shadow.card]}>
           <Text style={{ fontFamily: font.body600, fontSize: 15, color: color.ink }}>Set your baby's birth date</Text>
