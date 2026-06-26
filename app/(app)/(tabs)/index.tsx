@@ -64,8 +64,9 @@ export default function Today() {
   });
   const isYou = person === 'you';
 
-  // Mum&Me phase tab — Pregnancy is always the default landing tab.
-  const [phase, setPhase] = useState<'pregnancy' | 'postpartum'>('pregnancy');
+  // Mum&Me phase tab — default to where she is: pregnancy while expecting,
+  // postpartum once the baby has arrived.
+  const [phase, setPhase] = useState<'pregnancy' | 'postpartum'>(maternalBirth ? 'postpartum' : 'pregnancy');
 
   // Baby-has-arrived handoff (celebration flow).
   const [handoffOpen, setHandoffOpen] = useState(false);
