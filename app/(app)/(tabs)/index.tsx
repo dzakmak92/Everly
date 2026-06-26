@@ -7,7 +7,7 @@ import { Button, Field } from '../../../src/components/forms';
 import { Logo } from '../../../src/components/Logo';
 import {
   ChevronRight, Bottle, Calendar as CalendarIcon, Syringe,
-  Heart, Calendar as CalIcon, Activity, Smile, Shield, CheckCircle,
+  Heart, Calendar as CalIcon, Activity, Smile, Shield, CheckCircle, Star, Leaf,
 } from '../../../src/components/icons';
 import { EntryIcon } from '../../../src/components/EntryIcon';
 import { Silhouette, ProgressBar } from '../../../src/components/ui';
@@ -396,7 +396,8 @@ function MaternityView({
   router: ReturnType<typeof useRouter>;
   onArrived: () => void;
 }) {
-  const phase: 'pregnancy' | 'postpartum' = maternalBirth ? 'postpartum' : 'pregnancy';
+  const derived: 'pregnancy' | 'postpartum' = maternalBirth ? 'postpartum' : 'pregnancy';
+  const [phase, setPhase] = useState<'pregnancy' | 'postpartum'>(derived);
   const now = Date.now();
 
   // Hero numbers.
@@ -404,18 +405,24 @@ function MaternityView({
   const ppDays = maternalBirth ? Math.max(0, Math.floor((now - new Date(maternalBirth).getTime()) / PP_MS)) : 0;
   const ppWeeks = Math.floor(ppDays / 7);
 
-  // Quick-action tiles per phase.
+  // Feature tiles per phase (2-column grid).
   const tiles =
     phase === 'pregnancy'
       ? [
-          { key: 'checkin', label: 'Check-in', bg: '#E0F4EF', icon: <Heart size={22} color={color.maternalTeal} filled={false} />, to: '/(app)/pregnancy' },
-          { key: 'appts', label: 'Appointments', bg: '#DCEBFA', icon: <CalIcon size={22} color={color.preconceptionSky} />, to: '/(app)/preg-appointments' },
-          { key: 'week', label: 'Week-by-week', bg: '#FBE0EA', icon: <Activity size={22} color={color.rose} />, to: '/(app)/preg-week' },
+          { key: 'checkin', label: 'Daily check-in', bg: '#D8F0E6', icon: <Smile size={20} color="#2C8475" />, to: '/(app)/pregnancy' },
+          { key: 'week', label: 'Week-by-week', bg: '#E7E4FB', icon: <Activity size={20} color={color.primary} />, to: '/(app)/preg-week' },
+          { key: 'appts', label: 'Appointments', bg: '#DCEBFA', icon: <CalIcon size={20} color="#2C5F90" />, to: '/(app)/preg-appointments' },
+          { key: 'triage', label: 'When to call', bg: '#FBE0EA', icon: <Shield size={20} color="#B04070" />, to: '/(app)/preg-vitals' },
+          { key: 'prep', label: 'Birth prep', bg: '#FBF1CE', icon: <CheckCircle size={20} color="#7A5C20" />, to: '/(app)/preg-birthprep' },
+          { key: 'names', label: 'Baby names', bg: '#E7E4FB', icon: <Star size={20} color={color.primary} />, to: '/(app)/preg-names' },
         ]
       : [
-          { key: 'epds', label: 'Wellbeing', bg: '#E7E4FB', icon: <Smile size={22} color={color.primary} />, to: '/(app)/epds' },
-          { key: 'recovery', label: 'Recovery', bg: '#E0F4EF', icon: <Shield size={22} color={color.maternalTeal} />, to: '/(app)/maternal' },
-          { key: 'appts', label: 'Appointments', bg: '#DCEBFA', icon: <CalIcon size={22} color={color.preconceptionSky} />, to: '/(app)/preg-appointments?tab=maternal' },
+          { key: 'epds', label: 'Wellbeing', bg: '#E7E4FB', icon: <Smile size={20} color={color.primary} />, to: '/(app)/epds' },
+          { key: 'recovery', label: 'Recovery', bg: '#D8F0E6', icon: <Shield size={20} color="#2C8475" />, to: '/(app)/maternal' },
+          { key: 'appts', label: 'Appointments', bg: '#DCEBFA', icon: <CalIcon size={20} color="#2C5F90" />, to: '/(app)/preg-appointments?tab=maternal' },
+          { key: 'pelvic', label: 'Pelvic floor', bg: '#FBE0EA', icon: <Activity size={20} color="#B04070" />, to: '/(app)/mat-pelvic' },
+          { key: 'next', label: 'Planning next', bg: '#E6EFDD', icon: <Leaf size={20} color="#6E9A4E" /> as any, to: '/(app)/mat-preconception' },
+          { key: 'story', label: 'Your story', bg: '#FCE6D8', icon: <Star size={20} color="#B5662E" />, to: '/(app)/timeline?subject=you' },
         ];
 
   // Up next — soonest first, max 2, future only.
@@ -427,6 +434,18 @@ function MaternityView({
 
   return (
     <View style={{ gap: 16 }}>
+      {/* Phase sub-tabs */}
+      <View style={{ flexDirection: 'row', backgroundColor: '#EFEDF8', borderRadius: radius.pill, padding: 3 }}>
+        {(['pregnancy', 'postpartum'] as const).map((p) => {
+          const on = p === phase;
+          return (
+            <Pressable key={p} onPress={() => setPhase(p)} style={{ flex: 1, paddingVertical: 9, borderRadius: radius.pill, alignItems: 'center', backgroundColor: on ? color.primary : 'transparent' }}>
+              <Text style={{ fontFamily: on ? font.body700 : font.body600, fontSize: 13, color: on ? '#fff' : color.inkSecondary }}>{p === 'pregnancy' ? 'Pregnancy' : 'Postpartum'}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
       {/* Teal hero */}
       <Pressable onPress={() => router.push((phase === 'pregnancy' ? '/(app)/pregnancy' : '/(app)/maternal') as any)}>
         <View style={[{ backgroundColor: color.maternalTeal, borderRadius: radius.card, padding: 20, gap: 14 }, shadow.card]}>
@@ -434,16 +453,16 @@ function MaternityView({
             <View style={{ flex: 1 }}>
               {phase === 'pregnancy' ? (
                 <>
-                  <Text style={{ fontFamily: font.display700, fontSize: 24, color: '#fff' }}>Week {gest ? gest.week : 0}</Text>
+                  <Text style={{ fontFamily: font.display700, fontSize: 24, color: '#fff' }}>{gest ? `Week ${gest.week}` : 'Pregnancy'}</Text>
                   <Text style={{ fontFamily: font.body500, fontSize: 13, color: 'rgba(255,255,255,0.85)', marginTop: 4 }}>
                     {gest ? `${gest.daysToGo} days to go · Trimester ${gest.trimester}` : 'Add a due date to begin'}
                   </Text>
                 </>
               ) : (
                 <>
-                  <Text style={{ fontFamily: font.display700, fontSize: 24, color: '#fff' }}>Week {ppWeeks} postpartum</Text>
+                  <Text style={{ fontFamily: font.display700, fontSize: 24, color: '#fff' }}>{maternalBirth ? `Week ${ppWeeks} postpartum` : 'Postpartum'}</Text>
                   <Text style={{ fontFamily: font.body500, fontSize: 13, color: 'rgba(255,255,255,0.85)', marginTop: 4 }}>
-                    Day {ppDays} · Fourth trimester
+                    {maternalBirth ? `Day ${ppDays} · Fourth trimester` : 'Unlocks after your baby arrives'}
                   </Text>
                 </>
               )}
@@ -456,17 +475,15 @@ function MaternityView({
         </View>
       </Pressable>
 
-      {/* Quick actions */}
+      {/* Feature grid */}
       <View style={{ gap: 10 }}>
-        <Label>Quick actions</Label>
-        <View style={{ flexDirection: 'row', gap: 10 }}>
+        <Label>{phase === 'pregnancy' ? 'This week' : 'Looking after you'}</Label>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
           {tiles.map((t) => (
-            <Pressable key={t.key} onPress={() => router.push(t.to as any)} style={({ pressed }) => [{ flex: 1, opacity: pressed ? 0.82 : 1 }]}>
-              <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, paddingVertical: 16, paddingHorizontal: 8, alignItems: 'center', gap: 9 }, shadow.card]}>
-                <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: t.bg, alignItems: 'center', justifyContent: 'center' }}>
-                  {t.icon}
-                </View>
-                <Text style={{ fontFamily: font.body700, fontSize: 12.5, color: color.ink, textAlign: 'center' }}>{t.label}</Text>
+            <Pressable key={t.key} onPress={() => router.push(t.to as any)} style={({ pressed }) => [{ width: '47.5%', flexGrow: 1, opacity: pressed ? 0.82 : 1 }]}>
+              <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 14, gap: 9 }, shadow.card]}>
+                <View style={{ width: 42, height: 42, borderRadius: 13, backgroundColor: t.bg, alignItems: 'center', justifyContent: 'center' }}>{t.icon}</View>
+                <Text style={{ fontFamily: font.body700, fontSize: 13.5, color: color.ink }}>{t.label}</Text>
               </View>
             </Pressable>
           ))}
