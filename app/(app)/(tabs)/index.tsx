@@ -15,12 +15,12 @@ import { DateField } from '../../../src/components/DateField';
 import { useSupabase } from '../../../src/lib/supabase';
 import { ageLabel, stageFrom } from '../../../src/lib/age';
 import {
-  gestFromDueDate, weekContent, MOODS, PREG_SYMPTOMS, RED_FLAGS_CALL_NOW, RED_FLAGS_CALL_SOON,
+  gestFromDueDate, weekContent, MOODS, PREG_SYMPTOMS, RED_FLAGS_CALL_NOW, RED_FLAGS_CALL_SOON, dueDateFromLmp,
 } from '../../../src/lib/pregnancy';
 import { EPDS_QUESTIONS, scoreEpds, BAND_LABEL, CRISIS_RESOURCES } from '../../../src/lib/epds';
 import {
   useData, entriesOn, upcomingEvents, entryDetail, ENTRY_META, quickLogKinds, MOOD_LABELS, CHILD_COLORS,
-  type EntryKind, type FeedSide, type DiaperType, type Child, type Lochia, type ChildColor,
+  type EntryKind, type FeedSide, type DiaperType, type Child, type Lochia, type ChildColor, type PregArchive,
 } from '../../../src/lib/store';
 
 const todayISO = () => {
@@ -52,8 +52,8 @@ export default function Today() {
   const { session, profile } = useSupabase();
   const {
     entries, addEntry, deleteEntry, children, activeChild, setActiveChild, events, vaccines,
-    dueDate, maternalBirth, setMaternalBirth, pregAppts, matAppts,
-    addChild, savedNames,
+    dueDate, setDueDate, maternalBirth, setMaternalBirth, pregAppts, matAppts,
+    addChild, savedNames, pregArchive, closePregnancy,
   } = useData();
 
   // Maternity ("You") journey availability + person switching.
@@ -89,9 +89,23 @@ export default function Today() {
     if (!nm) { setHandoffErr("Add your baby's name to continue."); return; }
     const id = addChild({ name: nm, color: handoffColor, birthDate: handoffDate });
     setActiveChild(id);
+    closePregnancy(handoffDate); // archive the pregnancy (read-only) + close the live one
     setMaternalBirth(handoffDate);
     setPhase('postpartum');
     setHandoffStep('done');
+  }
+
+  // Start a fresh pregnancy (reopens the live Mum&Me pregnancy view).
+  const [dueOpen, setDueOpen] = useState(false);
+  const [dueIn, setDueIn] = useState('');
+  const [lmpIn, setLmpIn] = useState('');
+  function openDuePicker() { setDueIn(''); setLmpIn(''); setDueOpen(true); }
+  function saveDue() {
+    const dd = dueIn.trim() || (lmpIn.trim() ? dueDateFromLmp(lmpIn.trim()) : '');
+    if (!dd) return;
+    setDueDate(dd);
+    setDueOpen(false);
+    setPhase('pregnancy');
   }
   function finishHandoff() {
     setHandoffOpen(false);
@@ -195,7 +209,9 @@ export default function Today() {
           maternalBirth={maternalBirth}
           pregAppts={pregAppts}
           matAppts={matAppts}
+          pregArchive={pregArchive}
           onArrived={openHandoff}
+          onStartPregnancy={openDuePicker}
         />
       )}
 
@@ -369,6 +385,22 @@ export default function Today() {
           </Pressable>
         </Pressable>
       </Modal>
+
+      {/* Start-a-new-pregnancy due date modal */}
+      <Modal visible={dueOpen} transparent animationType="fade" onRequestClose={() => setDueOpen(false)}>
+        <Pressable onPress={() => setDueOpen(false)} style={{ flex: 1, backgroundColor: 'rgba(40,18,50,0.35)', justifyContent: 'center', paddingHorizontal: 28 }}>
+          <Pressable onPress={() => {}} style={[{ backgroundColor: color.canvas, borderRadius: radius.card, padding: 20, gap: 14 }, shadow.card]}>
+            <Text style={{ fontFamily: font.display700, fontSize: 18, color: color.ink }}>Start a new pregnancy</Text>
+            <Text style={{ fontFamily: font.body400, fontSize: 13, color: color.muted }}>Add your due date — or your last period date and we'll estimate it.</Text>
+            <DateField label="Due date" value={dueIn} onChangeText={setDueIn} />
+            <DateField label="Last period (optional)" value={lmpIn} onChangeText={setLmpIn} optional />
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <Button label="Cancel" variant="secondary" onPress={() => setDueOpen(false)} style={{ flex: 1 }} />
+              <Button label="Save" onPress={saveDue} style={{ flex: 1 }} />
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </ScrollView>
   );
 }
@@ -488,8 +520,12 @@ function YouPill({ active, label, onPress }: { active: boolean; label: string; o
 
 type ApptLike = { id: string; title: string; at: string };
 
+/** Weeks of gestation reached at birth, from an archived pregnancy. */
+const archWeekOf = (a: { dueDate: string; bornDate: string }) =>
+  Math.max(0, Math.floor((280 - Math.round((ppTime(a.dueDate) - ppTime(a.bornDate)) / PP_MS)) / 7));
+
 function MaternityView({
-  phase, setPhase, dueDate, maternalBirth, pregAppts, matAppts, onArrived,
+  phase, setPhase, dueDate, maternalBirth, pregAppts, matAppts, pregArchive, onArrived, onStartPregnancy,
 }: {
   phase: 'pregnancy' | 'postpartum';
   setPhase: (p: 'pregnancy' | 'postpartum') => void;
@@ -497,7 +533,9 @@ function MaternityView({
   maternalBirth: string | null;
   pregAppts: ApptLike[];
   matAppts: ApptLike[];
+  pregArchive: PregArchive[];
   onArrived: () => void;
+  onStartPregnancy: () => void;
 }) {
   // Accordion grid: one card open at a time, panel renders full-width below.
   const [openCard, setOpenCard] = useState<string | null>(null);
@@ -509,6 +547,12 @@ function MaternityView({
   const gest = gestFromDueDate(dueDate ?? undefined);
   const ppDays = maternalBirth ? Math.max(0, Math.floor((now - ppTime(maternalBirth)) / PP_MS)) : 0;
   const ppWeeks = Math.floor(ppDays / 7);
+
+  // Pregnancy sub-state: live (due date set), archived (closed after birth) or empty.
+  const pregLive = !!dueDate;
+  const lastArchive = pregArchive[0] ?? null;
+  const pregArchived = !dueDate && !!lastArchive;
+  const showGrid = phase === 'postpartum' || (phase === 'pregnancy' && pregLive);
 
   // Feature tiles per phase (2-column grid). `key` is the panel selector.
   const tiles =
@@ -557,9 +601,13 @@ function MaternityView({
       <View style={[{ backgroundColor: color.maternalTeal, borderRadius: radius.card, padding: 20, gap: 14 }, shadow.card]}>
         {phase === 'pregnancy' ? (
           <>
-            <Text style={{ fontFamily: font.display700, fontSize: 24, color: '#fff' }}>{gest ? `Week ${gest.week}` : 'Pregnancy'}</Text>
+            <Text style={{ fontFamily: font.display700, fontSize: 24, color: '#fff' }}>{gest ? `Week ${gest.week}` : pregArchived ? 'Pregnancy complete 🎉' : 'Pregnancy'}</Text>
             <Text style={{ fontFamily: font.body500, fontSize: 13, color: 'rgba(255,255,255,0.85)', marginTop: 4 }}>
-              {gest ? `${gest.daysToGo} days to go · Trimester ${gest.trimester}` : 'Add a due date to begin'}
+              {gest
+                ? `${gest.daysToGo} days to go · Trimester ${gest.trimester}`
+                : pregArchived
+                  ? `Born ${dateOnlyLabel(lastArchive!.bornDate)} · reached week ${archWeekOf(lastArchive!)}`
+                  : 'Add a due date to begin'}
             </Text>
           </>
         ) : (
@@ -573,8 +621,8 @@ function MaternityView({
         {phase === 'pregnancy' && gest && (
           <ProgressBar pct={Math.round(gest.progress * 100)} track="rgba(255,255,255,0.25)" colors={['#FFFFFF', '#E0F4EF']} />
         )}
-        {/* Baby-has-arrived lives inside the hero (pregnancy phase only). */}
-        {phase === 'pregnancy' && (
+        {/* Baby-has-arrived lives inside the hero (live pregnancy only). */}
+        {phase === 'pregnancy' && pregLive && (
           <Pressable onPress={onArrived} style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}>
             <View style={{ backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: radius.card, paddingVertical: 13, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <CheckCircle size={20} color="#fff" />
@@ -588,7 +636,41 @@ function MaternityView({
         )}
       </View>
 
+      {/* Archived (read-only) pregnancy — shown after birth until a new one begins */}
+      {phase === 'pregnancy' && !showGrid && (
+        <View style={{ gap: 10 }}>
+          {pregArchived && (
+            <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 16, gap: 10 }, shadow.card]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <View style={{ width: 30, height: 30, borderRadius: 9, backgroundColor: '#E0F4EF', alignItems: 'center', justifyContent: 'center' }}><CheckCircle size={17} color={color.maternalTeal} /></View>
+                <Text style={{ flex: 1, fontFamily: font.body700, fontSize: 14.5, color: color.ink }}>Pregnancy archive</Text>
+                <Badge text="read-only" bg="#EFEDF8" fg={color.muted} />
+              </View>
+              <View style={{ flexDirection: 'row' }}>
+                <Stat label="Reached" value={`Wk ${archWeekOf(lastArchive!)}`} />
+                <Divider />
+                <Stat label="Born" value={dateOnlyLabel(lastArchive!.bornDate).replace(/,.*/, '')} />
+                <Divider />
+                <Stat label="Check-ins" value={`${lastArchive!.checkins.length}`} />
+              </View>
+              <Text style={{ fontFamily: font.body400, fontSize: 12.5, color: color.muted }}>This pregnancy is saved as history. Start a new one whenever you're expecting again.</Text>
+            </View>
+          )}
+          <Pressable onPress={onStartPregnancy} style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1 }]}>
+            <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1.5, borderColor: color.maternalTeal }, shadow.card]}>
+              <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: '#E0F4EF', alignItems: 'center', justifyContent: 'center' }}><Plus size={20} color={color.maternalTeal} /></View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: font.body700, fontSize: 14.5, color: color.tealInk }}>{pregArchived ? 'Start a new pregnancy' : 'Set your due date'}</Text>
+                <Text style={{ fontFamily: font.body400, fontSize: 12.5, color: color.muted, marginTop: 2 }}>Reopens your week-by-week journey</Text>
+              </View>
+              <ChevronRight size={16} color={color.maternalTeal} />
+            </View>
+          </Pressable>
+        </View>
+      )}
+
       {/* Feature grid — tapping a card expands it inline (panel below the grid) */}
+      {showGrid && (
       <View style={{ gap: 10 }}>
         <Label>{phase === 'pregnancy' ? 'This week' : 'Looking after you'}</Label>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
@@ -623,9 +705,10 @@ function MaternityView({
           </View>
         )}
       </View>
+      )}
 
       {/* Up next */}
-      {upNext.length > 0 && (
+      {showGrid && upNext.length > 0 && (
         <View style={{ gap: 10 }}>
           <Label>Up next</Label>
           {upNext.map((a) => (
