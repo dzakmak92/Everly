@@ -7,7 +7,7 @@ import { Button, Field } from '../../../src/components/forms';
 import { Logo } from '../../../src/components/Logo';
 import {
   ChevronRight, Bottle, Calendar as CalendarIcon, Syringe,
-  Heart, Calendar as CalIcon, Activity, Smile, Shield, CheckCircle, Star, Leaf, X, Plus, ChevronLeft,
+  Heart, Calendar as CalIcon, Activity, Smile, Shield, CheckCircle, Star, Leaf, X, Plus, ChevronLeft, Check,
 } from '../../../src/components/icons';
 import { EntryIcon } from '../../../src/components/EntryIcon';
 import { Silhouette, ProgressBar } from '../../../src/components/ui';
@@ -15,7 +15,7 @@ import { DateField } from '../../../src/components/DateField';
 import { useSupabase } from '../../../src/lib/supabase';
 import { ageLabel, stageFrom } from '../../../src/lib/age';
 import {
-  gestFromDueDate, weekContent, MOODS, PREG_SYMPTOMS, RED_FLAGS_CALL_NOW, RED_FLAGS_CALL_SOON, dueDateFromLmp,
+  gestFromDueDate, weekContent, MOODS, PREG_SYMPTOMS, RED_FLAGS_CALL_NOW, RED_FLAGS_CALL_SOON, dueDateFromLmp, TRIMESTER_TIPS, BABY_NAMES,
 } from '../../../src/lib/pregnancy';
 import { EPDS_QUESTIONS, scoreEpds, BAND_LABEL, CRISIS_RESOURCES } from '../../../src/lib/epds';
 import {
@@ -813,8 +813,8 @@ function CardPanel({ cardKey, dueDate, maternalBirth, ppWeeks, onClose }: { card
     case 'names': return <NamesPanel />;
     case 'epds': return <WellbeingPanel />;
     case 'recovery': return <RecoveryPanel />;
-    case 'matappts': return <MatApptsPanel />;
-    case 'pelvic': return <PelvicPanel />;
+    case 'matappts': return <MatApptsPanel maternalBirth={maternalBirth} />;
+    case 'pelvic': return <PelvicPanel maternalBirth={maternalBirth} />;
     case 'next': return <PlanningPanel />;
     case 'story': return <StoryPanel maternalBirth={maternalBirth} ppWeeks={ppWeeks} />;
     default: return null;
@@ -857,38 +857,84 @@ function CheckinPanel({ onClose }: { onClose: () => void }) {
 }
 
 function WeekPanel({ dueDate }: { dueDate: string | null }) {
-  const [week, setWeek] = useState<number>(() => gestFromDueDate(dueDate ?? undefined)?.week ?? 12);
+  const gest = gestFromDueDate(dueDate ?? undefined);
+  const [week, setWeek] = useState<number>(gest?.week ?? 12);
+  const [tab, setTab] = useState<'baby' | 'body' | 'nutrition'>('baby');
   const c = weekContent(week);
+  const trimester: 1 | 2 | 3 = week < 13 ? 1 : week < 27 ? 2 : 3;
+  const tips = TRIMESTER_TIPS[trimester];
   return (
     <View style={{ gap: 14 }}>
+      {/* Week pager */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <Pressable onPress={() => setWeek((w) => Math.max(1, w - 1))} hitSlop={8} style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: color.canvas, alignItems: 'center', justifyContent: 'center' }}>
           <ChevronLeft size={20} color={color.tealDeep} />
         </Pressable>
-        <Text style={{ fontFamily: font.display700, fontSize: 20, color: color.ink }}>Week {week}</Text>
+        <View style={{ alignItems: 'center' }}>
+          <Text style={{ fontFamily: font.display700, fontSize: 20, color: color.ink }}>Week {week}</Text>
+          <Text style={{ fontFamily: font.body500, fontSize: 11.5, color: color.muted }}>of 40 · Trimester {trimester}</Text>
+        </View>
         <Pressable onPress={() => setWeek((w) => Math.min(42, w + 1))} hitSlop={8} style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: color.canvas, alignItems: 'center', justifyContent: 'center' }}>
           <ChevronRight size={20} color={color.tealDeep} />
         </Pressable>
       </View>
-      <View style={{ backgroundColor: color.canvas, borderRadius: radius.tile, padding: 14, gap: 6 }}>
-        <Text style={{ fontFamily: font.body700, fontSize: 15, color: color.ink }}>Size of a {c.size}</Text>
-        <Text style={{ fontFamily: font.body500, fontSize: 13, color: color.inkSecondary }}>~{c.lengthCm} cm · ~{c.weightG} g</Text>
-        <Text style={{ fontFamily: font.body400, fontSize: 13, color: color.muted, marginTop: 2 }}>{c.note}</Text>
+      {gest != null && week !== gest.week && (
+        <Pressable onPress={() => setWeek(gest.week)} hitSlop={8} style={{ alignSelf: 'center' }}>
+          <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.maternalTeal }}>Back to my week (Week {gest.week})</Text>
+        </Pressable>
+      )}
+      {/* Tabs */}
+      <View style={{ flexDirection: 'row', backgroundColor: color.canvas, borderRadius: radius.pill, padding: 3 }}>
+        {(['baby', 'body', 'nutrition'] as const).map((t) => {
+          const sel = t === tab;
+          return (
+            <Pressable key={t} onPress={() => setTab(t)} style={{ flex: 1, paddingVertical: 8, borderRadius: radius.pill, alignItems: 'center', backgroundColor: sel ? color.maternalTeal : 'transparent' }}>
+              <Text style={{ fontFamily: font.body700, fontSize: 12.5, color: sel ? '#fff' : color.muted }}>{t === 'body' ? 'Your body' : t === 'baby' ? 'Baby' : 'Nutrition'}</Text>
+            </Pressable>
+          );
+        })}
       </View>
+      {tab === 'baby' ? (
+        <View style={{ backgroundColor: color.canvas, borderRadius: radius.tile, padding: 14, gap: 6 }}>
+          <Text style={{ fontFamily: font.body700, fontSize: 15, color: color.ink }}>Size of a {c.size}</Text>
+          {(c.lengthCm > 0 || c.weightG > 0) && (
+            <Text style={{ fontFamily: font.body500, fontSize: 13, color: color.inkSecondary }}>{c.lengthCm > 0 ? `~${c.lengthCm} cm` : ''}{c.weightG > 0 ? `${c.lengthCm > 0 ? ' · ' : ''}~${c.weightG} g` : ''}</Text>
+          )}
+          <Text style={{ fontFamily: font.body400, fontSize: 13, color: color.muted, marginTop: 2, lineHeight: 19 }}>{c.note}</Text>
+        </View>
+      ) : (
+        <View style={{ gap: 8 }}>
+          {(tab === 'body' ? tips.body : tips.nutrition).map((t, i) => (
+            <View key={i} style={{ backgroundColor: color.canvas, borderRadius: radius.tile, padding: 12, flexDirection: 'row', gap: 10 }}>
+              <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: color.maternalTeal, marginTop: 6 }} />
+              <Text style={{ flex: 1, fontFamily: font.body500, fontSize: 13, color: color.ink, lineHeight: 19 }}>{t}</Text>
+            </View>
+          ))}
+        </View>
+      )}
     </View>
   );
 }
 
 function PregApptsPanel() {
   const { pregAppts, addPregAppt, deletePregAppt } = useData();
-  const now = Date.now();
+  const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0);
+  const isFuture = (iso: string) => new Date(iso).getTime() >= startOfToday.getTime();
   const [title, setTitle] = useState('');
   const [date, setDate] = useState(todayISO());
-  const upcoming = [...pregAppts]
-    .filter((a) => new Date(a.at).getTime() >= now)
-    .sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime())
-    .slice(0, 3);
-  const add = () => { if (!title.trim()) return; addPregAppt({ title, at: `${date}T09:00:00`, kind: 'appointment' }); setTitle(''); setDate(todayISO()); };
+  const [result, setResult] = useState('');
+  const [kind, setKind] = useState<'appointment' | 'test'>('appointment');
+
+  const appts = pregAppts.filter((a) => a.kind === 'appointment');
+  const tests = pregAppts.filter((a) => a.kind === 'test');
+  const upcoming = appts.filter((a) => isFuture(a.at)).sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
+  const past = appts.filter((a) => !isFuture(a.at)).sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
+
+  const add = () => {
+    if (!title.trim() || !date.trim()) return;
+    addPregAppt({ title, at: `${date}T09:00:00`, kind, result: kind === 'test' ? result.trim() || undefined : undefined });
+    setTitle(''); setDate(todayISO()); setResult('');
+  };
   return (
     <View style={{ gap: 14 }}>
       <View style={{ gap: 8 }}>
@@ -897,10 +943,26 @@ function PregApptsPanel() {
           <PanelRow key={a.id} title={a.title} sub={apptDateLabel(a.at)} onDelete={() => deletePregAppt(a.id)} />
         ))}
       </View>
+      {past.length > 0 && (
+        <View style={{ gap: 8 }}>
+          <PanelLabel>Past</PanelLabel>
+          {past.map((a) => (
+            <PanelRow key={a.id} title={a.title} sub={apptDateLabel(a.at)} onDelete={() => deletePregAppt(a.id)} />
+          ))}
+        </View>
+      )}
+      <View style={{ gap: 8 }}>
+        <PanelLabel>Test results</PanelLabel>
+        {tests.length === 0 ? <EmptyHint text="No test results yet." /> : tests.map((a) => (
+          <PanelRow key={a.id} title={a.title} sub={`${dateOnlyLabel(a.at)}${a.result ? ` · ${a.result}` : ''}`} onDelete={() => deletePregAppt(a.id)} />
+        ))}
+      </View>
       <View style={{ gap: 10 }}>
-        <PanelLabel>Add appointment</PanelLabel>
-        <Field label="Title" value={title} onChangeText={setTitle} placeholder="e.g. 20-week scan" autoCapitalize="sentences" />
+        <PanelLabel>Add</PanelLabel>
+        <SelectChips options={['appointment', 'test']} value={kind} onChange={(v) => setKind(v as 'appointment' | 'test')} />
+        <Field label="Title" value={title} onChangeText={setTitle} placeholder={kind === 'test' ? 'e.g. GTT blood test' : 'e.g. 20-week scan'} autoCapitalize="sentences" />
         <DateField label="Date" value={date} onChangeText={setDate} />
+        {kind === 'test' && <Field label="Result (optional)" value={result} onChangeText={setResult} placeholder="e.g. Normal" autoCapitalize="sentences" />}
         <Button label="Add" onPress={add} />
       </View>
     </View>
@@ -940,20 +1002,57 @@ function TriagePanel() {
   );
 }
 
+const STARTER_PREP: { category: string; label: string }[] = [
+  { category: 'For Mum', label: 'ID & maternity notes' },
+  { category: 'For Mum', label: 'Comfortable nightwear' },
+  { category: 'For Mum', label: 'Toiletries & lip balm' },
+  { category: 'For Mum', label: 'Snacks & water bottle' },
+  { category: 'For Baby', label: 'Bodysuits (newborn)' },
+  { category: 'For Baby', label: 'Muslins & blanket' },
+  { category: 'For Baby', label: 'Nappies & wipes' },
+  { category: 'For Baby', label: 'Going-home outfit' },
+  { category: 'Birth plan', label: 'Pain-relief preferences' },
+  { category: 'Birth plan', label: 'Birth environment wishes' },
+];
+const PREP_CATS = ['For Mum', 'For Baby', 'Birth plan'];
+
 function BirthPrepPanel() {
-  const { birthPrep, addBirthPrep, toggleBirthPrep } = useData();
+  const { birthPrep, addBirthPrep, toggleBirthPrep, deleteBirthPrep } = useData();
   const [label, setLabel] = useState('');
-  const add = () => { if (!label.trim()) return; addBirthPrep({ category: 'General', label }); setLabel(''); };
+  const [category, setCategory] = useState('For Mum');
+  const cats = Array.from(new Set(birthPrep.map((i) => i.category)));
+  const done = birthPrep.filter((i) => i.checked).length;
+  const pct = birthPrep.length ? Math.round((done / birthPrep.length) * 100) : 0;
+  const add = () => { if (!label.trim()) return; addBirthPrep({ category, label }); setLabel(''); };
   return (
     <View style={{ gap: 14 }}>
-      <View style={{ gap: 8 }}>
-        <PanelLabel>Checklist</PanelLabel>
-        {birthPrep.length === 0 ? <EmptyHint text="Nothing on your list yet — add an item below." /> : birthPrep.map((i) => (
-          <CheckRow key={i.id} label={i.label} checked={i.checked} onToggle={() => toggleBirthPrep(i.id)} />
-        ))}
-      </View>
+      {birthPrep.length === 0 ? (
+        <View style={{ gap: 10 }}>
+          <EmptyHint text="Start with a hospital-bag & birth-plan checklist you can tick off and add to." />
+          <Button label="Load starter checklist" onPress={() => STARTER_PREP.forEach((s) => addBirthPrep(s))} />
+        </View>
+      ) : (
+        <>
+          <View style={{ backgroundColor: color.maternalTeal, borderRadius: radius.tile, padding: 14 }}>
+            <Text style={{ fontFamily: font.display700, fontSize: 18, color: '#fff' }}>{done} / {birthPrep.length} done · {pct}%</Text>
+          </View>
+          {cats.map((cat) => (
+            <View key={cat} style={{ gap: 8 }}>
+              <PanelLabel>{cat}</PanelLabel>
+              {birthPrep.filter((i) => i.category === cat).map((i) => (
+                <View key={i.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <View style={{ flex: 1 }}><CheckRow label={i.label} checked={i.checked} onToggle={() => toggleBirthPrep(i.id)} /></View>
+                  <Pressable onPress={() => deleteBirthPrep(i.id)} hitSlop={8}><Text style={{ fontFamily: font.body700, fontSize: 18, color: color.faint }}>×</Text></Pressable>
+                </View>
+              ))}
+            </View>
+          ))}
+        </>
+      )}
       <View style={{ gap: 10 }}>
-        <Field label="Add item" value={label} onChangeText={setLabel} placeholder="e.g. Pack hospital bag" autoCapitalize="sentences" />
+        <PanelLabel>Add item</PanelLabel>
+        <SelectChips options={PREP_CATS} value={category} onChange={setCategory} />
+        <Field label="Item" value={label} onChangeText={setLabel} placeholder="e.g. Pack hospital bag" autoCapitalize="sentences" />
         <Button label="Add" onPress={add} />
       </View>
     </View>
@@ -962,19 +1061,54 @@ function BirthPrepPanel() {
 
 function NamesPanel() {
   const { savedNames, saveName, deleteName } = useData();
+  const [filter, setFilter] = useState<'All' | 'Girl' | 'Boy' | 'Unisex'>('All');
+  const [idx, setIdx] = useState(0);
   const [name, setName] = useState('');
   const [gender, setGender] = useState('Girl');
+
+  const savedSet = new Set(savedNames.map((n) => n.name));
+  const pool = BABY_NAMES.filter((n) => (filter === 'All' || n.gender === filter) && !savedSet.has(n.name));
+  const card = pool[idx % Math.max(1, pool.length)];
   const add = () => { if (!name.trim()) return; saveName({ name: name.trim(), gender }); setName(''); };
+
   return (
     <View style={{ gap: 14 }}>
+      {/* Suggestions explorer */}
+      <View style={{ gap: 10 }}>
+        <PanelLabel>Explore names</PanelLabel>
+        <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+          {(['All', 'Girl', 'Boy', 'Unisex'] as const).map((f) => (
+            <Pressable key={f} onPress={() => { setFilter(f); setIdx(0); }} style={{ paddingVertical: 6, paddingHorizontal: 12, borderRadius: radius.pill, backgroundColor: filter === f ? color.maternalTeal : '#fff', borderWidth: 1, borderColor: filter === f ? color.maternalTeal : color.hairline }}>
+              <Text style={{ fontFamily: font.body600, fontSize: 12, color: filter === f ? '#fff' : color.ink }}>{f}</Text>
+            </Pressable>
+          ))}
+        </View>
+        {card ? (
+          <View style={{ backgroundColor: color.canvas, borderRadius: radius.tile, padding: 18, alignItems: 'center', gap: 4 }}>
+            <Text style={{ fontFamily: font.display700, fontSize: 26, color: color.ink }}>{card.name}</Text>
+            <Text style={{ fontFamily: font.body600, fontSize: 12.5, color: color.maternalTeal }}>{card.gender} · {card.origin}</Text>
+            <Text style={{ fontFamily: font.body400, fontSize: 12.5, color: color.inkSecondary, textAlign: 'center', marginTop: 2 }}>{card.meaning}</Text>
+          </View>
+        ) : (
+          <EmptyHint text="You've been through them all for this filter." />
+        )}
+        {card && (
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <Button label="Skip" variant="secondary" onPress={() => setIdx((i) => i + 1)} style={{ flex: 1 }} />
+            <Button label="♥ Save" onPress={() => { saveName({ name: card.name, gender: card.gender }); setIdx((i) => i + 1); }} style={{ flex: 1 }} />
+          </View>
+        )}
+      </View>
+
       <View style={{ gap: 8 }}>
-        <PanelLabel>Saved names</PanelLabel>
+        <PanelLabel>Saved names{savedNames.length ? ` · ${savedNames.length}` : ''}</PanelLabel>
         {savedNames.length === 0 ? <EmptyHint text="No saved names yet." /> : savedNames.map((n) => (
           <PanelRow key={n.id} title={n.name} sub={n.gender} onDelete={() => deleteName(n.id)} />
         ))}
       </View>
       <View style={{ gap: 10 }}>
-        <Field label="Add a name" value={name} onChangeText={setName} placeholder="e.g. Maya" autoCapitalize="words" />
+        <PanelLabel>Add your own</PanelLabel>
+        <Field label="Name" value={name} onChangeText={setName} placeholder="e.g. Maya" autoCapitalize="words" />
         <SelectChips options={['Girl', 'Boy', 'Unisex']} value={gender} onChange={setGender} />
         <Button label="Save name" onPress={add} />
       </View>
@@ -1090,51 +1224,103 @@ function RecoveryPanel() {
   );
 }
 
-function MatApptsPanel() {
+const MAT_SEED = [
+  { title: 'Midwife discharge', kind: 'check' as const, off: 5 },
+  { title: 'Health visitor assessment', kind: 'check' as const, off: 14 },
+  { title: '6-week GP check', kind: 'appointment' as const, off: 42, prep: 'Contraception, mental health, physical recovery, return to work' },
+];
+
+function MatApptsPanel({ maternalBirth }: { maternalBirth: string | null }) {
   const { matAppts, addMatAppt, deleteMatAppt } = useData();
-  const now = Date.now();
+  const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0);
+  const isFuture = (iso: string) => new Date(iso).getTime() >= startOfToday.getTime();
   const [title, setTitle] = useState('');
   const [date, setDate] = useState(todayISO());
-  const upcoming = [...matAppts]
-    .filter((a) => new Date(a.at).getTime() >= now)
-    .sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime())
-    .slice(0, 3);
-  const add = () => { if (!title.trim()) return; addMatAppt({ title, at: `${date}T10:00:00`, kind: 'appointment' }); setTitle(''); setDate(todayISO()); };
+  const [prep, setPrep] = useState('');
+  const upcoming = matAppts.filter((a) => isFuture(a.at)).sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
+  const past = matAppts.filter((a) => !isFuture(a.at)).sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
+  const add = () => { if (!title.trim() || !date.trim()) return; addMatAppt({ title, at: `${date}T10:00:00`, kind: 'appointment', prep: prep.trim() || undefined }); setTitle(''); setDate(todayISO()); setPrep(''); };
+  const seed = () => {
+    const birth = maternalBirth ? ppTime(maternalBirth) : Date.now();
+    MAT_SEED.forEach((s) => addMatAppt({ title: s.title, at: new Date(birth + s.off * PP_MS).toISOString(), kind: s.kind, prep: (s as any).prep }));
+  };
   return (
     <View style={{ gap: 14 }}>
-      <View style={{ gap: 8 }}>
-        <PanelLabel>Upcoming</PanelLabel>
-        {upcoming.length === 0 ? <EmptyHint text="No upcoming appointments yet." /> : upcoming.map((a) => (
-          <PanelRow key={a.id} title={a.title} sub={apptDateLabel(a.at)} onDelete={() => deleteMatAppt(a.id)} />
-        ))}
-      </View>
+      {matAppts.length === 0 && (
+        <View style={{ gap: 10 }}>
+          <EmptyHint text="Seed the standard postpartum schedule from your birth date, or add your own below." />
+          <Button label="Load standard schedule" variant="secondary" onPress={seed} />
+        </View>
+      )}
+      {upcoming.length > 0 && (
+        <View style={{ gap: 8 }}>
+          <PanelLabel>Upcoming</PanelLabel>
+          {upcoming.map((a) => (
+            <PanelRow key={a.id} title={a.title} sub={`${apptDateLabel(a.at)}${a.prep ? ` · prep: ${a.prep}` : ''}`} onDelete={() => deleteMatAppt(a.id)} />
+          ))}
+        </View>
+      )}
+      {past.length > 0 && (
+        <View style={{ gap: 8 }}>
+          <PanelLabel>Past</PanelLabel>
+          {past.map((a) => (
+            <PanelRow key={a.id} title={a.title} sub={apptDateLabel(a.at)} onDelete={() => deleteMatAppt(a.id)} />
+          ))}
+        </View>
+      )}
       <View style={{ gap: 10 }}>
         <PanelLabel>Add appointment</PanelLabel>
         <Field label="Title" value={title} onChangeText={setTitle} placeholder="e.g. 6-week check" autoCapitalize="sentences" />
         <DateField label="Date" value={date} onChangeText={setDate} />
+        <Field label="Prep questions (optional)" value={prep} onChangeText={setPrep} placeholder="e.g. contraception, mood" autoCapitalize="sentences" />
         <Button label="Add" onPress={add} />
       </View>
     </View>
   );
 }
 
-function PelvicPanel() {
+const PELVIC_STAGES = [
+  { max: 3, name: 'Stage 1 · Weeks 0–3', note: 'Gentle reconnection. Rest is part of recovery.', ex: ['Deep core breathing — 10 breaths × 3', 'Gentle pelvic-floor squeezes — 5 holds', 'Short, slow walks'] },
+  { max: 8, name: 'Stage 2 · Weeks 4–8', note: 'Walking up to 30 min is usually safe now.', ex: ['Kegel contractions — 10 holds × 10s × 3 sets', 'Deep core breathing — 10 breaths × 3', 'Gentle walking 20–30 min'] },
+  { max: 999, name: 'Stage 3 · Weeks 9+', note: 'Progressive strength — listen to your body.', ex: ['Kegels with movement — 3 sets', 'Glute bridges — 10 × 3', 'Brisk walking / low-impact cardio'] },
+];
+
+function PelvicPanel({ maternalBirth }: { maternalBirth: string | null }) {
   const { pelvicLog, addPelvic } = useData();
-  const [exercise, setExercise] = useState('');
-  const recent = pelvicLog.slice(0, 3);
-  const add = () => { if (!exercise.trim()) return; addPelvic(exercise.trim()); setExercise(''); };
+  const week = maternalBirth ? Math.floor((Date.now() - ppTime(maternalBirth)) / (7 * PP_MS)) : 0;
+  const stage = PELVIC_STAGES.find((s) => week <= s.max) ?? PELVIC_STAGES[2];
+  const runDate = maternalBirth ? ppTime(maternalBirth) + 12 * 7 * PP_MS : null;
+  const runWeeks = runDate ? Math.ceil((runDate - Date.now()) / (7 * PP_MS)) : null;
+  const doneToday = (ex: string) => pelvicLog.some((p) => p.exercise === ex && new Date(p.at).toDateString() === new Date().toDateString());
   return (
     <View style={{ gap: 14 }}>
-      <View style={{ gap: 10 }}>
-        <Field label="Log an exercise" value={exercise} onChangeText={setExercise} placeholder="e.g. Kegels × 10" autoCapitalize="sentences" />
-        <Button label="Add" onPress={add} />
+      {!maternalBirth && <EmptyHint text="Set your birth date to stage the program. Showing Stage 1." />}
+      <View style={{ backgroundColor: color.maternalTeal, borderRadius: radius.tile, padding: 14 }}>
+        <Text style={{ fontFamily: font.display700, fontSize: 16, color: '#fff' }}>{stage.name}</Text>
+        <Text style={{ fontFamily: font.body500, fontSize: 12.5, color: 'rgba(255,255,255,0.92)', marginTop: 3 }}>{stage.note}</Text>
       </View>
       <View style={{ gap: 8 }}>
-        <PanelLabel>Recent</PanelLabel>
-        {recent.length === 0 ? <EmptyHint text="No sessions logged yet." /> : recent.map((p) => (
-          <PanelRow key={p.id} title={p.exercise} sub={dayTimeOf(p.at)} />
-        ))}
+        <PanelLabel>Today's routine</PanelLabel>
+        {stage.ex.map((ex) => {
+          const done = doneToday(ex);
+          return (
+            <Pressable key={ex} onPress={() => !done && addPelvic(ex)} style={{ backgroundColor: color.canvas, borderRadius: radius.tile, padding: 13, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: done ? color.maternalTeal : color.faint, backgroundColor: done ? color.maternalTeal : 'transparent', alignItems: 'center', justifyContent: 'center' }}>{done && <Check size={13} color="#fff" />}</View>
+              <Text style={{ flex: 1, fontFamily: font.body600, fontSize: 13, color: color.ink, textDecorationLine: done ? 'line-through' : 'none' }}>{ex}</Text>
+              {!done && <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.maternalTeal }}>Done</Text>}
+            </Pressable>
+          );
+        })}
       </View>
+      <View style={{ backgroundColor: '#FCE6D8', borderRadius: radius.tile, padding: 12 }}>
+        <Text style={{ fontFamily: font.body600, fontSize: 12.5, color: '#B5662E' }}>Avoid crunches and planks until after your 6-week check — they can worsen abdominal separation.</Text>
+      </View>
+      {runDate && (
+        <View style={{ backgroundColor: color.canvas, borderRadius: radius.tile, padding: 13 }}>
+          <Text style={{ fontFamily: font.body700, fontSize: 13, color: color.ink }}>Return to running</Text>
+          <Text style={{ fontFamily: font.body400, fontSize: 12.5, color: color.inkSecondary, marginTop: 2 }}>Earliest safe ≈ week 12{runWeeks && runWeeks > 0 ? ` · about ${runWeeks} week${runWeeks === 1 ? '' : 's'} away` : ' · you may be ready — check with your provider'}.</Text>
+        </View>
+      )}
     </View>
   );
 }
