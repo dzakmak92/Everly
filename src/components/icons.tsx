@@ -39,6 +39,15 @@ export const Home = ({ size = 18, color = '#D46E97' }: IconProps) => (
   </Svg>
 );
 
+export const Grid = ({ size = 18, color = '#9C9AB2' }: IconProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Rect x="3" y="3" width="7" height="7" rx="1.5" {...stroke(color)} />
+    <Rect x="14" y="3" width="7" height="7" rx="1.5" {...stroke(color)} />
+    <Rect x="3" y="14" width="7" height="7" rx="1.5" {...stroke(color)} />
+    <Rect x="14" y="14" width="7" height="7" rx="1.5" {...stroke(color)} />
+  </Svg>
+);
+
 export const Calendar = ({ size = 18, color = '#9C9AB2' }: IconProps) => (
   <Svg width={size} height={size} viewBox="0 0 24 24">
     <Rect x="3" y="4" width="18" height="18" rx="3" {...stroke(color)} />

@@ -5,7 +5,7 @@ import { DataProvider, useData } from '../../src/lib/store';
 import { Splash } from '../../src/components/forms';
 import { Onboarding } from '../../src/components/Onboarding';
 import { color, font } from '../../src/theme/tokens';
-import { Home, Calendar, Heart, Clock, Settings } from '../../src/components/icons';
+import { Home, Calendar, Heart, Clock, Grid } from '../../src/components/icons';
 
 function AppTabs() {
   return (
@@ -29,8 +29,9 @@ function AppTabs() {
       <Tabs.Screen name="calendar" options={{ title: 'Calendar', tabBarIcon: ({ color: c, size }) => <Calendar size={size} color={c as string} /> }} />
       <Tabs.Screen name="health" options={{ title: 'Health', tabBarIcon: ({ color: c, size }) => <Heart size={size} color={c as string} /> }} />
       <Tabs.Screen name="timeline" options={{ title: 'Timeline', tabBarIcon: ({ color: c, size }) => <Clock size={size} color={c as string} /> }} />
-      <Tabs.Screen name="settings" options={{ title: 'Settings', tabBarIcon: ({ color: c, size }) => <Settings size={size} color={c as string} /> }} />
+      <Tabs.Screen name="more" options={{ title: 'More', tabBarIcon: ({ color: c, size }) => <Grid size={size} color={c as string} /> }} />
       {/* Non-tab routes (reachable via navigation, hidden from the tab bar). */}
+      <Tabs.Screen name="settings" options={{ href: null }} />
       <Tabs.Screen name="plans" options={{ href: null }} />
       <Tabs.Screen name="kick-counter" options={{ href: null }} />
       <Tabs.Screen name="contractions" options={{ href: null }} />
