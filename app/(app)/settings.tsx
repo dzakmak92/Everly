@@ -88,6 +88,7 @@ export default function SettingsTab() {
         <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 6 }, shadow.card]}>
           {[
             { label: 'Plans & billing', to: '/(app)/plans' },
+            { label: 'Pregnancy', to: '/(app)/pregnancy' },
             { label: 'Routines & chores', to: '/(app)/routines' },
             { label: 'Co-parent', to: '/(app)/coparent' },
             { label: 'Kick counter', to: '/(app)/kick-counter' },
