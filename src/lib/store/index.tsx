@@ -63,6 +63,9 @@ export type EpdsResult = { id: string; at: string; total: number; band: string; 
 export type Lochia = 'none' | 'light' | 'moderate' | 'heavy';
 export type RecoveryLog = { id: string; at: string; systolic?: number; diastolic?: number; lochia?: Lochia; note?: string };
 
+export type TzContact = { id: string; name: string; tz: string; location?: string };
+export type SavedTip = { id: string; at: string; text: string };
+
 export type Caregiver = { id: string; name: string };
 /** Expense paidBy is 'me' or a caregiver id; splitPct = the other party's share. */
 export type Expense = { id: string; label: string; amount: number; paidBy: string; splitPct: number; settled: boolean; at: string };
@@ -95,6 +98,8 @@ const CHECKINS_KEY = 'everly.checkins.v1';
 const MAT_BIRTH_KEY = 'everly.maternalBirth.v1';
 const EPDS_KEY = 'everly.epds.v1';
 const RECOVERY_KEY = 'everly.recovery.v1';
+const TZ_KEY = 'everly.tzContacts.v1';
+const TIPS_KEY = 'everly.savedTips.v1';
 
 function newId() {
   return `${Date.now().toString(36)}-${Math.floor(Math.random() * 1e6).toString(36)}`;
@@ -160,6 +165,12 @@ type DataValue = {
   recoveryLogs: RecoveryLog[];
   addRecoveryLog: (input: { systolic?: number; diastolic?: number; lochia?: Lochia; note?: string }) => void;
   deleteRecoveryLog: (id: string) => void;
+  tzContacts: TzContact[];
+  addTzContact: (input: { name: string; tz: string; location?: string }) => void;
+  deleteTzContact: (id: string) => void;
+  savedTips: SavedTip[];
+  saveTip: (text: string) => void;
+  deleteTip: (id: string) => void;
   clearAll: () => void;
 };
 
@@ -185,12 +196,14 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
   const [maternalBirth, setMaternalBirthState] = useState<string | null>(null);
   const [epdsResults, setEpdsResults] = useState<EpdsResult[]>([]);
   const [recoveryLogs, setRecoveryLogs] = useState<RecoveryLog[]>([]);
+  const [tzContacts, setTzContacts] = useState<TzContact[]>([]);
+  const [savedTips, setSavedTips] = useState<SavedTip[]>([]);
 
   useEffect(() => {
     let active = true;
     (async () => {
       try {
-        const [rawE, rawC, rawA, rawEv, rawV, rawM, rawG, rawR, rawCh, rawMs, rawCg, rawEx, rawCu, rawDue, rawCi, rawMb, rawEp, rawRec] = await Promise.all([
+        const [rawE, rawC, rawA, rawEv, rawV, rawM, rawG, rawR, rawCh, rawMs, rawCg, rawEx, rawCu, rawDue, rawCi, rawMb, rawEp, rawRec, rawTz, rawTip] = await Promise.all([
           AsyncStorage.getItem(ENTRIES_KEY),
           AsyncStorage.getItem(CHILDREN_KEY),
           AsyncStorage.getItem(ACTIVE_KEY),
@@ -209,6 +222,8 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
           AsyncStorage.getItem(MAT_BIRTH_KEY),
           AsyncStorage.getItem(EPDS_KEY),
           AsyncStorage.getItem(RECOVERY_KEY),
+          AsyncStorage.getItem(TZ_KEY),
+          AsyncStorage.getItem(TIPS_KEY),
         ]);
         if (!active) return;
         if (rawE) setEntries(JSON.parse(rawE));
@@ -229,6 +244,8 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
         if (rawMb) setMaternalBirthState(JSON.parse(rawMb));
         if (rawEp) setEpdsResults(JSON.parse(rawEp));
         if (rawRec) setRecoveryLogs(JSON.parse(rawRec));
+        if (rawTz) setTzContacts(JSON.parse(rawTz));
+        if (rawTip) setSavedTips(JSON.parse(rawTip));
       } catch {
         // Corrupt/missing cache → start empty. Never crash on storage.
       } finally {
@@ -256,6 +273,8 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
   useEffect(() => { if (!loading) AsyncStorage.setItem(MAT_BIRTH_KEY, JSON.stringify(maternalBirth)).catch(() => {}); }, [maternalBirth, loading]);
   useEffect(() => { if (!loading) AsyncStorage.setItem(EPDS_KEY, JSON.stringify(epdsResults)).catch(() => {}); }, [epdsResults, loading]);
   useEffect(() => { if (!loading) AsyncStorage.setItem(RECOVERY_KEY, JSON.stringify(recoveryLogs)).catch(() => {}); }, [recoveryLogs, loading]);
+  useEffect(() => { if (!loading) AsyncStorage.setItem(TZ_KEY, JSON.stringify(tzContacts)).catch(() => {}); }, [tzContacts, loading]);
+  useEffect(() => { if (!loading) AsyncStorage.setItem(TIPS_KEY, JSON.stringify(savedTips)).catch(() => {}); }, [savedTips, loading]);
 
   const addChild = useCallback((input: { name: string; color: ChildColor; birthDate?: string }) => {
     const child: Child = { id: newId(), name: input.name.trim(), color: input.color, birthDate: input.birthDate?.trim() || undefined };
@@ -386,6 +405,13 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
   }, []);
   const deleteRecoveryLog = useCallback((id: string) => setRecoveryLogs((prev) => prev.filter((r) => r.id !== id)), []);
 
+  const addTzContact = useCallback((input: { name: string; tz: string; location?: string }) => {
+    setTzContacts((prev) => [...prev, { id: newId(), name: input.name.trim(), tz: input.tz.trim(), location: input.location?.trim() || undefined }]);
+  }, []);
+  const deleteTzContact = useCallback((id: string) => setTzContacts((prev) => prev.filter((c) => c.id !== id)), []);
+  const saveTip = useCallback((text: string) => setSavedTips((prev) => [{ id: newId(), at: new Date().toISOString(), text }, ...prev]), []);
+  const deleteTip = useCallback((id: string) => setSavedTips((prev) => prev.filter((t) => t.id !== id)), []);
+
   const clearAll = useCallback(() => { setEntries([]); setEvents([]); }, []);
 
   const activeChild = useMemo(() => children.find((c) => c.id === activeId) ?? null, [children, activeId]);
@@ -405,9 +431,10 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
       expenses, addExpense, toggleExpenseSettled, deleteExpense,
       dueDate, setDueDate, checkins, addCheckin, deleteCheckin,
       maternalBirth, setMaternalBirth, epdsResults, addEpdsResult, deleteEpdsResult, recoveryLogs, addRecoveryLog, deleteRecoveryLog,
+      tzContacts, addTzContact, deleteTzContact, savedTips, saveTip, deleteTip,
       clearAll,
     }),
-    [loading, children, activeChild, setActiveChild, addChild, updateChild, deleteChild, entries, addEntry, deleteEntry, events, addEvent, deleteEvent, vaccines, addVaccine, updateVaccine, deleteVaccine, medications, addMedication, toggleMedication, deleteMedication, growth, addGrowth, deleteGrowth, routines, addRoutine, addRoutineStep, toggleStep, resetRoutine, deleteRoutine, chores, addChore, toggleChore, deleteChore, milestones, addMilestone, deleteMilestone, caregivers, addCaregiver, deleteCaregiver, custody, setCustodyDay, expenses, addExpense, toggleExpenseSettled, deleteExpense, dueDate, setDueDate, checkins, addCheckin, deleteCheckin, maternalBirth, setMaternalBirth, epdsResults, addEpdsResult, deleteEpdsResult, recoveryLogs, addRecoveryLog, deleteRecoveryLog, clearAll],
+    [loading, children, activeChild, setActiveChild, addChild, updateChild, deleteChild, entries, addEntry, deleteEntry, events, addEvent, deleteEvent, vaccines, addVaccine, updateVaccine, deleteVaccine, medications, addMedication, toggleMedication, deleteMedication, growth, addGrowth, deleteGrowth, routines, addRoutine, addRoutineStep, toggleStep, resetRoutine, deleteRoutine, chores, addChore, toggleChore, deleteChore, milestones, addMilestone, deleteMilestone, caregivers, addCaregiver, deleteCaregiver, custody, setCustodyDay, expenses, addExpense, toggleExpenseSettled, deleteExpense, dueDate, setDueDate, checkins, addCheckin, deleteCheckin, maternalBirth, setMaternalBirth, epdsResults, addEpdsResult, deleteEpdsResult, recoveryLogs, addRecoveryLog, deleteRecoveryLog, tzContacts, addTzContact, deleteTzContact, savedTips, saveTip, deleteTip, clearAll],
   );
 
   return <DataContext.Provider value={value}>{node}</DataContext.Provider>;

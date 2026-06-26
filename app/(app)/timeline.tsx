@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, View, Text, Pressable } from 'react-native';
+import { ScrollView, View, Text, Pressable, Share, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, font, radius, shadow } from '../../src/theme/tokens';
 import { useData, ENTRY_META, entryDetail, type Entry } from '../../src/lib/store';
@@ -27,6 +27,16 @@ export default function TimelineTab() {
   const insets = useSafeAreaInsets();
   const { entries, deleteEntry, milestones, children } = useData();
   const childName = (id?: string) => children.find((c) => c.id === id)?.name;
+
+  async function shareMilestone(text: string) {
+    try {
+      const nav = typeof navigator !== 'undefined' ? (navigator as any) : undefined;
+      if (Platform.OS === 'web' && nav?.share) await nav.share({ text });
+      else await Share.share({ message: text });
+    } catch {
+      /* user cancelled or unsupported */
+    }
+  }
 
   // Group newest-first into day buckets, preserving order.
   const groups: { key: string; items: Entry[] }[] = [];
@@ -56,6 +66,12 @@ export default function TimelineTab() {
                   {new Date(m.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}{childName(m.childId) ? ` · ${childName(m.childId)}` : ''}{m.note ? ` · ${m.note}` : ''}
                 </Text>
               </View>
+              <Pressable
+                onPress={() => shareMilestone(`${m.title} — ${new Date(m.date).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}${childName(m.childId) ? ` · ${childName(m.childId)}` : ''} (via Everly)`)}
+                hitSlop={8}
+              >
+                <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.primary }}>Share</Text>
+              </Pressable>
             </View>
           ))}
         </View>
