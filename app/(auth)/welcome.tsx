@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, font } from '../../src/theme/tokens';
@@ -40,9 +40,6 @@ export default function Welcome() {
       <View style={{ gap: 12 }}>
         <Button label="Create account" onPress={() => router.push('/(auth)/sign-up')} />
         <Button label="I already have an account" variant="secondary" onPress={() => router.push('/(auth)/sign-in')} />
-        <Pressable onPress={() => router.push('/gallery')} style={{ alignItems: 'center', paddingTop: 6 }}>
-          <Text style={{ fontFamily: font.body600, fontSize: 13, color: color.muted }}>Browse the design gallery</Text>
-        </Pressable>
       </View>
     </View>
   );
