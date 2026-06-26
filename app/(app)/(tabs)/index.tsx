@@ -5,15 +5,27 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, font, radius, shadow, childToken } from '../../../src/theme/tokens';
 import { Button, Field } from '../../../src/components/forms';
 import { Logo } from '../../../src/components/Logo';
-import { ChevronRight, Bottle, Calendar as CalendarIcon, Syringe } from '../../../src/components/icons';
+import {
+  ChevronRight, Bottle, Calendar as CalendarIcon, Syringe,
+  Heart, Calendar as CalIcon, Activity, Smile, Shield, CheckCircle,
+} from '../../../src/components/icons';
 import { EntryIcon } from '../../../src/components/EntryIcon';
-import { Silhouette } from '../../../src/components/ui';
+import { Silhouette, ProgressBar } from '../../../src/components/ui';
+import { DateField } from '../../../src/components/DateField';
 import { useSupabase } from '../../../src/lib/supabase';
 import { ageLabel, stageFrom } from '../../../src/lib/age';
+import { gestFromDueDate } from '../../../src/lib/pregnancy';
 import {
   useData, entriesOn, upcomingEvents, entryDetail, ENTRY_META, quickLogKinds, MOOD_LABELS,
   type EntryKind, type FeedSide, type DiaperType, type Child,
 } from '../../../src/lib/store';
+
+const todayISO = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+const apptDateLabel = (iso: string) =>
+  new Date(iso).toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 
 function greeting() {
   const h = new Date().getHours();
@@ -35,7 +47,22 @@ export default function Today() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { session, profile } = useSupabase();
-  const { entries, addEntry, deleteEntry, children, activeChild, setActiveChild, events, vaccines } = useData();
+  const {
+    entries, addEntry, deleteEntry, children, activeChild, setActiveChild, events, vaccines,
+    dueDate, maternalBirth, setMaternalBirth, pregAppts, matAppts,
+  } = useData();
+
+  // Maternity ("You") journey availability + person switching.
+  const hasJourney = !!maternalBirth || !!dueDate;
+  const [person, setPerson] = useState<'you' | string>(() => {
+    if (children.length > 0) return activeChild?.id ?? children[0].id;
+    return hasJourney ? 'you' : (activeChild?.id ?? '');
+  });
+  const isYou = person === 'you';
+
+  // Baby-has-arrived handoff modal (pregnancy phase only).
+  const [handoffOpen, setHandoffOpen] = useState(false);
+  const [handoffDate, setHandoffDate] = useState(todayISO());
 
   const [kind, setKind] = useState<EntryKind | null>(null);
   const [side, setSide] = useState<FeedSide>('left');
@@ -103,12 +130,42 @@ export default function Today() {
         <Text style={{ fontFamily: font.body400, fontSize: 13, color: color.muted, marginTop: 4 }}>{dateLabel}</Text>
       </Pressable>
 
-      {/* Child pills */}
-      {children.length > 0 && (
+      {/* People pills (children + optional You journey) */}
+      {(children.length > 0 || hasJourney) && (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-          {children.map((ch) => <ChildPill key={ch.id} child={ch} active={ch.id === activeChild?.id} onPress={() => setActiveChild(ch.id)} onLong={() => router.push(`/(app)/child/${ch.id}` as any)} />)}
+          {children.map((ch) => (
+            <ChildPill
+              key={ch.id}
+              child={ch}
+              active={!isYou && ch.id === person}
+              onPress={() => { setPerson(ch.id); setActiveChild(ch.id); }}
+              onLong={() => router.push(`/(app)/child/${ch.id}` as any)}
+            />
+          ))}
+          {hasJourney && (
+            <YouPill
+              active={isYou}
+              label={youStatusLabel(dueDate, maternalBirth)}
+              onPress={() => setPerson('you')}
+            />
+          )}
         </View>
       )}
+
+      {/* ── You (maternity) view ──────────────────────────────────────────── */}
+      {isYou && (
+        <MaternityView
+          dueDate={dueDate}
+          maternalBirth={maternalBirth}
+          pregAppts={pregAppts}
+          matAppts={matAppts}
+          router={router}
+          onArrived={() => { setHandoffDate(todayISO()); setHandoffOpen(true); }}
+        />
+      )}
+
+      {/* ── Child view (existing Today content) ───────────────────────────── */}
+      {!isYou && <>
 
       {/* Today at a glance */}
       {today.length > 0 && (
@@ -176,6 +233,8 @@ export default function Today() {
         )}
       </View>
 
+      </>}
+
       {/* Detail modal */}
       <Modal visible={kind !== null} transparent animationType="fade" onRequestClose={() => setKind(null)}>
         <Pressable onPress={() => setKind(null)} style={{ flex: 1, backgroundColor: 'rgba(40,18,50,0.35)', justifyContent: 'center', paddingHorizontal: 28 }}>
@@ -191,6 +250,21 @@ export default function Today() {
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <Button label="Cancel" variant="secondary" onPress={() => setKind(null)} style={{ flex: 1 }} />
               <Button label="Save" onPress={save} style={{ flex: 1 }} />
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Baby-has-arrived handoff modal (manual only) */}
+      <Modal visible={handoffOpen} transparent animationType="fade" onRequestClose={() => setHandoffOpen(false)}>
+        <Pressable onPress={() => setHandoffOpen(false)} style={{ flex: 1, backgroundColor: 'rgba(40,18,50,0.35)', justifyContent: 'center', paddingHorizontal: 28 }}>
+          <Pressable onPress={() => {}} style={[{ backgroundColor: color.canvas, borderRadius: radius.card, padding: 20, gap: 14 }, shadow.card]}>
+            <Text style={{ fontFamily: font.display700, fontSize: 18, color: color.ink }}>Baby has arrived 🎉</Text>
+            <Text style={{ fontFamily: font.body400, fontSize: 13, color: color.muted }}>Congratulations! Set the birth date to move into your postpartum journey. Your pregnancy stays saved as history.</Text>
+            <DateField label="Baby's birth date" value={handoffDate} onChangeText={setHandoffDate} />
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <Button label="Cancel" variant="secondary" onPress={() => setHandoffOpen(false)} style={{ flex: 1 }} />
+              <Button label="Confirm" onPress={() => { setMaternalBirth(handoffDate); setHandoffOpen(false); }} style={{ flex: 1 }} />
             </View>
           </Pressable>
         </Pressable>
@@ -275,6 +349,163 @@ function ChildPill({ child, active, onPress, onLong }: { child: Child; active: b
         </View>
       </View>
     </Pressable>
+  );
+}
+
+/* ── You (maternity) journey ────────────────────────────────────────────── */
+
+const PP_MS = 86400000;
+
+/** Status label for the People-row "You" pill. */
+function youStatusLabel(dueDate: string | null, maternalBirth: string | null): string {
+  if (maternalBirth) {
+    const days = Math.max(0, Math.floor((Date.now() - new Date(maternalBirth).getTime()) / PP_MS));
+    return `Week ${Math.floor(days / 7)} pp`;
+  }
+  const g = gestFromDueDate(dueDate ?? undefined);
+  return g ? `Week ${g.week}` : 'You';
+}
+
+function YouPill({ active, label, onPress }: { active: boolean; label: string; onPress: () => void }) {
+  const fillC = '#E0F4EF';
+  const strokeC = color.maternalTeal;
+  return (
+    <Pressable onPress={onPress}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: active ? fillC : '#fff', borderRadius: radius.pill, paddingVertical: 7, paddingRight: 14, paddingLeft: 7, borderWidth: 1.5, borderColor: active ? strokeC : color.hairline }}>
+        <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: active ? strokeC : fillC, alignItems: 'center', justifyContent: 'center' }}>
+          <Silhouette size={18} fill={active ? '#fff' : strokeC} />
+        </View>
+        <View>
+          <Text style={{ fontFamily: font.body700, fontSize: 13, color: active ? color.tealInk : color.ink }}>You</Text>
+          <Text style={{ fontFamily: font.body400, fontSize: 11, color: active ? color.tealDeep : color.muted, marginTop: 2 }}>{label}</Text>
+        </View>
+      </View>
+    </Pressable>
+  );
+}
+
+type ApptLike = { id: string; title: string; at: string };
+
+function MaternityView({
+  dueDate, maternalBirth, pregAppts, matAppts, router, onArrived,
+}: {
+  dueDate: string | null;
+  maternalBirth: string | null;
+  pregAppts: ApptLike[];
+  matAppts: ApptLike[];
+  router: ReturnType<typeof useRouter>;
+  onArrived: () => void;
+}) {
+  const phase: 'pregnancy' | 'postpartum' = maternalBirth ? 'postpartum' : 'pregnancy';
+  const now = Date.now();
+
+  // Hero numbers.
+  const gest = gestFromDueDate(dueDate ?? undefined);
+  const ppDays = maternalBirth ? Math.max(0, Math.floor((now - new Date(maternalBirth).getTime()) / PP_MS)) : 0;
+  const ppWeeks = Math.floor(ppDays / 7);
+
+  // Quick-action tiles per phase.
+  const tiles =
+    phase === 'pregnancy'
+      ? [
+          { key: 'checkin', label: 'Check-in', bg: '#E0F4EF', icon: <Heart size={22} color={color.maternalTeal} filled={false} />, to: '/(app)/pregnancy' },
+          { key: 'appts', label: 'Appointments', bg: '#DCEBFA', icon: <CalIcon size={22} color={color.preconceptionSky} />, to: '/(app)/preg-appointments' },
+          { key: 'week', label: 'Week-by-week', bg: '#FBE0EA', icon: <Activity size={22} color={color.rose} />, to: '/(app)/preg-week' },
+        ]
+      : [
+          { key: 'epds', label: 'Wellbeing', bg: '#E7E4FB', icon: <Smile size={22} color={color.primary} />, to: '/(app)/epds' },
+          { key: 'recovery', label: 'Recovery', bg: '#E0F4EF', icon: <Shield size={22} color={color.maternalTeal} />, to: '/(app)/maternal' },
+          { key: 'appts', label: 'Appointments', bg: '#DCEBFA', icon: <CalIcon size={22} color={color.preconceptionSky} />, to: '/(app)/preg-appointments?tab=maternal' },
+        ];
+
+  // Up next — soonest first, max 2, future only.
+  const source = phase === 'pregnancy' ? pregAppts : matAppts;
+  const upNext = [...source]
+    .filter((a) => new Date(a.at).getTime() >= now)
+    .sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime())
+    .slice(0, 2);
+
+  return (
+    <View style={{ gap: 16 }}>
+      {/* Teal hero */}
+      <Pressable onPress={() => router.push((phase === 'pregnancy' ? '/(app)/pregnancy' : '/(app)/maternal') as any)}>
+        <View style={[{ backgroundColor: color.maternalTeal, borderRadius: radius.card, padding: 20, gap: 14 }, shadow.card]}>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+            <View style={{ flex: 1 }}>
+              {phase === 'pregnancy' ? (
+                <>
+                  <Text style={{ fontFamily: font.display700, fontSize: 24, color: '#fff' }}>Week {gest ? gest.week : 0}</Text>
+                  <Text style={{ fontFamily: font.body500, fontSize: 13, color: 'rgba(255,255,255,0.85)', marginTop: 4 }}>
+                    {gest ? `${gest.daysToGo} days to go · Trimester ${gest.trimester}` : 'Add a due date to begin'}
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <Text style={{ fontFamily: font.display700, fontSize: 24, color: '#fff' }}>Week {ppWeeks} postpartum</Text>
+                  <Text style={{ fontFamily: font.body500, fontSize: 13, color: 'rgba(255,255,255,0.85)', marginTop: 4 }}>
+                    Day {ppDays} · Fourth trimester
+                  </Text>
+                </>
+              )}
+            </View>
+            <Text style={{ fontFamily: font.body700, fontSize: 13, color: '#fff' }}>Open →</Text>
+          </View>
+          {phase === 'pregnancy' && gest && (
+            <ProgressBar pct={Math.round(gest.progress * 100)} track="rgba(255,255,255,0.25)" colors={['#FFFFFF', '#E0F4EF']} />
+          )}
+        </View>
+      </Pressable>
+
+      {/* Quick actions */}
+      <View style={{ gap: 10 }}>
+        <Label>Quick actions</Label>
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          {tiles.map((t) => (
+            <Pressable key={t.key} onPress={() => router.push(t.to as any)} style={({ pressed }) => [{ flex: 1, opacity: pressed ? 0.82 : 1 }]}>
+              <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, paddingVertical: 16, paddingHorizontal: 8, alignItems: 'center', gap: 9 }, shadow.card]}>
+                <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: t.bg, alignItems: 'center', justifyContent: 'center' }}>
+                  {t.icon}
+                </View>
+                <Text style={{ fontFamily: font.body700, fontSize: 12.5, color: color.ink, textAlign: 'center' }}>{t.label}</Text>
+              </View>
+            </Pressable>
+          ))}
+        </View>
+      </View>
+
+      {/* Up next */}
+      {upNext.length > 0 && (
+        <View style={{ gap: 10 }}>
+          <Label>Up next</Label>
+          {upNext.map((a) => (
+            <FeedRow
+              key={a.id}
+              chipBg="#E0F4EF"
+              icon={<CalIcon size={22} color={color.maternalTeal} />}
+              title={a.title}
+              sub={apptDateLabel(a.at)}
+              trailing={<ChevronRight size={16} color={color.faint} />}
+            />
+          ))}
+        </View>
+      )}
+
+      {/* Manual handoff — pregnancy phase only */}
+      {phase === 'pregnancy' && (
+        <Pressable onPress={onArrived} style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1 }]}>
+          <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1.5, borderColor: color.maternalTeal }, shadow.card]}>
+            <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: '#E0F4EF', alignItems: 'center', justifyContent: 'center' }}>
+              <CheckCircle size={22} color={color.maternalTeal} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontFamily: font.body700, fontSize: 14.5, color: color.tealInk }}>Baby has arrived 🎉</Text>
+              <Text style={{ fontFamily: font.body400, fontSize: 12.5, color: color.muted, marginTop: 2 }}>Move into your postpartum journey</Text>
+            </View>
+            <ChevronRight size={16} color={color.maternalTeal} />
+          </View>
+        </Pressable>
+      )}
+    </View>
   );
 }
 
