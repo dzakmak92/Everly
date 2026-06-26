@@ -91,8 +91,7 @@ export default function Pregnancy() {
             {([
               { label: 'Daily check-in', fn: () => setCiOpen(true) },
               { label: 'Week-by-week', fn: () => router.push('/(app)/preg-week') },
-              { label: 'Kick counter', fn: () => router.push('/(app)/kick-counter') },
-              { label: 'Contraction timer', fn: () => router.push('/(app)/contractions') },
+              { label: 'Labour & movement', fn: () => router.push('/(app)/kick-counter') },
               { label: 'Appointments & tests', fn: () => router.push('/(app)/preg-appointments') },
               { label: 'Birth prep', fn: () => router.push('/(app)/preg-birthprep') },
               { label: 'Baby names', fn: () => router.push('/(app)/preg-names') },

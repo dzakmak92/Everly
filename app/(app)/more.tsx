@@ -3,7 +3,7 @@ import { ScrollView, View, Text, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, font, radius, shadow } from '../../src/theme/tokens';
-import { BabyBean, Heart, Plus, Clock, Activity, CheckCircle, User, MessageSquare, Calendar, Leaf, Star, Settings, Shield, Syringe, Camera } from '../../src/components/icons';
+import { BabyBean, Heart, Plus, Clock, Activity, CheckCircle, User, Calendar, Star, Settings, Shield, Syringe, Camera } from '../../src/components/icons';
 
 type Item = { label: string; to: string; icon: React.ReactNode; bg: string };
 const Ic = (C: any, c: string) => <C size={20} color={c} />;
@@ -28,7 +28,6 @@ const SECTIONS: { title: string; items: Item[] }[] = [
     items: [
       { label: 'Add / log', to: '/(app)/quick-add', icon: Ic(Plus, '#B5662E'), bg: '#FCE6D8' },
       { label: 'Night log', to: '/(app)/quick-add?night=1', icon: Ic(Clock, '#54579E'), bg: '#E7E4FB' },
-      { label: 'Rhythm ring', to: '/(app)/rhythm', icon: Ic(Activity, '#2C8475'), bg: '#D8F0E6' },
       { label: 'Routines & chores', to: '/(app)/routines', icon: Ic(CheckCircle, '#7A5C20'), bg: '#FBF1CE' },
     ],
   },
@@ -37,14 +36,13 @@ const SECTIONS: { title: string; items: Item[] }[] = [
     items: [
       { label: 'Co-parent', to: '/(app)/coparent', icon: Ic(User, '#B04070'), bg: '#FBE0EA' },
       { label: 'Family timezones', to: '/(app)/timezones', icon: Ic(Clock, '#2C5F90'), bg: '#DCEBFA' },
-      { label: 'Weekly digest', to: '/(app)/digest', icon: Ic(MessageSquare, '#54579E'), bg: '#E7E4FB' },
       { label: 'Kiosk mode', to: '/(app)/kiosk', icon: Ic(Calendar, '#B5662E'), bg: '#FCE6D8' },
     ],
   },
   {
     title: 'Discover',
     items: [
-      { label: 'Gentle insights', to: '/(app)/insights', icon: Ic(Leaf, '#2C8475'), bg: '#D8F0E6' },
+      { label: 'Insights', to: '/(app)/insights', icon: Ic(Activity, '#2C8475'), bg: '#D8F0E6' },
       { label: 'Design gallery', to: '/gallery', icon: Ic(Star, '#C9A33B'), bg: '#FBF1CE' },
     ],
   },
