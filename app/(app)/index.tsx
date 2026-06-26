@@ -1,21 +1,19 @@
 import React, { useState } from 'react';
 import { ScrollView, View, Text, Pressable, Modal } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, font, radius, shadow, childToken } from '../../src/theme/tokens';
 import { Button, Field } from '../../src/components/forms';
 import { Logo } from '../../src/components/Logo';
 import { ChevronRight, Bottle, Calendar as CalendarIcon, Syringe } from '../../src/components/icons';
+import { EntryIcon } from '../../src/components/EntryIcon';
 import { Silhouette } from '../../src/components/ui';
 import { useSupabase } from '../../src/lib/supabase';
-import { ageLabel } from '../../src/lib/age';
+import { ageLabel, stageFrom } from '../../src/lib/age';
 import {
-  useData, entriesOn, upcomingEvents, entryDetail, ENTRY_META,
+  useData, entriesOn, upcomingEvents, entryDetail, ENTRY_META, quickLogKinds, MOOD_LABELS,
   type EntryKind, type FeedSide, type DiaperType, type Child,
 } from '../../src/lib/store';
-
-const QUICK: EntryKind[] = ['feed', 'sleep', 'diaper', 'pump', 'note'];
 
 function greeting() {
   const h = new Date().getHours();
@@ -45,6 +43,10 @@ export default function Today() {
   const [ml, setMl] = useState('');
   const [mins, setMins] = useState('');
   const [note, setNote] = useState('');
+  const [mood, setMood] = useState(2);
+
+  // Quick-log options adapt to the active child's life-stage.
+  const quick = quickLogKinds(activeChild?.birthDate ? stageFrom(activeChild.birthDate) : 'newborn');
 
   const rawName = profile?.name || session?.user?.email?.split('@')[0] || 'there';
   const name = rawName.charAt(0).toUpperCase() + rawName.slice(1);
@@ -68,7 +70,7 @@ export default function Today() {
   const dueVax = forChild(vaccines).filter((v) => !v.givenDate)[0];
   const childName = (id?: string) => children.find((c) => c.id === id)?.name;
 
-  function open(k: EntryKind) { setKind(k); setSide('left'); setDiaper('wet'); setMl(''); setMins(''); setNote(''); }
+  function open(k: EntryKind) { setKind(k); setSide('left'); setDiaper('wet'); setMl(''); setMins(''); setNote(''); setMood(2); }
   function save() {
     if (!kind) return;
     const n = (s: string) => { const v = parseInt(s, 10); return isNaN(v) ? undefined : v; };
@@ -76,7 +78,9 @@ export default function Today() {
     else if (kind === 'pump') addEntry('pump', { volumeMl: n(ml), note });
     else if (kind === 'sleep') addEntry('sleep', { durationMin: n(mins), note });
     else if (kind === 'diaper') addEntry('diaper', { diaperType: diaper, note });
-    else addEntry('note', { note });
+    else if (kind === 'activity') addEntry('activity', { durationMin: n(mins), note });
+    else if (kind === 'mood') addEntry('mood', { mood, note });
+    else addEntry(kind, { note }); // note / meal / medicine / potty
     setKind(null);
   }
 
@@ -144,11 +148,11 @@ export default function Today() {
       <View style={{ gap: 10 }}>
         <Label>Quick log</Label>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-          {QUICK.map((k) => {
+          {quick.map((k) => {
             const m = ENTRY_META[k];
             return (
               <Pressable key={k} onPress={() => open(k)} style={({ pressed }) => [{ backgroundColor: m.fill, borderRadius: radius.card, paddingVertical: 18, paddingHorizontal: 10, flexGrow: 1, flexBasis: '30%', minWidth: 100, alignItems: 'center', gap: 8, opacity: pressed ? 0.82 : 1 }]}>
-                <EntryGlyph kind={k} color={m.ink} size={24} />
+                <EntryIcon kind={k} color={m.ink} size={24} />
                 <Text style={{ fontFamily: font.body700, fontSize: 14.5, color: m.ink }}>{m.label}</Text>
               </Pressable>
             );
@@ -179,10 +183,11 @@ export default function Today() {
             <Text style={{ fontFamily: font.display700, fontSize: 18, color: color.ink }}>{kind ? ENTRY_META[kind].label : ''}</Text>
             {kind === 'feed' && <Chips options={[['left', 'Left'], ['right', 'Right'], ['bottle', 'Bottle']]} value={side} onChange={(v) => setSide(v as FeedSide)} />}
             {kind === 'feed' && side === 'bottle' && <Field label="Amount (ml)" value={ml} onChangeText={setMl} placeholder="e.g. 120" />}
-            {(kind === 'feed' || kind === 'sleep') && <Field label="Duration (min)" value={mins} onChangeText={setMins} placeholder="e.g. 20" />}
+            {(kind === 'feed' || kind === 'sleep' || kind === 'activity') && <Field label="Duration (min)" value={mins} onChangeText={setMins} placeholder="e.g. 20" />}
             {kind === 'pump' && <Field label="Amount (ml)" value={ml} onChangeText={setMl} placeholder="e.g. 90" />}
             {kind === 'diaper' && <Chips options={[['wet', 'Wet'], ['dirty', 'Dirty'], ['both', 'Both']]} value={diaper} onChange={(v) => setDiaper(v as DiaperType)} />}
-            <Field label={kind === 'note' ? 'Note' : 'Note (optional)'} value={note} onChangeText={setNote} placeholder="Anything to add?" autoCapitalize="sentences" />
+            {kind === 'mood' && <Chips options={MOOD_LABELS.map((l, i) => [String(i), l] as [string, string])} value={String(mood)} onChange={(v) => setMood(parseInt(v, 10))} />}
+            <Field label={kind === 'note' || kind === 'meal' || kind === 'medicine' || kind === 'potty' ? 'Note' : 'Note (optional)'} value={note} onChangeText={setNote} placeholder={kind === 'meal' ? 'What did they eat?' : kind === 'medicine' ? 'Medicine & dose' : kind === 'potty' ? 'e.g. pee / poo / accident' : 'Anything to add?'} autoCapitalize="sentences" />
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <Button label="Cancel" variant="secondary" onPress={() => setKind(null)} style={{ flex: 1 }} />
               <Button label="Save" onPress={save} style={{ flex: 1 }} />
@@ -215,16 +220,6 @@ function Divider() {
 }
 
 /* ── timeline ─────────────────────────────────────────────────────────────── */
-function glyphStroke(c: string) {
-  return { fill: 'none' as const, stroke: c, strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
-}
-function EntryGlyph({ kind, color: c, size = 16 }: { kind: EntryKind; color: string; size?: number }) {
-  if (kind === 'feed') return <Bottle size={size} color={c} />;
-  if (kind === 'sleep') return <Svg width={size} height={size} viewBox="0 0 24 24"><Path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" {...glyphStroke(c)} /></Svg>;
-  if (kind === 'pump') return <Svg width={size} height={size} viewBox="0 0 24 24"><Path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" {...glyphStroke(c)} /></Svg>;
-  if (kind === 'diaper') return <Svg width={size} height={size} viewBox="0 0 24 24"><Path d="M4 8l4-4 4 4 4-4 4 4v8l-4 4-4-4-4 4-4-4V8z" {...glyphStroke(c)} /></Svg>;
-  return <Svg width={size} height={size} viewBox="0 0 24 24"><Path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" {...glyphStroke(c)} /><Path d="M14 2v6h6M8 13h8M8 17h6" {...glyphStroke(c)} /></Svg>;
-}
 function EntryRow({ entry, first, last, onDelete }: { entry: { id: string; kind: EntryKind; at: string }; first: boolean; last: boolean; onDelete: () => void }) {
   const m = ENTRY_META[entry.kind];
   const detail = entryDetail(entry as any);
@@ -234,7 +229,7 @@ function EntryRow({ entry, first, last, onDelete }: { entry: { id: string; kind:
       <View style={{ width: 34, alignItems: 'center' }}>
         <View style={{ width: 2, height: 14, backgroundColor: first ? 'transparent' : color.hairline }} />
         <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: m.fill, alignItems: 'center', justifyContent: 'center' }}>
-          <EntryGlyph kind={entry.kind} color={m.ink} size={16} />
+          <EntryIcon kind={entry.kind} color={m.ink} size={16} />
         </View>
         <View style={{ width: 2, flex: 1, minHeight: 12, backgroundColor: last ? 'transparent' : color.hairline }} />
       </View>
