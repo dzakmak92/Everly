@@ -141,14 +141,15 @@ export default function Today() {
       )}
 
       {/* Quick log */}
-      <View>
+      <View style={{ gap: 10 }}>
         <Label>Quick log</Label>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 9, marginTop: 10 }}>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
           {QUICK.map((k) => {
             const m = ENTRY_META[k];
             return (
-              <Pressable key={k} onPress={() => open(k)} style={({ pressed }) => [{ backgroundColor: m.fill, borderRadius: radius.tile, paddingVertical: 13, paddingHorizontal: 15, minWidth: 84, alignItems: 'center', opacity: pressed ? 0.8 : 1 }]}>
-                <Text style={{ fontFamily: font.body700, fontSize: 13.5, color: m.ink }}>+ {m.label}</Text>
+              <Pressable key={k} onPress={() => open(k)} style={({ pressed }) => [{ backgroundColor: m.fill, borderRadius: radius.card, paddingVertical: 18, paddingHorizontal: 10, flexGrow: 1, flexBasis: '30%', minWidth: 100, alignItems: 'center', gap: 8, opacity: pressed ? 0.82 : 1 }]}>
+                <EntryGlyph kind={k} color={m.ink} size={24} />
+                <Text style={{ fontFamily: font.body700, fontSize: 14.5, color: m.ink }}>{m.label}</Text>
               </Pressable>
             );
           })}
