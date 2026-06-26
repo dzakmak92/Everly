@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import { ScrollView, View, Text, Pressable, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { color, font, radius, shadow, childToken } from '../../src/theme/tokens';
-import { Button, Field, Notice } from '../../src/components/forms';
-import { DateField } from '../../src/components/DateField';
-import { ChevronRight } from '../../src/components/icons';
-import { Silhouette } from '../../src/components/ui';
-import { useData, CHILD_COLORS, type ChildColor } from '../../src/lib/store';
-import { ageLabel, stageFrom, STAGE_LABEL } from '../../src/lib/age';
+import { color, font, radius, shadow, childToken } from '../../../src/theme/tokens';
+import { Button, Field, Notice } from '../../../src/components/forms';
+import { DateField } from '../../../src/components/DateField';
+import { ChevronRight } from '../../../src/components/icons';
+import { Silhouette } from '../../../src/components/ui';
+import { useData, CHILD_COLORS, type ChildColor } from '../../../src/lib/store';
+import { ageLabel, stageFrom, STAGE_LABEL } from '../../../src/lib/age';
 
 export default function Family() {
   const router = useRouter();

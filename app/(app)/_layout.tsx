@@ -1,90 +1,24 @@
 import React from 'react';
-import { Pressable, View } from 'react-native';
-import { Redirect, Tabs } from 'expo-router';
+import { Redirect, Stack } from 'expo-router';
 import { useSupabase } from '../../src/lib/supabase';
 import { DataProvider, useData } from '../../src/lib/store';
 import { Splash } from '../../src/components/forms';
 import { Onboarding } from '../../src/components/Onboarding';
-import { color, font, shadow } from '../../src/theme/tokens';
-import { Home, Calendar, User, Grid, Plus } from '../../src/components/icons';
+import { color } from '../../src/theme/tokens';
 
-/** Raised center FAB used as the quick-add tab button. */
-function FabButton({ onPress }: { onPress?: (e: any) => void }) {
-  return (
-    <Pressable onPress={onPress} style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-      <View style={[{ width: 54, height: 54, borderRadius: 27, backgroundColor: color.primary, alignItems: 'center', justifyContent: 'center', marginTop: -22 }, shadow.periwinkleButton]}>
-        <Plus size={26} color="#fff" />
-      </View>
-    </Pressable>
-  );
-}
-
-function AppTabs() {
-  return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: color.primary,
-        tabBarInactiveTintColor: color.muted,
-        tabBarStyle: {
-          backgroundColor: '#fff',
-          borderTopColor: color.hairline,
-          borderTopWidth: 1,
-          height: 76,
-          paddingTop: 8,
-          paddingBottom: 18,
-        },
-        tabBarLabelStyle: { fontFamily: font.body600, fontSize: 11 },
-      }}
-    >
-      <Tabs.Screen name="index" options={{ title: 'Today', tabBarIcon: ({ color: c, size }) => <Home size={size} color={c as string} /> }} />
-      <Tabs.Screen name="calendar" options={{ title: 'Calendar', tabBarIcon: ({ color: c, size }) => <Calendar size={size} color={c as string} /> }} />
-      <Tabs.Screen name="quick-add" options={{ title: '', tabBarButton: (p) => <FabButton onPress={p.onPress as any} /> }} />
-      <Tabs.Screen name="family" options={{ title: 'Family', tabBarIcon: ({ color: c, size }) => <User size={size} color={c as string} /> }} />
-      <Tabs.Screen name="more" options={{ title: 'More', tabBarIcon: ({ color: c, size }) => <Grid size={size} color={c as string} /> }} />
-      {/* Non-tab routes (reachable via navigation, hidden from the tab bar). */}
-      <Tabs.Screen name="health" options={{ href: null }} />
-      <Tabs.Screen name="timeline" options={{ href: null }} />
-      <Tabs.Screen name="settings" options={{ href: null }} />
-      <Tabs.Screen name="plans" options={{ href: null }} />
-      <Tabs.Screen name="kick-counter" options={{ href: null }} />
-      <Tabs.Screen name="contractions" options={{ href: null }} />
-      <Tabs.Screen name="admin" options={{ href: null }} />
-      <Tabs.Screen name="routines" options={{ href: null }} />
-      <Tabs.Screen name="coparent" options={{ href: null }} />
-      <Tabs.Screen name="pregnancy" options={{ href: null }} />
-      <Tabs.Screen name="maternal" options={{ href: null }} />
-      <Tabs.Screen name="epds" options={{ href: null }} />
-      <Tabs.Screen name="digest" options={{ href: null }} />
-      <Tabs.Screen name="timezones" options={{ href: null }} />
-      <Tabs.Screen name="insights" options={{ href: null }} />
-      <Tabs.Screen name="nightlog" options={{ href: null }} />
-      <Tabs.Screen name="rhythm" options={{ href: null }} />
-      <Tabs.Screen name="kiosk" options={{ href: null }} />
-      <Tabs.Screen name="preg-week" options={{ href: null }} />
-      <Tabs.Screen name="preg-birthprep" options={{ href: null }} />
-      <Tabs.Screen name="preg-names" options={{ href: null }} />
-      <Tabs.Screen name="preg-care" options={{ href: null }} />
-      <Tabs.Screen name="preg-appointments" options={{ href: null }} />
-      <Tabs.Screen name="preg-triage" options={{ href: null }} />
-      <Tabs.Screen name="preg-vitals" options={{ href: null }} />
-      <Tabs.Screen name="mat-preconception" options={{ href: null }} />
-      <Tabs.Screen name="mat-care" options={{ href: null }} />
-      <Tabs.Screen name="mat-pelvic" options={{ href: null }} />
-      <Tabs.Screen name="mat-appointments" options={{ href: null }} />
-      <Tabs.Screen name="mat-timeline" options={{ href: null }} />
-      <Tabs.Screen name="mat-again" options={{ href: null }} />
-      <Tabs.Screen name="child/[id]" options={{ href: null }} />
-    </Tabs>
-  );
-}
-
-/** Routes by on-device state: loading → splash, no children → onboarding, else tabs. */
+/**
+ * App stack: the (tabs) group is the home, and every other screen is pushed as
+ * a card so the back button returns to wherever you came from (not always Today).
+ */
 function Shell() {
   const { loading, children } = useData();
   if (loading) return <Splash />;
   if (children.length === 0) return <Onboarding />;
-  return <AppTabs />;
+  return (
+    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: color.canvas } }}>
+      <Stack.Screen name="(tabs)" />
+    </Stack>
+  );
 }
 
 /** The app is for signed-in users only; bounce to welcome otherwise. */
