@@ -51,6 +51,10 @@ export default function Appointments() {
 
   const appts = pregAppts.filter((a) => a.kind === 'appointment');
   const tests = pregAppts.filter((a) => a.kind === 'test');
+  const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0);
+  const isFuture = (iso: string) => new Date(iso).getTime() >= startOfToday.getTime();
+  const upcomingAppts = appts.filter((a) => isFuture(a.at)).sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
+  const pastAppts = appts.filter((a) => !isFuture(a.at)).sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
 
   const kindOptions: ('appointment' | 'test' | 'check')[] = mode === 'pregnancy' ? ['appointment', 'test'] : ['appointment', 'check'];
 
@@ -78,10 +82,18 @@ export default function Appointments() {
         <>
           <View style={{ gap: 8 }}>
             <Text style={Label}>Upcoming</Text>
-            {appts.length === 0 ? <Empty t="No appointments yet." /> : appts.map((a) => (
+            {upcomingAppts.length === 0 ? <Empty t="No upcoming appointments." /> : upcomingAppts.map((a) => (
               <Row key={a.id} title={a.title} sub={whenLabel(a.at)} onDelete={() => deletePregAppt(a.id)} />
             ))}
           </View>
+          {pastAppts.length > 0 && (
+            <View style={{ gap: 8 }}>
+              <Text style={Label}>Past</Text>
+              {pastAppts.map((a) => (
+                <Row key={a.id} title={a.title} sub={whenLabel(a.at)} onDelete={() => deletePregAppt(a.id)} />
+              ))}
+            </View>
+          )}
           <View style={{ gap: 8 }}>
             <Text style={Label}>Test results</Text>
             {tests.length === 0 ? <Empty t="No test results yet." /> : tests.map((a) => (

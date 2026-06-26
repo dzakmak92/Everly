@@ -160,9 +160,9 @@ function DayTab() {
   const avgSleepMin = sleepDays.length ? Math.round(sleepDays.reduce((a, b) => a + b, 0) / sleepDays.length) : 0;
   const avgSleepLabel = avgSleepMin > 0 ? `${(avgSleepMin / 60).toFixed(1)}h` : '—';
 
-  const feedDays = feedSeries.filter((n) => n > 0);
-  const avgFeeds = feedDays.length ? feedSeries.reduce((a, b) => a + b, 0) / feedDays.length : 0;
-  const avgFeedsLabel = feedDays.length ? avgFeeds.toFixed(1) : '—';
+  const totalFeeds = feedSeries.reduce((a, b) => a + b, 0);
+  const avgFeeds = totalFeeds / 7; // average across all 7 days, not just days with feeds
+  const avgFeedsLabel = totalFeeds > 0 ? avgFeeds.toFixed(1) : '—';
 
   const deltaMin = avgSleepMin > 0 ? sleepMin - avgSleepMin : 0;
   const deltaLabel =
@@ -171,11 +171,23 @@ function DayTab() {
   const childGrowth = activeChild
     ? growth.filter((g) => g.childId === activeChild.id).sort((a, b) => a.at.localeCompare(b.at))
     : [];
-  const latestGrowth = childGrowth[childGrowth.length - 1];
-  const growthPct = estimatePercentile(latestGrowth?.weightKg);
-  const growthLabel = growthPct != null ? `${ordinal(growthPct)}` : '—';
-  const growthSeries =
-    childGrowth.length > 0 ? childGrowth.slice(-7).map((g) => g.weightKg ?? g.heightCm ?? 0) : [];
+  // Growth: show the latest weight (fall back to height) plus its trend — no
+  // medical-sounding percentile, since we have no age/sex reference curve.
+  const weightPoints = childGrowth.filter((g) => g.weightKg != null && g.weightKg > 0);
+  const heightPoints = childGrowth.filter((g) => g.heightCm != null && g.heightCm > 0);
+  const useWeight = weightPoints.length > 0;
+  const growthPoints = useWeight ? weightPoints : heightPoints;
+  const growthSeries = growthPoints
+    .slice(-7)
+    .map((g) => (useWeight ? g.weightKg! : g.heightCm!));
+  const latestVal = growthSeries.length ? growthSeries[growthSeries.length - 1] : null;
+  const prevVal = growthSeries.length > 1 ? growthSeries[growthSeries.length - 2] : null;
+  const growthUnit = useWeight ? 'kg' : 'cm';
+  const growthLabel = latestVal != null ? `${latestVal}${growthUnit}` : '—';
+  const growthTrend =
+    latestVal != null && prevVal != null && latestVal !== prevVal
+      ? `${latestVal > prevVal ? '↑' : '↓'} ${Math.abs(+(latestVal - prevVal).toFixed(2))}${growthUnit}`
+      : null;
 
   const sw = 64;
   const sh = 18;
@@ -280,7 +292,7 @@ function DayTab() {
       <View style={{ flexDirection: 'row', gap: 8 }}>
         <SparkCard label="Avg sleep" value={avgSleepLabel} path={sparkPath(sleepSeries, sw, sh)} w={sw} h={sh} lineColor={lilac.stroke} />
         <SparkCard label="Feeds/day" value={avgFeedsLabel} path={sparkPath(feedSeries, sw, sh)} w={sw} h={sh} lineColor={mint.stroke} />
-        <SparkCard label="Growth" value={growthLabel} path={sparkPath(growthSeries, sw, sh)} w={sw} h={sh} lineColor={butter.stroke} />
+        <SparkCard label={useWeight ? 'Weight' : 'Height'} value={growthLabel} sub={growthTrend} path={sparkPath(growthSeries, sw, sh)} w={sw} h={sh} lineColor={butter.stroke} />
       </View>
 
       {today.length === 0 && (
@@ -306,6 +318,7 @@ function LegendItem({ swatch, round, label }: { swatch: string; round: boolean; 
 function SparkCard({
   label,
   value,
+  sub,
   path,
   w,
   h,
@@ -313,6 +326,7 @@ function SparkCard({
 }: {
   label: string;
   value: string;
+  sub?: string | null;
   path: string;
   w: number;
   h: number;
@@ -332,7 +346,10 @@ function SparkCard({
       >
         {label}
       </Text>
-      <Text style={{ fontFamily: font.display700, fontSize: 19, color: color.ink, marginBottom: 8 }}>{value}</Text>
+      <Text style={{ fontFamily: font.display700, fontSize: 19, color: color.ink, marginBottom: sub ? 2 : 8 }}>{value}</Text>
+      {sub ? (
+        <Text style={{ fontFamily: font.body700, fontSize: 10, color: color.primary, marginBottom: 6 }}>{sub}</Text>
+      ) : null}
       <Svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} fill="none">
         {path ? (
           <Path d={path} stroke={lineColor} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
@@ -342,19 +359,6 @@ function SparkCard({
       </Svg>
     </View>
   );
-}
-
-/** Crude weight→percentile mapping so the Growth card shows a plausible value. */
-function estimatePercentile(weightKg?: number): number | null {
-  if (weightKg == null || weightKg <= 0) return null;
-  const pct = Math.round(5 + ((weightKg - 3) / (11 - 3)) * 90);
-  return Math.max(1, Math.min(99, pct));
-}
-
-function ordinal(n: number): string {
-  const s = ['th', 'st', 'nd', 'rd'];
-  const v = n % 100;
-  return `${n}${s[(v - 20) % 10] || s[v] || s[0]}`;
 }
 
 /* ────────────────────────────────────────────────────── PATTERNS (Gentle) */

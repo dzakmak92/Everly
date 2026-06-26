@@ -110,7 +110,7 @@ export default function ChildProfile() {
     if (modal === 'edit') d.updateChild(child!.id, { name, birthDate: birth, color: colorKey });
     else if (modal === 'vaccine' && name.trim()) d.addVaccine({ childId: child!.id, name, dueDate: f1 });
     else if (modal === 'med' && name.trim()) d.addMedication({ childId: child!.id, name, dose: f1, schedule: f2 });
-    else if (modal === 'growth') d.addGrowth({ childId: child!.id, weightKg: num(f1), heightCm: num(f2) });
+    else if (modal === 'growth') { const w = num(f1); const h = num(f2); if (w != null || h != null) d.addGrowth({ childId: child!.id, weightKg: w, heightCm: h }); }
     else if (modal === 'milestone' && name.trim()) d.addMilestone({ childId: child!.id, title: name, date: f1 || new Date().toISOString().slice(0, 10), note: f2 });
     setModal(null);
   }
@@ -166,8 +166,8 @@ export default function ChildProfile() {
           </>
         ) : (
           <>
-            <StatTile value={`${myEvents.length}`} label="Homework" sub={myEvents.length ? 'upcoming' : 'all clear'} subColor={color.rose} />
-            <StatTile value={`${todayEvents.length}`} label="Activity" sub={todayEvents.length ? 'today' : 'none today'} subColor={PERIWINKLE} />
+            <StatTile value={`${myEvents.length}`} label="Upcoming" sub={myEvents.length ? 'scheduled' : 'all clear'} subColor={color.rose} />
+            <StatTile value={`${todayEvents.length}`} label="Today" sub={todayEvents.length ? 'today' : 'none today'} subColor={PERIWINKLE} />
             <StatTile
               value={choresTotal ? `${choresDone}/${choresTotal}` : '0'}
               label="Chores"
@@ -263,7 +263,7 @@ export default function ChildProfile() {
                   chipBg={childToken.blush.fill}
                   icon={<Syringe size={18} color={childToken.blush.stroke} />}
                   title={v.name}
-                  sub={v.givenDate ? `Given ${v.givenDate}` : v.dueDate ? `Due ${v.dueDate}` : 'Scheduled'}
+                  sub={v.givenDate ? `Given ${fmtBirth(v.givenDate)}` : v.dueDate ? `Due ${fmtBirth(v.dueDate)}` : 'Scheduled'}
                   trailing={
                     !v.givenDate ? (
                       <Pressable onPress={() => d.updateVaccine(v.id, { givenDate: new Date().toISOString().slice(0, 10) })} hitSlop={8}>

@@ -14,15 +14,18 @@ const DAY = 86400000;
 export default function MatCare() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { momCare, addMomCare } = useData();
+  const { momCare, addMomCare, deleteMomCare } = useData();
   const [sleepOpen, setSleepOpen] = useState(false);
   const [hrs, setHrs] = useState('');
 
-  const todayWater = momCare.filter((m) => m.kind === 'water' && isToday(m.at)).reduce((s, m) => s + m.value, 0);
+  const todayWaterEntries = momCare.filter((m) => m.kind === 'water' && isToday(m.at));
+  const todayWater = todayWaterEntries.reduce((s, m) => s + m.value, 0);
   const goalWater = 2200;
   const lastComfort = momCare.find((m) => m.kind === 'comfort');
   const weekSleep = momCare.filter((m) => m.kind === 'sleep' && new Date(m.at).getTime() >= Date.now() - 7 * DAY);
   const avgSleep = weekSleep.length ? (weekSleep.reduce((s, m) => s + m.value, 0) / weekSleep.length).toFixed(1) : null;
+  const lastWater = todayWaterEntries[0]; // newest-first
+  const lastSleep = momCare.find((m) => m.kind === 'sleep');
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: color.canvas }} contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: insets.bottom + 28, paddingHorizontal: 22, gap: 16 }}>
@@ -40,6 +43,11 @@ export default function MatCare() {
             </Pressable>
           ))}
         </View>
+        {lastComfort && isToday(lastComfort.at) && (
+          <Pressable onPress={() => deleteMomCare(lastComfort.id)} hitSlop={8} style={{ alignSelf: 'flex-start' }}>
+            <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.muted }}>× Undo "{COMFORT[lastComfort.value]}"</Text>
+          </Pressable>
+        )}
         <View style={{ backgroundColor: '#FBE0EA', borderRadius: radius.tile, padding: 12 }}>
           <Text style={{ fontFamily: font.body600, fontSize: 12, color: color.roseInk }}>Mastitis watch: lump, redness, fever ≥38°C or flu-like aches → contact your GP or lactation consultant.</Text>
         </View>
@@ -55,6 +63,11 @@ export default function MatCare() {
           </View>
           <Pressable onPress={() => { setHrs(''); setSleepOpen(true); }} style={{ paddingVertical: 9, paddingHorizontal: 14, borderRadius: radius.pill, backgroundColor: color.primary }}><Text style={{ fontFamily: font.body700, fontSize: 13, color: '#fff' }}>+ Log</Text></Pressable>
         </View>
+        {lastSleep && (
+          <Pressable onPress={() => deleteMomCare(lastSleep.id)} hitSlop={8} style={{ alignSelf: 'flex-start', marginTop: 10 }}>
+            <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.muted }}>× Undo last ({lastSleep.value}h)</Text>
+          </Pressable>
+        )}
       </View>
 
       {/* Hydration */}
@@ -68,6 +81,11 @@ export default function MatCare() {
             </Pressable>
           ))}
         </View>
+        {lastWater && (
+          <Pressable onPress={() => deleteMomCare(lastWater.id)} hitSlop={8} style={{ alignSelf: 'flex-start' }}>
+            <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.muted }}>× Undo last (+{lastWater.value} ml)</Text>
+          </Pressable>
+        )}
         <Text style={{ fontFamily: font.body400, fontSize: 12, color: color.muted }}>Breastfeeding needs ~500ml extra a day.</Text>
       </View>
 

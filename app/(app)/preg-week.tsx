@@ -14,7 +14,7 @@ export default function PregWeek() {
   const insets = useSafeAreaInsets();
   const { dueDate } = useData();
   const gest = gestFromDueDate(dueDate ?? undefined);
-  const [week, setWeek] = useState(gest?.week || 12);
+  const [week, setWeek] = useState(gest?.week ?? 12);
   const [tab, setTab] = useState<Tab>('baby');
 
   const content = weekContent(week);
@@ -35,6 +35,11 @@ export default function PregWeek() {
           </View>
           <Pressable onPress={() => setWeek((w) => Math.min(42, w + 1))} hitSlop={10}><ChevronRight size={22} color={color.muted} /></Pressable>
         </View>
+        {gest != null && week !== gest.week && (
+          <Pressable onPress={() => setWeek(gest.week)} hitSlop={8} style={{ alignSelf: 'center', marginTop: 10 }}>
+            <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.maternalTeal }}>Back to my week (Week {gest.week})</Text>
+          </Pressable>
+        )}
       </View>
 
       {/* Tabs */}

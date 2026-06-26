@@ -68,9 +68,11 @@ export default function PregVitals() {
               <Pressable onPress={() => setOpen('glucose')}><Text style={{ fontFamily: font.body700, fontSize: 13, color: color.primary }}>+ Log</Text></Pressable>
             </View>
             {glucose.length === 0 ? <Empty t="No readings yet." /> : glucose.slice(0, 6).map((v) => {
-              const high = (v.glucose ?? 0) > 7.8;
+              const reading = v.glucose ?? 0;
+              const isFasting = (v.tag ?? '').toLowerCase().includes('fasting');
+              const high = isFasting ? reading >= 5.3 : reading > 7.8;
               return (
-                <Row key={v.id} title={`${v.glucose} mmol/L`} sub={`${v.tag || ''} · ${dateOf(v.at)}`} flag={high ? 'High (target ≤7.8)' : undefined} onDelete={() => deletePregVital(v.id)} />
+                <Row key={v.id} title={`${v.glucose} mmol/L`} sub={`${v.tag || ''} · ${dateOf(v.at)}`} flag={high ? (isFasting ? 'High (fasting target <5.3)' : 'High (target ≤7.8)') : undefined} onDelete={() => deletePregVital(v.id)} />
               );
             })}
           </View>
