@@ -17,6 +17,10 @@ import { gestFromDueDate, weekContent, dueDateFromLmp, PREG_SYMPTOMS, MOODS } fr
 
 const num = (s: string) => { const v = parseFloat(s); return isNaN(v) ? undefined : v; };
 
+const _t = (d: string) => new Date(d.length <= 10 ? `${d}T00:00:00` : d).getTime();
+const fmtArch = (iso: string) => new Date(_t(iso)).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+const archWeek = (a: { dueDate: string; bornDate: string }) => Math.max(0, Math.floor((280 - Math.round((_t(a.dueDate) - _t(a.bornDate)) / 86400000)) / 7));
+
 const Ic = (C: any, c: string) => <C size={19} color={c} />;
 
 /** Icon-led grouped row (matches the More hub style). */
@@ -43,7 +47,8 @@ const SectionLabel = ({ children }: { children: React.ReactNode }) => (
 export default function Pregnancy() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { dueDate, setDueDate, setMaternalBirth, addChild, setActiveChild, savedNames, checkins, addCheckin, deleteCheckin } = useData();
+  const { dueDate, setDueDate, setMaternalBirth, addChild, setActiveChild, savedNames, checkins, addCheckin, deleteCheckin, pregArchive, closePregnancy } = useData();
+  const archived = !dueDate ? (pregArchive[0] ?? null) : null;
 
   const [dueOpen, setDueOpen] = useState(false);
   const [dueIn, setDueIn] = useState('');
@@ -85,6 +90,7 @@ export default function Pregnancy() {
     if (!birthIn.trim()) { setArrErr('Pick a birth date.'); return; }
     const id = addChild({ name: nm, color: arrColor, birthDate: birthIn.trim() });
     setActiveChild(id);
+    closePregnancy(birthIn.trim()); // archive the pregnancy (read-only)
     setMaternalBirth(birthIn.trim());
     setArrivedOpen(false);
     router.replace('/(app)/maternal' as any);
@@ -114,6 +120,26 @@ export default function Pregnancy() {
       <MumMeSwitch phase="pregnancy" />
 
       {!gest ? (
+        archived ? (
+          <View style={{ gap: 14 }}>
+            <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 18, gap: 12 }, shadow.card]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <View style={{ width: 30, height: 30, borderRadius: 9, backgroundColor: '#E0F4EF', alignItems: 'center', justifyContent: 'center' }}><CheckCircle size={17} color={color.maternalTeal} /></View>
+                <Text style={{ flex: 1, fontFamily: font.body700, fontSize: 15, color: color.ink }}>Pregnancy complete 🎉</Text>
+                <View style={{ backgroundColor: '#EFEDF8', borderRadius: radius.pill, paddingVertical: 4, paddingHorizontal: 10 }}><Text style={{ fontFamily: font.body700, fontSize: 11, color: color.muted }}>read-only</Text></View>
+              </View>
+              <Text style={{ fontFamily: font.body400, fontSize: 13, color: color.inkSecondary }}>
+                Born {fmtArch(archived.bornDate)} · reached week {archWeek(archived)}. This pregnancy is saved as history — your check-ins from it stay here.
+              </Text>
+              {archived.checkins.length > 0 && (
+                <View style={{ borderTopWidth: 1, borderTopColor: color.hairline, paddingTop: 10, gap: 6 }}>
+                  <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 0.8, textTransform: 'uppercase', color: color.muted }}>{archived.checkins.length} check-in{archived.checkins.length === 1 ? '' : 's'} logged</Text>
+                </View>
+              )}
+            </View>
+            <Button label="Start a new pregnancy" onPress={() => setDueOpen(true)} />
+          </View>
+        ) : (
         <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 20, gap: 12 }, shadow.card]}>
           <Text style={{ fontFamily: font.body600, fontSize: 15, color: color.ink }}>Set your due date to start tracking</Text>
           <Text style={{ fontFamily: font.body400, fontSize: 13, color: color.inkSecondary }}>
@@ -121,6 +147,7 @@ export default function Pregnancy() {
           </Text>
           <Button label="Set due date" onPress={() => setDueOpen(true)} />
         </View>
+        )
       ) : (
         <>
           {/* Week hero */}

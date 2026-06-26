@@ -64,6 +64,9 @@ export type Milestone = { id: string; childId: string; title: string; date: stri
 
 export type PregCheckin = { id: string; at: string; mood: number; symptoms: string[]; weightKg?: number };
 
+/** A completed pregnancy, kept read-only once the baby has arrived. */
+export type PregArchive = { id: string; dueDate: string; bornDate: string; checkins: PregCheckin[]; archivedAt: string };
+
 export type BirthPrepItem = { id: string; category: string; label: string; checked: boolean };
 export type SavedName = { id: string; name: string; gender: string };
 export type PregStatus = 'active' | 'paused' | 'archived';
@@ -119,6 +122,7 @@ const EXPENSES_KEY = 'everly.expenses.v1';
 const CUSTODY_KEY = 'everly.custody.v1';
 const PREG_DUE_KEY = 'everly.pregDue.v1';
 const CHECKINS_KEY = 'everly.checkins.v1';
+const PREG_ARCHIVE_KEY = 'everly.pregArchive.v1';
 const MAT_BIRTH_KEY = 'everly.maternalBirth.v1';
 const EPDS_KEY = 'everly.epds.v1';
 const RECOVERY_KEY = 'everly.recovery.v1';
@@ -194,6 +198,8 @@ type DataValue = {
   checkins: PregCheckin[];
   addCheckin: (input: { mood: number; symptoms: string[]; weightKg?: number }) => void;
   deleteCheckin: (id: string) => void;
+  pregArchive: PregArchive[];
+  closePregnancy: (bornDate: string) => void;
   maternalBirth: string | null;
   setMaternalBirth: (d: string | null) => void;
   epdsResults: EpdsResult[];
@@ -269,6 +275,7 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
   const [custody, setCustody] = useState<Custody>({});
   const [dueDate, setDueDateState] = useState<string | null>(null);
   const [checkins, setCheckins] = useState<PregCheckin[]>([]);
+  const [pregArchive, setPregArchive] = useState<PregArchive[]>([]);
   const [maternalBirth, setMaternalBirthState] = useState<string | null>(null);
   const [epdsResults, setEpdsResults] = useState<EpdsResult[]>([]);
   const [recoveryLogs, setRecoveryLogs] = useState<RecoveryLog[]>([]);
@@ -385,6 +392,8 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
   useEffect(() => { if (!loading) AsyncStorage.setItem(CUSTODY_KEY, JSON.stringify(custody)).catch(() => {}); }, [custody, loading]);
   useEffect(() => { if (!loading) AsyncStorage.setItem(PREG_DUE_KEY, JSON.stringify(dueDate)).catch(() => {}); }, [dueDate, loading]);
   useEffect(() => { if (!loading) AsyncStorage.setItem(CHECKINS_KEY, JSON.stringify(checkins)).catch(() => {}); }, [checkins, loading]);
+  useEffect(() => { if (!loading) AsyncStorage.setItem(PREG_ARCHIVE_KEY, JSON.stringify(pregArchive)).catch(() => {}); }, [pregArchive, loading]);
+  useEffect(() => { AsyncStorage.getItem(PREG_ARCHIVE_KEY).then((r) => { if (r) setPregArchive(JSON.parse(r)); }).catch(() => {}); }, []);
   useEffect(() => { if (!loading) AsyncStorage.setItem(MAT_BIRTH_KEY, JSON.stringify(maternalBirth)).catch(() => {}); }, [maternalBirth, loading]);
   useEffect(() => { if (!loading) AsyncStorage.setItem(EPDS_KEY, JSON.stringify(epdsResults)).catch(() => {}); }, [epdsResults, loading]);
   useEffect(() => { if (!loading) AsyncStorage.setItem(RECOVERY_KEY, JSON.stringify(recoveryLogs)).catch(() => {}); }, [recoveryLogs, loading]);
@@ -524,6 +533,15 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
     setCheckins((prev) => [{ id: newId(), at: new Date().toISOString(), mood: input.mood, symptoms: input.symptoms, weightKg: input.weightKg }, ...prev]);
   }, []);
   const deleteCheckin = useCallback((id: string) => setCheckins((prev) => prev.filter((c) => c.id !== id)), []);
+  // Close the live pregnancy: snapshot it into the read-only archive and clear
+  // the live due date + check-ins (a new pregnancy reopens by setting a due date).
+  const closePregnancy = useCallback((bornDate: string) => {
+    setDueDateState((dd) => {
+      if (dd) setPregArchive((prev) => [{ id: newId(), dueDate: dd, bornDate: bornDate.trim(), checkins, archivedAt: new Date().toISOString() }, ...prev]);
+      return null;
+    });
+    setCheckins([]);
+  }, [checkins]);
 
   const setMaternalBirth = useCallback((db: string | null) => setMaternalBirthState(db?.trim() || null), []);
   const addEpdsResult = useCallback((input: { total: number; band: string; selfHarmFlag: boolean }) => {
@@ -603,7 +621,7 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
       caregivers, addCaregiver, deleteCaregiver,
       custody, setCustodyDay,
       expenses, addExpense, toggleExpenseSettled, deleteExpense,
-      dueDate, setDueDate, checkins, addCheckin, deleteCheckin,
+      dueDate, setDueDate, checkins, addCheckin, deleteCheckin, pregArchive, closePregnancy,
       maternalBirth, setMaternalBirth, epdsResults, addEpdsResult, deleteEpdsResult, recoveryLogs, addRecoveryLog, deleteRecoveryLog,
       tzContacts, addTzContact, deleteTzContact, savedTips, saveTip, deleteTip,
       birthPrep, addBirthPrep, toggleBirthPrep, deleteBirthPrep,
@@ -620,7 +638,7 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
       contractionSessions, addContraction, deleteContraction, clearContractions,
       clearAll,
     }),
-    [loading, children, activeChild, setActiveChild, addChild, updateChild, deleteChild, entries, addEntry, deleteEntry, events, addEvent, deleteEvent, vaccines, addVaccine, updateVaccine, deleteVaccine, medications, addMedication, toggleMedication, deleteMedication, growth, addGrowth, deleteGrowth, routines, addRoutine, addRoutineStep, toggleStep, resetRoutine, deleteRoutine, chores, addChore, toggleChore, deleteChore, milestones, addMilestone, deleteMilestone, caregivers, addCaregiver, deleteCaregiver, custody, setCustodyDay, expenses, addExpense, toggleExpenseSettled, deleteExpense, dueDate, setDueDate, checkins, addCheckin, deleteCheckin, maternalBirth, setMaternalBirth, epdsResults, addEpdsResult, deleteEpdsResult, recoveryLogs, addRecoveryLog, deleteRecoveryLog, tzContacts, addTzContact, deleteTzContact, savedTips, saveTip, deleteTip, birthPrep, addBirthPrep, toggleBirthPrep, deleteBirthPrep, savedNames, saveName, deleteName, pregStatus, setPregStatus, pregAppts, addPregAppt, deletePregAppt, pregVitals, addPregVital, deletePregVital, lastPeriod, setLastPeriod, cycleLength, setCycleLength, ttcItems, addTtc, toggleTtc, deleteTtc, momCare, addMomCare, deleteMomCare, pelvicLog, addPelvic, matAppts, addMatAppt, deleteMatAppt, kickSessions, addKickSession, deleteKickSession, clearKickSessions, contractionSessions, addContraction, deleteContraction, clearContractions, clearAll],
+    [loading, children, activeChild, setActiveChild, addChild, updateChild, deleteChild, entries, addEntry, deleteEntry, events, addEvent, deleteEvent, vaccines, addVaccine, updateVaccine, deleteVaccine, medications, addMedication, toggleMedication, deleteMedication, growth, addGrowth, deleteGrowth, routines, addRoutine, addRoutineStep, toggleStep, resetRoutine, deleteRoutine, chores, addChore, toggleChore, deleteChore, milestones, addMilestone, deleteMilestone, caregivers, addCaregiver, deleteCaregiver, custody, setCustodyDay, expenses, addExpense, toggleExpenseSettled, deleteExpense, dueDate, setDueDate, checkins, addCheckin, deleteCheckin, pregArchive, closePregnancy, maternalBirth, setMaternalBirth, epdsResults, addEpdsResult, deleteEpdsResult, recoveryLogs, addRecoveryLog, deleteRecoveryLog, tzContacts, addTzContact, deleteTzContact, savedTips, saveTip, deleteTip, birthPrep, addBirthPrep, toggleBirthPrep, deleteBirthPrep, savedNames, saveName, deleteName, pregStatus, setPregStatus, pregAppts, addPregAppt, deletePregAppt, pregVitals, addPregVital, deletePregVital, lastPeriod, setLastPeriod, cycleLength, setCycleLength, ttcItems, addTtc, toggleTtc, deleteTtc, momCare, addMomCare, deleteMomCare, pelvicLog, addPelvic, matAppts, addMatAppt, deleteMatAppt, kickSessions, addKickSession, deleteKickSession, clearKickSessions, contractionSessions, addContraction, deleteContraction, clearContractions, clearAll],
   );
 
   return <DataContext.Provider value={value}>{node}</DataContext.Provider>;
