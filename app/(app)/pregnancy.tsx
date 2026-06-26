@@ -95,8 +95,7 @@ export default function Pregnancy() {
               { label: 'Appointments & tests', fn: () => router.push('/(app)/preg-appointments') },
               { label: 'Birth prep', fn: () => router.push('/(app)/preg-birthprep') },
               { label: 'Baby names', fn: () => router.push('/(app)/preg-names') },
-              { label: 'Extra monitoring', fn: () => router.push('/(app)/preg-vitals') },
-              { label: 'When to call (triage)', fn: () => router.push('/(app)/preg-triage') },
+              { label: 'Monitoring & when to call', fn: () => router.push('/(app)/preg-vitals') },
               { label: 'Care & support', fn: () => router.push('/(app)/preg-care') },
             ] as { label: string; fn: () => void }[]).map(({ label, fn }) => (
               <Pressable key={label} onPress={fn} style={[{ backgroundColor: '#fff', borderRadius: radius.cardSm, padding: 16, flexDirection: 'row', alignItems: 'center' }, shadow.card]}>

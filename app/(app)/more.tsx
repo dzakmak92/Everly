@@ -27,7 +27,6 @@ const SECTIONS: { title: string; items: Item[] }[] = [
     title: 'Log & tools',
     items: [
       { label: 'Add / log', to: '/(app)/quick-add', icon: Ic(Plus, '#B5662E'), bg: '#FCE6D8' },
-      { label: 'Night log', to: '/(app)/quick-add?night=1', icon: Ic(Clock, '#54579E'), bg: '#E7E4FB' },
       { label: 'Routines & chores', to: '/(app)/routines', icon: Ic(CheckCircle, '#7A5C20'), bg: '#FBF1CE' },
     ],
   },
