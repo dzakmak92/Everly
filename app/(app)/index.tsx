@@ -47,13 +47,19 @@ export default function Today() {
 
   const rawName = profile?.name || session?.user?.email?.split('@')[0] || 'there';
   const name = rawName.charAt(0).toUpperCase() + rawName.slice(1);
-  const today = entriesOn(entries);
+
+  // Everything below is scoped to the active child so switching pills changes the view.
+  const cid = activeChild?.id;
+  const forChild = <T extends { childId?: string }>(list: T[]) => (cid ? list.filter((x) => x.childId === cid) : list);
+
+  const today = entriesOn(forChild(entries));
   const dateLabel = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
 
-  // "What's next" sources
-  const lastFeed = entries.find((e) => e.kind === 'feed');
-  const nextEvents = upcomingEvents(events).slice(0, 2);
-  const dueVax = vaccines.filter((v) => !v.givenDate)[0];
+  // "What's next" sources (active child)
+  const lastFeed = forChild(entries).find((e) => e.kind === 'feed');
+  // Active child's events plus family-wide events (no child attached).
+  const nextEvents = upcomingEvents(events).filter((e) => !cid || !e.childId || e.childId === cid).slice(0, 2);
+  const dueVax = forChild(vaccines).filter((v) => !v.givenDate)[0];
   const childName = (id?: string) => children.find((c) => c.id === id)?.name;
 
   function open(k: EntryKind) { setKind(k); setSide('left'); setDiaper('wet'); setMl(''); setMins(''); setNote(''); }
