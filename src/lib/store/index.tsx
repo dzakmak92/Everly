@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { childToken } from '../../theme/tokens';
+import type { Stage } from '../age';
 
 /**
  * On-device data layer (PRD privacy model: child/maternal/health data NEVER
@@ -18,9 +19,12 @@ export type Child = {
   birthDate?: string; // ISO date (YYYY-MM-DD), optional
 };
 
-export type EntryKind = 'sleep' | 'feed' | 'diaper' | 'note' | 'pump';
+export type EntryKind = 'sleep' | 'feed' | 'diaper' | 'note' | 'pump' | 'meal' | 'mood' | 'activity' | 'medicine' | 'potty';
 export type FeedSide = 'left' | 'right' | 'bottle';
 export type DiaperType = 'wet' | 'dirty' | 'both';
+
+/** Mood scale (index) used by the 'mood' entry kind. */
+export const MOOD_LABELS = ['Rough', 'Okay', 'Good', 'Great', 'Amazing'] as const;
 
 export type Entry = {
   id: string;
@@ -31,11 +35,12 @@ export type Entry = {
   // Optional, kind-specific details (all backward-compatible):
   side?: FeedSide; // feed
   volumeMl?: number; // feed (bottle) / pump
-  durationMin?: number; // sleep / feed
+  durationMin?: number; // sleep / feed / activity
   diaperType?: DiaperType; // diaper
+  mood?: number; // mood (index into MOOD_LABELS)
 };
 
-export type EntryDetails = Partial<Pick<Entry, 'note' | 'side' | 'volumeMl' | 'durationMin' | 'diaperType'>>;
+export type EntryDetails = Partial<Pick<Entry, 'note' | 'side' | 'volumeMl' | 'durationMin' | 'diaperType' | 'mood'>>;
 
 /** A scheduled future item (appointment, activity, reminder). */
 export type EventItem = {
@@ -89,6 +94,11 @@ export const ENTRY_META: Record<EntryKind, { label: string; verb: string; fill: 
   diaper: { label: 'Diaper', verb: 'Logged a change', fill: '#D8F0E6', ink: '#1E5C50' },
   pump: { label: 'Pump', verb: 'Logged a pump', fill: '#FBF1CE', ink: '#7A5C20' },
   note: { label: 'Note', verb: 'Added a note', fill: '#DCEBFA', ink: '#2C5F90' },
+  meal: { label: 'Meal', verb: 'Logged a meal', fill: '#FCE6D8', ink: '#B5662E' },
+  mood: { label: 'Mood', verb: 'Logged a mood', fill: '#E7E4FB', ink: '#54579E' },
+  activity: { label: 'Activity', verb: 'Logged activity', fill: '#D8F0E6', ink: '#1E5C50' },
+  medicine: { label: 'Medicine', verb: 'Logged medicine', fill: '#FBE0EA', ink: '#B04070' },
+  potty: { label: 'Potty', verb: 'Logged potty', fill: '#DCEBFA', ink: '#2C5F90' },
 };
 
 const ENTRIES_KEY = 'everly.entries.v1';
@@ -411,6 +421,7 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
           volumeMl: details?.volumeMl,
           durationMin: details?.durationMin,
           diaperType: details?.diaperType,
+          mood: details?.mood,
         },
         ...prev,
       ]);
@@ -607,6 +618,25 @@ export function entryDetail(e: Entry): string {
   if (e.volumeMl) bits.push(`${e.volumeMl} ml`);
   if (e.durationMin) bits.push(e.durationMin >= 60 ? `${Math.floor(e.durationMin / 60)}h ${e.durationMin % 60}m` : `${e.durationMin}m`);
   if (e.diaperType) bits.push(e.diaperType === 'both' ? 'Wet + dirty' : e.diaperType === 'wet' ? 'Wet' : 'Dirty');
+  if (typeof e.mood === 'number' && MOOD_LABELS[e.mood]) bits.push(MOOD_LABELS[e.mood]);
   if (e.note) bits.push(e.note);
   return bits.join(' · ');
+}
+
+/** Which quick-log kinds make sense for a child's life-stage. */
+export function quickLogKinds(stage: Stage): EntryKind[] {
+  switch (stage) {
+    case 'newborn':
+    case 'baby':
+      return ['feed', 'sleep', 'diaper', 'pump', 'note'];
+    case 'preschool':
+      return ['meal', 'sleep', 'potty', 'mood', 'note'];
+    case 'school':
+      return ['meal', 'sleep', 'activity', 'medicine', 'note'];
+    case 'teen':
+    case 'youngAdult':
+      return ['mood', 'sleep', 'activity', 'note'];
+    default:
+      return ['feed', 'sleep', 'diaper', 'pump', 'note'];
+  }
 }
