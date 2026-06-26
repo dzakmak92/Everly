@@ -53,7 +53,7 @@ export default function Maternal() {
           { label: 'Planning your next', to: '/(app)/mat-preconception' },
           { label: 'Feeding & sleep (you)', to: '/(app)/mat-care' },
           { label: 'Pelvic floor & movement', to: '/(app)/mat-pelvic' },
-          { label: 'Your appointments', to: '/(app)/mat-appointments' },
+          { label: 'Your appointments', to: '/(app)/preg-appointments?tab=maternal' },
           { label: 'Your story (timeline)', to: '/(app)/timeline?subject=you' },
         ].map((row, i) => (
           <Pressable key={row.to} onPress={() => router.push(row.to as any)} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 13, paddingHorizontal: 12, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: color.hairline }}>
