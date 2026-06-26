@@ -11,7 +11,8 @@ import {
   ChevronLeft, ChevronRight,
   BabyBean, Heart, Calendar, Activity, CheckCircle, Shield, Star, Smile,
 } from '../../src/components/icons';
-import { useData } from '../../src/lib/store';
+import { useData, CHILD_COLORS, type ChildColor } from '../../src/lib/store';
+import { childToken } from '../../src/theme/tokens';
 import { gestFromDueDate, weekContent, dueDateFromLmp, PREG_SYMPTOMS, MOODS } from '../../src/lib/pregnancy';
 
 const num = (s: string) => { const v = parseFloat(s); return isNaN(v) ? undefined : v; };
@@ -42,13 +43,16 @@ const SectionLabel = ({ children }: { children: React.ReactNode }) => (
 export default function Pregnancy() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { dueDate, setDueDate, setMaternalBirth, checkins, addCheckin, deleteCheckin } = useData();
+  const { dueDate, setDueDate, setMaternalBirth, addChild, setActiveChild, savedNames, checkins, addCheckin, deleteCheckin } = useData();
 
   const [dueOpen, setDueOpen] = useState(false);
   const [dueIn, setDueIn] = useState('');
   const [lmpIn, setLmpIn] = useState('');
   const [arrivedOpen, setArrivedOpen] = useState(false);
   const [birthIn, setBirthIn] = useState('');
+  const [arrName, setArrName] = useState('');
+  const [arrColor, setArrColor] = useState<ChildColor>(CHILD_COLORS[0]);
+  const [arrErr, setArrErr] = useState('');
   const [ciOpen, setCiOpen] = useState(false);
   const [mood, setMood] = useState(2);
   const [symptoms, setSymptoms] = useState<string[]>([]);
@@ -76,7 +80,14 @@ export default function Pregnancy() {
     : [];
 
   function confirmArrived() {
-    if (birthIn.trim()) { setMaternalBirth(birthIn.trim()); setArrivedOpen(false); router.replace('/(app)/maternal' as any); }
+    const nm = arrName.trim();
+    if (!nm) { setArrErr("Add your baby's name to continue."); return; }
+    if (!birthIn.trim()) { setArrErr('Pick a birth date.'); return; }
+    const id = addChild({ name: nm, color: arrColor, birthDate: birthIn.trim() });
+    setActiveChild(id);
+    setMaternalBirth(birthIn.trim());
+    setArrivedOpen(false);
+    router.replace('/(app)/maternal' as any);
   }
   function saveDue() {
     const dd = dueIn.trim() || (lmpIn.trim() ? dueDateFromLmp(lmpIn.trim()) : '');
@@ -213,7 +224,7 @@ export default function Pregnancy() {
           </View>
 
           {/* Manual handoff to postpartum */}
-          <Pressable onPress={() => { setBirthIn(new Date().toISOString().slice(0, 10)); setArrivedOpen(true); }} style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1 }]}>
+          <Pressable onPress={() => { setBirthIn(new Date().toISOString().slice(0, 10)); setArrName(''); setArrColor(CHILD_COLORS[0]); setArrErr(''); setArrivedOpen(true); }} style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1 }]}>
             <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1.5, borderColor: color.maternalTeal }, shadow.card]}>
               <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: '#E0F4EF', alignItems: 'center', justifyContent: 'center' }}>
                 <CheckCircle size={22} color={color.maternalTeal} />
@@ -233,11 +244,39 @@ export default function Pregnancy() {
         <Pressable onPress={() => setArrivedOpen(false)} style={{ flex: 1, backgroundColor: 'rgba(40,18,50,0.35)', justifyContent: 'center', paddingHorizontal: 28 }}>
           <Pressable onPress={() => {}} style={[{ backgroundColor: color.canvas, borderRadius: radius.card, padding: 20, gap: 14 }, shadow.card]}>
             <Text style={{ fontFamily: font.display700, fontSize: 18, color: color.ink }}>Baby has arrived 🎉</Text>
-            <Text style={{ fontFamily: font.body400, fontSize: 13, color: color.inkSecondary }}>Set the birth date to move Mum&Me into your postpartum journey. Your pregnancy stays saved as history.</Text>
+            <Text style={{ fontFamily: font.body400, fontSize: 13, color: color.inkSecondary }}>Welcome your little one and move Mum&Me into your postpartum journey. Your pregnancy stays saved as history.</Text>
+            <Field label="Baby's name" value={arrName} onChangeText={(t) => { setArrName(t); if (arrErr) setArrErr(''); }} placeholder="e.g. Oliver" autoCapitalize="words" />
+            {savedNames.length > 0 && (
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                {savedNames.slice(0, 8).map((n) => {
+                  const sel = arrName.trim() === n.name;
+                  return (
+                    <Pressable key={n.id} onPress={() => { setArrName(n.name); if (arrErr) setArrErr(''); }}>
+                      <View style={{ backgroundColor: sel ? color.maternalTeal : '#fff', borderRadius: radius.pill, paddingVertical: 6, paddingHorizontal: 12, borderWidth: 1.5, borderColor: sel ? color.maternalTeal : color.hairline }}>
+                        <Text style={{ fontFamily: font.body600, fontSize: 13, color: sel ? '#fff' : color.ink }}>{n.name}</Text>
+                      </View>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            )}
             <DateField label="Baby's birth date" value={birthIn} onChangeText={setBirthIn} />
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 11 }}>
+              {CHILD_COLORS.map((k) => {
+                const t = childToken[k]; const sel = k === arrColor;
+                return (
+                  <Pressable key={k} onPress={() => setArrColor(k)}>
+                    <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: t.fill, borderWidth: sel ? 3 : 1, borderColor: sel ? t.stroke : color.hairline, alignItems: 'center', justifyContent: 'center' }}>
+                      <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: t.stroke }} />
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </View>
+            {arrErr ? <Text style={{ fontFamily: font.body500, fontSize: 12.5, color: color.rose }}>{arrErr}</Text> : null}
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <Button label="Cancel" variant="secondary" onPress={() => setArrivedOpen(false)} style={{ flex: 1 }} />
-              <Button label="Confirm" onPress={confirmArrived} style={{ flex: 1 }} />
+              <Button label="Welcome baby" onPress={confirmArrived} style={{ flex: 1.3 }} />
             </View>
           </Pressable>
         </Pressable>

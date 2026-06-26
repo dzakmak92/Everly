@@ -19,8 +19,8 @@ import {
 } from '../../../src/lib/pregnancy';
 import { EPDS_QUESTIONS, scoreEpds, BAND_LABEL, CRISIS_RESOURCES } from '../../../src/lib/epds';
 import {
-  useData, entriesOn, upcomingEvents, entryDetail, ENTRY_META, quickLogKinds, MOOD_LABELS,
-  type EntryKind, type FeedSide, type DiaperType, type Child, type Lochia,
+  useData, entriesOn, upcomingEvents, entryDetail, ENTRY_META, quickLogKinds, MOOD_LABELS, CHILD_COLORS,
+  type EntryKind, type FeedSide, type DiaperType, type Child, type Lochia, type ChildColor,
 } from '../../../src/lib/store';
 
 const todayISO = () => {
@@ -53,6 +53,7 @@ export default function Today() {
   const {
     entries, addEntry, deleteEntry, children, activeChild, setActiveChild, events, vaccines,
     dueDate, maternalBirth, setMaternalBirth, pregAppts, matAppts,
+    addChild, savedNames,
   } = useData();
 
   // Maternity ("You") journey availability + person switching.
@@ -63,9 +64,38 @@ export default function Today() {
   });
   const isYou = person === 'you';
 
-  // Baby-has-arrived handoff modal (pregnancy phase only).
+  // Mum&Me phase tab — Pregnancy is always the default landing tab.
+  const [phase, setPhase] = useState<'pregnancy' | 'postpartum'>('pregnancy');
+
+  // Baby-has-arrived handoff (celebration flow).
   const [handoffOpen, setHandoffOpen] = useState(false);
+  const [handoffStep, setHandoffStep] = useState<'form' | 'done'>('form');
   const [handoffDate, setHandoffDate] = useState(todayISO());
+  const [handoffName, setHandoffName] = useState('');
+  const [handoffColor, setHandoffColor] = useState<ChildColor>(CHILD_COLORS[0]);
+  const [handoffErr, setHandoffErr] = useState('');
+
+  function openHandoff() {
+    setHandoffStep('form');
+    setHandoffDate(todayISO());
+    setHandoffName('');
+    setHandoffColor(CHILD_COLORS[0]);
+    setHandoffErr('');
+    setHandoffOpen(true);
+  }
+  function confirmHandoff() {
+    const nm = handoffName.trim();
+    if (!nm) { setHandoffErr("Add your baby's name to continue."); return; }
+    const id = addChild({ name: nm, color: handoffColor, birthDate: handoffDate });
+    setActiveChild(id);
+    setMaternalBirth(handoffDate);
+    setPhase('postpartum');
+    setHandoffStep('done');
+  }
+  function finishHandoff() {
+    setHandoffOpen(false);
+    setPerson('you');
+  }
 
   const [kind, setKind] = useState<EntryKind | null>(null);
   const [side, setSide] = useState<FeedSide>('left');
@@ -158,11 +188,13 @@ export default function Today() {
       {/* ── You (maternity) view ──────────────────────────────────────────── */}
       {isYou && (
         <MaternityView
+          phase={phase}
+          setPhase={setPhase}
           dueDate={dueDate}
           maternalBirth={maternalBirth}
           pregAppts={pregAppts}
           matAppts={matAppts}
-          onArrived={() => { setHandoffDate(todayISO()); setHandoffOpen(true); }}
+          onArrived={openHandoff}
         />
       )}
 
@@ -257,17 +289,82 @@ export default function Today() {
         </Pressable>
       </Modal>
 
-      {/* Baby-has-arrived handoff modal (manual only) */}
-      <Modal visible={handoffOpen} transparent animationType="fade" onRequestClose={() => setHandoffOpen(false)}>
-        <Pressable onPress={() => setHandoffOpen(false)} style={{ flex: 1, backgroundColor: 'rgba(40,18,50,0.35)', justifyContent: 'center', paddingHorizontal: 28 }}>
-          <Pressable onPress={() => {}} style={[{ backgroundColor: color.canvas, borderRadius: radius.card, padding: 20, gap: 14 }, shadow.card]}>
-            <Text style={{ fontFamily: font.display700, fontSize: 18, color: color.ink }}>Baby has arrived 🎉</Text>
-            <Text style={{ fontFamily: font.body400, fontSize: 13, color: color.muted }}>Congratulations! Set the birth date to move into your postpartum journey. Your pregnancy stays saved as history.</Text>
-            <DateField label="Baby's birth date" value={handoffDate} onChangeText={setHandoffDate} />
-            <View style={{ flexDirection: 'row', gap: 10 }}>
-              <Button label="Cancel" variant="secondary" onPress={() => setHandoffOpen(false)} style={{ flex: 1 }} />
-              <Button label="Confirm" onPress={() => { setMaternalBirth(handoffDate); setHandoffOpen(false); }} style={{ flex: 1 }} />
-            </View>
+      {/* Baby-has-arrived handoff — celebration + create baby + move to postpartum */}
+      <Modal visible={handoffOpen} transparent animationType="fade" onRequestClose={() => (handoffStep === 'done' ? finishHandoff() : setHandoffOpen(false))}>
+        <Pressable onPress={() => (handoffStep === 'done' ? finishHandoff() : setHandoffOpen(false))} style={{ flex: 1, backgroundColor: 'rgba(40,18,50,0.45)', justifyContent: 'center', paddingHorizontal: 26 }}>
+          <Pressable onPress={() => {}} style={[{ backgroundColor: color.canvas, borderRadius: radius.card, overflow: 'hidden' }, shadow.card]}>
+            {handoffStep === 'form' ? (
+              <View style={{ padding: 20, gap: 14 }}>
+                <View style={{ alignItems: 'center', gap: 6 }}>
+                  <Text style={{ fontSize: 40 }}>🎉</Text>
+                  <Text style={{ fontFamily: font.display700, fontSize: 20, color: color.ink, textAlign: 'center' }}>Baby has arrived!</Text>
+                  <Text style={{ fontFamily: font.body400, fontSize: 13, color: color.muted, textAlign: 'center', lineHeight: 19 }}>
+                    Congratulations 💛 Let's welcome your little one and move into your postpartum journey. Your pregnancy stays saved as history.
+                  </Text>
+                </View>
+                <Field label="Baby's name" value={handoffName} onChangeText={(t) => { setHandoffName(t); if (handoffErr) setHandoffErr(''); }} placeholder="e.g. Oliver" autoCapitalize="words" />
+                {savedNames.length > 0 && (
+                  <View style={{ gap: 7 }}>
+                    <Text style={{ fontFamily: font.body700, fontSize: 10.5, letterSpacing: 0.9, textTransform: 'uppercase', color: color.muted }}>From your shortlist</Text>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                      {savedNames.slice(0, 8).map((n) => {
+                        const sel = handoffName.trim() === n.name;
+                        return (
+                          <Pressable key={n.id} onPress={() => { setHandoffName(n.name); if (handoffErr) setHandoffErr(''); }}>
+                            <View style={{ backgroundColor: sel ? color.maternalTeal : '#fff', borderRadius: radius.pill, paddingVertical: 7, paddingHorizontal: 13, borderWidth: 1.5, borderColor: sel ? color.maternalTeal : color.hairline }}>
+                              <Text style={{ fontFamily: font.body600, fontSize: 13, color: sel ? '#fff' : color.ink }}>{n.name}</Text>
+                            </View>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  </View>
+                )}
+                <DateField label="Baby's birth date" value={handoffDate} onChangeText={setHandoffDate} />
+                <View style={{ gap: 8 }}>
+                  <Text style={{ fontFamily: font.body700, fontSize: 10.5, letterSpacing: 0.9, textTransform: 'uppercase', color: color.muted }}>Colour</Text>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 11 }}>
+                    {CHILD_COLORS.map((k) => {
+                      const t = childToken[k]; const sel = k === handoffColor;
+                      return (
+                        <Pressable key={k} onPress={() => setHandoffColor(k)}>
+                          <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: t.fill, borderWidth: sel ? 3 : 1, borderColor: sel ? t.stroke : color.hairline, alignItems: 'center', justifyContent: 'center' }}>
+                            <View style={{ width: 13, height: 13, borderRadius: 7, backgroundColor: t.stroke }} />
+                          </View>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </View>
+                {handoffErr ? <Text style={{ fontFamily: font.body500, fontSize: 12.5, color: color.rose }}>{handoffErr}</Text> : null}
+                <View style={{ flexDirection: 'row', gap: 10 }}>
+                  <Button label="Not yet" variant="secondary" onPress={() => setHandoffOpen(false)} style={{ flex: 1 }} />
+                  <Button label="Welcome baby" onPress={confirmHandoff} style={{ flex: 1.4 }} />
+                </View>
+              </View>
+            ) : (
+              <View>
+                <View style={{ backgroundColor: color.maternalTeal, paddingTop: 28, paddingBottom: 24, paddingHorizontal: 22, alignItems: 'center', gap: 8 }}>
+                  <Text style={{ fontSize: 46 }}>🎉</Text>
+                  <Text style={{ fontFamily: font.display700, fontSize: 22, color: '#fff', textAlign: 'center' }}>Welcome to the world,{'\n'}{handoffName.trim()}!</Text>
+                  <Text style={{ fontFamily: font.body500, fontSize: 13, color: 'rgba(255,255,255,0.9)', textAlign: 'center' }}>Born {dateOnlyLabel(handoffDate)}</Text>
+                </View>
+                <View style={{ padding: 20, gap: 12 }}>
+                  <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 0.9, textTransform: 'uppercase', color: color.muted }}>What happens now</Text>
+                  {[
+                    { icon: '👶', text: `${handoffName.trim()} is added to your family — log feeds, sleep and nappies from Today.` },
+                    { icon: '💚', text: 'Mum&Me switches to Postpartum: recovery, wellbeing checks and pelvic-floor support.' },
+                    { icon: '📖', text: 'Your pregnancy stays saved as history — nothing is lost.' },
+                  ].map((row, i) => (
+                    <View key={i} style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
+                      <Text style={{ fontSize: 18 }}>{row.icon}</Text>
+                      <Text style={{ flex: 1, fontFamily: font.body400, fontSize: 13.5, color: color.inkSecondary, lineHeight: 19 }}>{row.text}</Text>
+                    </View>
+                  ))}
+                  <Button label="Start postpartum journey" onPress={finishHandoff} style={{ marginTop: 4 }} />
+                </View>
+              </View>
+            )}
           </Pressable>
         </Pressable>
       </Modal>
@@ -391,18 +488,20 @@ function YouPill({ active, label, onPress }: { active: boolean; label: string; o
 type ApptLike = { id: string; title: string; at: string };
 
 function MaternityView({
-  dueDate, maternalBirth, pregAppts, matAppts, onArrived,
+  phase, setPhase, dueDate, maternalBirth, pregAppts, matAppts, onArrived,
 }: {
+  phase: 'pregnancy' | 'postpartum';
+  setPhase: (p: 'pregnancy' | 'postpartum') => void;
   dueDate: string | null;
   maternalBirth: string | null;
   pregAppts: ApptLike[];
   matAppts: ApptLike[];
   onArrived: () => void;
 }) {
-  const derived: 'pregnancy' | 'postpartum' = maternalBirth ? 'postpartum' : 'pregnancy';
-  const [phase, setPhase] = useState<'pregnancy' | 'postpartum'>(derived);
   // Accordion grid: one card open at a time, panel renders full-width below.
   const [openCard, setOpenCard] = useState<string | null>(null);
+  // Collapse any open card whenever the phase tab changes.
+  React.useEffect(() => { setOpenCard(null); }, [phase]);
   const now = Date.now();
 
   // Hero numbers.
@@ -473,6 +572,19 @@ function MaternityView({
         {phase === 'pregnancy' && gest && (
           <ProgressBar pct={Math.round(gest.progress * 100)} track="rgba(255,255,255,0.25)" colors={['#FFFFFF', '#E0F4EF']} />
         )}
+        {/* Baby-has-arrived lives inside the hero (pregnancy phase only). */}
+        {phase === 'pregnancy' && (
+          <Pressable onPress={onArrived} style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}>
+            <View style={{ backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: radius.card, paddingVertical: 13, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <CheckCircle size={20} color="#fff" />
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: font.body700, fontSize: 14, color: '#fff' }}>Baby has arrived 🎉</Text>
+                <Text style={{ fontFamily: font.body400, fontSize: 12, color: 'rgba(255,255,255,0.85)', marginTop: 1 }}>Move into your postpartum journey</Text>
+              </View>
+              <ChevronRight size={16} color="#fff" />
+            </View>
+          </Pressable>
+        )}
       </View>
 
       {/* Feature grid — tapping a card expands it inline (panel below the grid) */}
@@ -528,21 +640,6 @@ function MaternityView({
         </View>
       )}
 
-      {/* Manual handoff — pregnancy phase only */}
-      {phase === 'pregnancy' && (
-        <Pressable onPress={onArrived} style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1 }]}>
-          <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1.5, borderColor: color.maternalTeal }, shadow.card]}>
-            <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: '#E0F4EF', alignItems: 'center', justifyContent: 'center' }}>
-              <CheckCircle size={22} color={color.maternalTeal} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: font.body700, fontSize: 14.5, color: color.tealInk }}>Baby has arrived 🎉</Text>
-              <Text style={{ fontFamily: font.body400, fontSize: 12.5, color: color.muted, marginTop: 2 }}>Move into your postpartum journey</Text>
-            </View>
-            <ChevronRight size={16} color={color.maternalTeal} />
-          </View>
-        </Pressable>
-      )}
     </View>
   );
 }
