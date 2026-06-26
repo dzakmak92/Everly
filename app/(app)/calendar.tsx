@@ -178,6 +178,11 @@ export default function CalendarTab() {
         )}
       </View>
 
+      {/* Weather forecast strip (bigger icons + temps) */}
+      {wx.location ? (
+        <WeatherStrip wx={wx} selKey={selKey} onSelect={(d) => { setView({ y: d.getFullYear(), m: d.getMonth() }); setSel({ y: d.getFullYear(), m: d.getMonth(), d: d.getDate() }); }} onConfigure={() => setWxOpen(true)} />
+      ) : null}
+
       {/* Selected-day header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4 }}>
         <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 1.1, textTransform: 'uppercase', color: color.muted }}>
@@ -256,6 +261,47 @@ function WeatherChip({ wx, selDate, onPress }: { wx: ReturnType<typeof useWeathe
       </Text>
       <Text style={{ fontFamily: font.body400, fontSize: 11, color: color.muted }} numberOfLines={1}>{wx.location.name}</Text>
     </Pressable>
+  );
+}
+
+function WeatherStrip({ wx, selKey, onSelect, onConfigure }: { wx: ReturnType<typeof useWeather>; selKey: string; onSelect: (d: Date) => void; onConfigure: () => void }) {
+  const today = new Date();
+  const days = Array.from({ length: 7 }).map((_, i) => { const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + i); return { d, wx: wx.wxForDate(d) }; });
+  const have = days.filter((x) => x.wx);
+  return (
+    <View style={{ gap: 8 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4 }}>
+        <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 1.1, textTransform: 'uppercase', color: color.muted }}>
+          Forecast · {wx.location?.name}
+        </Text>
+        <Pressable onPress={onConfigure} hitSlop={8}><Text style={{ fontFamily: font.body700, fontSize: 12, color: color.primary }}>Change</Text></Pressable>
+      </View>
+      {have.length === 0 ? (
+        <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 16, alignItems: 'center' }, shadow.card]}>
+          <Text style={{ fontFamily: font.body500, fontSize: 13, color: color.muted }}>{wx.loading ? 'Loading forecast…' : wx.error || 'No forecast available.'}</Text>
+        </View>
+      ) : (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingHorizontal: 4, paddingVertical: 2 }}>
+          {days.map(({ d, wx: w }, i) => {
+            const k = key(d.getFullYear(), d.getMonth(), d.getDate());
+            const sel = k === selKey;
+            const label = i === 0 ? 'Today' : d.toLocaleDateString(undefined, { weekday: 'short' });
+            return (
+              <Pressable key={k} onPress={() => onSelect(d)} style={[{ width: 74, borderRadius: radius.card, paddingVertical: 14, paddingHorizontal: 8, alignItems: 'center', gap: 8, backgroundColor: sel ? color.primary : '#fff' }, shadow.card]}>
+                <Text style={{ fontFamily: font.body700, fontSize: 12, color: sel ? '#fff' : color.inkSecondary }}>{label}</Text>
+                {w ? <WeatherGlyph code={w.code} size={32} color={sel ? '#fff' : undefined} /> : <Text style={{ fontFamily: font.body400, fontSize: 22, color: sel ? '#fff' : color.faint }}>·</Text>}
+                {w ? (
+                  <View style={{ alignItems: 'center' }}>
+                    <Text style={{ fontFamily: font.display700, fontSize: 16, color: sel ? '#fff' : color.ink }}>{w.tMax}°</Text>
+                    <Text style={{ fontFamily: font.body500, fontSize: 12, color: sel ? 'rgba(255,255,255,0.8)' : color.muted }}>{w.tMin}°</Text>
+                  </View>
+                ) : <Text style={{ fontFamily: font.body500, fontSize: 12, color: sel ? 'rgba(255,255,255,0.8)' : color.faint }}>—</Text>}
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      )}
+    </View>
   );
 }
 
