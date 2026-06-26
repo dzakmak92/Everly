@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Everly — One family app, from the first scan to first car</title>
+  <meta name="description" content="Everly grows with your family — pregnancy, newborn, toddler, school, teen and beyond. Private by design: your family's data stays on your device. Free forever to start." />
+  <link rel="canonical" href="https://everly.app/" />
+  <meta name="theme-color" content="#6B6FC9" />
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Everly — the family app that grows with you" />
+  <meta property="og:description" content="From first feed to first car. One app, one private story. Free to start, no credit card." />
+  <meta property="og:url" content="https://everly.app/" />
+  <meta property="og:site_name" content="Everly" />
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Everly — the family app that grows with you" />
+  <meta name="twitter:description" content="From first feed to first car. One app, one private story." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Everly",
+    "applicationCategory": "LifestyleApplication",
+    "operatingSystem": "iOS, Android, Web",
+    "description": "A private family app that grows with your child from pregnancy to adulthood.",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" }
+  }
+  </script>
+  <style>
+    :root {
+      --periwinkle:#6B6FC9; --periwinkle-deep:#54579E; --rose:#E98FB3; --teal:#3A9B8A;
+      --ink:#33324A; --ink2:#6F6E86; --muted:#9C9AB2; --canvas:#F4F3FB; --sage:#3A6B4E;
+      --gold:#C9A33B;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    html { scroll-behavior:smooth; }
+    body { font-family:'Nunito',sans-serif; color:var(--ink); background:var(--canvas); line-height:1.5; -webkit-font-smoothing:antialiased; }
+    h1,h2,h3 { font-family:'Quicksand',sans-serif; font-weight:700; letter-spacing:-0.01em; }
+    a { color:inherit; text-decoration:none; }
+    .wrap { max-width:1080px; margin:0 auto; padding:0 24px; }
+    /* nav */
+    header { position:sticky; top:0; z-index:20; background:rgba(244,243,251,0.85); backdrop-filter:blur(10px); border-bottom:1px solid rgba(51,50,74,0.06); }
+    nav { display:flex; align-items:center; justify-content:space-between; height:64px; }
+    .brand { display:flex; align-items:center; gap:10px; font-family:'Quicksand'; font-weight:700; font-size:22px; }
+    .brand svg { width:26px; height:30px; }
+    .nav-links { display:flex; gap:28px; align-items:center; }
+    .nav-links a { color:var(--ink2); font-weight:600; font-size:15px; }
+    .nav-links a:hover { color:var(--ink); }
+    .btn { display:inline-flex; align-items:center; gap:8px; font-family:'Nunito'; font-weight:700; font-size:15px; padding:12px 22px; border-radius:14px; cursor:pointer; border:none; transition:transform .12s ease, box-shadow .12s ease; }
+    .btn-primary { background:var(--periwinkle); color:#fff; box-shadow:0 6px 16px rgba(107,111,201,0.32); }
+    .btn-primary:hover { transform:translateY(-1px); box-shadow:0 10px 22px rgba(107,111,201,0.4); }
+    .btn-ghost { background:#fff; color:var(--periwinkle); border:1.5px solid rgba(51,50,74,0.1); }
+    .pill { display:inline-block; background:#D4EDE7; color:#2C8475; font-weight:700; font-size:13px; padding:7px 15px; border-radius:999px; }
+    /* hero */
+    .hero { text-align:center; padding:84px 0 64px; }
+    .hero h1 { font-size:clamp(34px,6vw,60px); line-height:1.06; max-width:14ch; margin:18px auto 0; }
+    .hero p.sub { font-size:clamp(16px,2.2vw,20px); color:var(--ink2); max-width:48ch; margin:20px auto 0; }
+    .hero .cta { display:flex; gap:14px; justify-content:center; flex-wrap:wrap; margin-top:32px; }
+    .hero .note { color:var(--muted); font-size:13px; margin-top:16px; }
+    /* stages */
+    .stages { display:flex; gap:14px; overflow-x:auto; padding:8px 24px 20px; scroll-snap-type:x mandatory; }
+    .stage { scroll-snap-align:start; flex:0 0 150px; background:#fff; border-radius:20px; padding:20px 18px; box-shadow:0 3px 16px rgba(51,50,74,0.06); }
+    .stage .dot { width:36px; height:36px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; margin-bottom:12px; }
+    .stage h3 { font-size:16px; } .stage p { font-size:13px; color:var(--muted); margin-top:4px; }
+    section { padding:64px 0; }
+    .eyebrow { text-align:center; color:var(--periwinkle); font-weight:700; letter-spacing:1.4px; text-transform:uppercase; font-size:12px; }
+    .section-title { text-align:center; font-size:clamp(26px,4vw,38px); margin-top:10px; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:18px; margin-top:40px; }
+    .card { background:#fff; border-radius:22px; padding:24px; box-shadow:0 3px 16px rgba(51,50,74,0.06); }
+    .card .ic { width:44px; height:44px; border-radius:13px; display:flex; align-items:center; justify-content:center; font-size:20px; margin-bottom:14px; }
+    .card h3 { font-size:18px; } .card p { color:var(--ink2); font-size:14.5px; margin-top:8px; }
+    .privacy { background:linear-gradient(135deg,#2C1A48,#3A2050); color:#fff; border-radius:32px; padding:48px; text-align:center; }
+    .privacy h2 { color:#fff; font-size:clamp(24px,4vw,34px); } .privacy p { color:rgba(255,255,255,0.8); max-width:52ch; margin:14px auto 0; }
+    .privacy .stats { display:flex; gap:36px; justify-content:center; flex-wrap:wrap; margin-top:32px; }
+    .privacy .stats div { font-family:'Quicksand'; }
+    .privacy .stats b { display:block; font-size:34px; font-weight:700; }
+    .privacy .stats span { color:rgba(255,255,255,0.7); font-size:13px; }
+    /* pricing */
+    .tiers { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px; margin-top:40px; }
+    .tier { background:#fff; border-radius:22px; padding:26px; box-shadow:0 3px 16px rgba(51,50,74,0.06); border:2px solid transparent; }
+    .tier.featured { border-color:var(--periwinkle); }
+    .tier .name { font-family:'Quicksand'; font-weight:700; font-size:20px; }
+    .tier .price { font-size:32px; font-weight:800; margin:8px 0; } .tier .price small { font-size:14px; font-weight:600; color:var(--muted); }
+    .tier ul { list-style:none; margin-top:14px; } .tier li { font-size:14px; color:var(--ink2); padding:6px 0 6px 24px; position:relative; }
+    .tier li::before { content:'✓'; position:absolute; left:0; color:var(--teal); font-weight:700; }
+    .tier .tag { font-size:11px; font-weight:700; color:var(--periwinkle); text-transform:uppercase; letter-spacing:1px; }
+    /* faq */
+    details { background:#fff; border-radius:16px; padding:18px 20px; margin-top:12px; box-shadow:0 2px 10px rgba(51,50,74,0.05); }
+    summary { font-weight:700; cursor:pointer; font-size:16px; list-style:none; }
+    summary::-webkit-details-marker { display:none; }
+    details p { color:var(--ink2); margin-top:10px; font-size:14.5px; }
+    footer { background:#fff; border-top:1px solid rgba(51,50,74,0.06); padding:40px 0; text-align:center; color:var(--muted); font-size:14px; }
+    footer .links { display:flex; gap:24px; justify-content:center; flex-wrap:wrap; margin-bottom:16px; }
+    footer .links a { color:var(--ink2); font-weight:600; }
+    @media (max-width:640px){ .nav-links a:not(.btn){ display:none; } section{ padding:48px 0;} .privacy{padding:32px 20px;border-radius:24px;} }
+  </style>
+</head>
+<body>
+  <header><div class="wrap"><nav>
+    <a class="brand" href="#top">
+      <svg viewBox="0 0 26 30" fill="none"><path d="M13 2C8 6 6 10 9 15c-2 0-4 2-4 5 0 4 4 6 8 6s8-2 8-6c0-3-2-5-4-5 3-5 1-9-4-13z" fill="#6B6FC9"/><rect x="11.5" y="20" width="3" height="9" rx="1.5" fill="#54579E"/></svg>
+      Everly
+    </a>
+    <div class="nav-links">
+      <a href="#stages">How it grows</a>
+      <a href="#features">Features</a>
+      <a href="#pricing">Pricing</a>
+      <a class="btn btn-primary" href="#pricing">Get started</a>
+    </div>
+  </nav></div></header>
+
+  <main id="top">
+    <div class="hero wrap">
+      <span class="pill">Free forever to start · no credit card</span>
+      <h1>One family app, from the first scan to first car.</h1>
+      <p class="sub">Everly grows with your child through every stage — pregnancy, newborn, toddler, school, teen and beyond. Private by design.</p>
+      <div class="cta">
+        <a class="btn btn-primary" href="#pricing">Start free →</a>
+        <a class="btn btn-ghost" href="#features">See how it works</a>
+      </div>
+      <p class="note">Birth to 18+ · Your data stays on your device · iOS, Android & web</p>
+    </div>
+
+    <section id="stages" style="padding-top:8px">
+      <p class="eyebrow">Adapts as they grow</p>
+      <h2 class="section-title">Six stages, one continuous story</h2>
+    </section>
+    <div class="stages">
+      <div class="stage"><div class="dot" style="background:#6B6FC9">1</div><h3>Newborn</h3><p>Feeds, sleep, night log</p></div>
+      <div class="stage"><div class="dot" style="background:#3A9B8A">2</div><h3>Baby</h3><p>Rhythm, milestones</p></div>
+      <div class="stage"><div class="dot" style="background:#D9824F">3</div><h3>Preschool</h3><p>Routines, health</p></div>
+      <div class="stage"><div class="dot" style="background:#C9A33B">4</div><h3>School</h3><p>Calendar, chores</p></div>
+      <div class="stage"><div class="dot" style="background:#D46E97">5</div><h3>Teen</h3><p>Activities, allowance</p></div>
+      <div class="stage"><div class="dot" style="background:#54579E">6</div><h3>Young adult</h3><p>The lifelong timeline</p></div>
+    </div>
+
+    <section id="features" class="wrap">
+      <p class="eyebrow">Everything in one calm place</p>
+      <h2 class="section-title">Built different</h2>
+      <div class="grid">
+        <div class="card"><div class="ic" style="background:#E7E4FB">🌙</div><h3>Made for 3am</h3><p>Two-tap logging, a calm night mode, and wake-window awareness — one-handed.</p></div>
+        <div class="card"><div class="ic" style="background:#D8F0E6">💚</div><h3>Mum&Me, free forever</h3><p>Pregnancy and postpartum recovery — including EPDS wellbeing check-ins — never gated.</p></div>
+        <div class="card"><div class="ic" style="background:#FCE6D8">📅</div><h3>The whole family</h3><p>Shared calendar, co-parent custody & expenses, routines and chores with points.</p></div>
+        <div class="card"><div class="ic" style="background:#FBE0EA">🩺</div><h3>Health, organised</h3><p>Vaccines, medications and growth — with a pediatrician PDF you can share.</p></div>
+        <div class="card"><div class="ic" style="background:#FBF1CE">✨</div><h3>One lifelong story</h3><p>Milestones and memories preserved from first smile to graduation.</p></div>
+        <div class="card"><div class="ic" style="background:#DCEBFA">🔒</div><h3>Private by design</h3><p>Your family's records live on your device — not in the cloud.</p></div>
+      </div>
+    </section>
+
+    <section class="wrap"><div class="privacy">
+      <h2>Your family. Your device. Your story.</h2>
+      <p>Everly stores account and billing only on our servers. Every child, health and family record stays encrypted on your device — never sold, never mined.</p>
+      <div class="stats">
+        <div><b>6</b><span>life stages</span></div>
+        <div><b>0</b><span>records in the cloud</span></div>
+        <div><b>18+</b><span>years, one app</span></div>
+        <div><b>∞</b><span>moments kept</span></div>
+      </div>
+    </div></section>
+
+    <section id="pricing" class="wrap">
+      <p class="eyebrow">Simple pricing</p>
+      <h2 class="section-title">Start free. Upgrade if you want more.</h2>
+      <div class="tiers">
+        <div class="tier"><div class="name">Free</div><div class="price">€0</div><ul><li>Pregnancy & postpartum</li><li>1 child profile</li><li>Daily logging, calendar</li></ul></div>
+        <div class="tier featured"><span class="tag">Recommended</span><div class="name">Pro</div><div class="price">€3.99<small>/mo</small></div><ul><li>Unlimited children</li><li>Health Hub & exports</li><li>Routines, night log</li></ul></div>
+        <div class="tier"><div class="name">Family</div><div class="price">€4.99<small>/mo</small></div><ul><li>Everything in Pro</li><li>Co-parent & multi-caregiver</li><li>Priority support</li></ul></div>
+        <div class="tier"><div class="name">Lifetime</div><div class="price">€149.99</div><ul><li>Everything in Family</li><li>Pay once, keep forever</li></ul></div>
+      </div>
+      <div style="text-align:center;margin-top:32px"><a class="btn btn-primary" href="#top">Create your free account →</a></div>
+    </section>
+
+    <section class="wrap">
+      <p class="eyebrow">Good to know</p>
+      <h2 class="section-title">Questions</h2>
+      <div style="max-width:680px;margin:32px auto 0">
+        <details><summary>Is my family's data really private?</summary><p>Yes. Child, health and maternal records are stored on your device. Our servers only hold your account and billing details.</p></details>
+        <details><summary>Is the pregnancy and postpartum side free?</summary><p>Always. Mum&Me — including EPDS wellbeing check-ins and safety tools — is free forever.</p></details>
+        <details><summary>Does it work for more than one child?</summary><p>Yes, on Pro and above. Each child has their own profile, stage-adaptive tools, health records and timeline.</p></details>
+        <details><summary>Which devices?</summary><p>iOS, Android and the web app — your data syncs to whichever you sign in on (account only; records stay on-device).</p></details>
+      </div>
+    </section>
+  </main>
+
+  <footer><div class="wrap">
+    <div class="links"><a href="#features">Features</a><a href="#pricing">Pricing</a><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Support</a></div>
+    <p>© 2026 Everly · Made with care for families.</p>
+  </div></footer>
+</body>
+</html>
