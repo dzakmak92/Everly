@@ -76,15 +76,19 @@ export default function NightLog() {
   const { entries, addEntry, activeChild } = useData();
   const [dark, setDark] = useState(true);
 
-  const today = entriesOn(entries);
+  // Scope to the active child so switching changes the view.
+  const cid = activeChild?.id;
+  const mine = cid ? entries.filter((e) => e.childId === cid) : entries;
+
+  const today = entriesOn(mine);
   const feeds = today.filter((e) => e.kind === 'feed').length;
   const sleepMin = today.filter((e) => e.kind === 'sleep').reduce((s, e) => s + (e.durationMin ?? 0), 0);
   const wet = today.filter((e) => e.kind === 'diaper').length;
   const ml = today.filter((e) => e.kind === 'feed' || e.kind === 'pump').reduce((s, e) => s + (e.volumeMl ?? 0), 0);
   const pumpMl = today.filter((e) => e.kind === 'pump').reduce((s, e) => s + (e.volumeMl ?? 0), 0);
 
-  // entries is newest-first, so find() gives the most recent of each kind.
-  const latestByKind = (k: EntryKind) => entries.find((e) => e.kind === k);
+  // mine is newest-first, so find() gives the most recent of each kind for this child.
+  const latestByKind = (k: EntryKind) => mine.find((e) => e.kind === k);
   const lastSleep = latestByKind('sleep');
 
   // Wake window: derive "next nap" from the last sleep entry (~2h wake window).

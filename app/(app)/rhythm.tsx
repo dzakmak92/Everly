@@ -59,7 +59,11 @@ export default function Rhythm() {
   const insets = useSafeAreaInsets();
   const { entries, activeChild, growth } = useData();
 
-  const today = entriesOn(entries);
+  // Scope to the active child so switching changes the ring + stats.
+  const cid = activeChild?.id;
+  const mine = cid ? entries.filter((e) => e.childId === cid) : entries;
+
+  const today = entriesOn(mine);
   const sleeps = today.filter((e) => e.kind === 'sleep' && (e.durationMin ?? 0) > 0);
   const sleepMin = sleepMinutesFor(today);
   const dots = today.filter((e) => e.kind !== 'sleep');
@@ -68,7 +72,7 @@ export default function Rhythm() {
   const days = Array.from({ length: 7 }).map((_, i) => {
     const ref = new Date();
     ref.setDate(ref.getDate() - (6 - i));
-    return entriesOn(entries, ref);
+    return entriesOn(mine, ref);
   });
   const sleepSeries = days.map(sleepMinutesFor);
   const feedSeries = days.map(feedCountFor);
