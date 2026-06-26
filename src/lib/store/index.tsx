@@ -69,6 +69,11 @@ export type EpdsResult = { id: string; at: string; total: number; band: string; 
 export type Lochia = 'none' | 'light' | 'moderate' | 'heavy';
 export type RecoveryLog = { id: string; at: string; systolic?: number; diastolic?: number; lochia?: Lochia; note?: string };
 
+export type TtcItem = { id: string; label: string; checked: boolean };
+export type MomCare = { id: string; at: string; kind: 'comfort' | 'sleep' | 'water'; value: number };
+export type PelvicLog = { id: string; at: string; exercise: string };
+export type MatAppt = { id: string; title: string; at: string; kind: 'appointment' | 'check'; prep?: string };
+
 export type TzContact = { id: string; name: string; tz: string; location?: string };
 export type SavedTip = { id: string; at: string; text: string };
 
@@ -111,6 +116,12 @@ const NAMES_KEY = 'everly.savedNames.v1';
 const PREGSTATUS_KEY = 'everly.pregStatus.v1';
 const PREGAPPT_KEY = 'everly.pregAppts.v1';
 const PREGVITAL_KEY = 'everly.pregVitals.v1';
+const LASTPERIOD_KEY = 'everly.lastPeriod.v1';
+const CYCLELEN_KEY = 'everly.cycleLen.v1';
+const TTC_KEY = 'everly.ttc.v1';
+const PELVIC_KEY = 'everly.pelvic.v1';
+const MOMCARE_KEY = 'everly.momCare.v1';
+const MATAPPT_KEY = 'everly.matAppts.v1';
 
 function newId() {
   return `${Date.now().toString(36)}-${Math.floor(Math.random() * 1e6).toString(36)}`;
@@ -197,6 +208,22 @@ type DataValue = {
   pregVitals: PregVital[];
   addPregVital: (input: { kind: 'glucose' | 'bp'; glucose?: number; systolic?: number; diastolic?: number; tag?: string }) => void;
   deletePregVital: (id: string) => void;
+  lastPeriod: string | null;
+  setLastPeriod: (d: string | null) => void;
+  cycleLength: number;
+  setCycleLength: (n: number) => void;
+  ttcItems: TtcItem[];
+  addTtc: (label: string) => void;
+  toggleTtc: (id: string) => void;
+  deleteTtc: (id: string) => void;
+  momCare: MomCare[];
+  addMomCare: (input: { kind: 'comfort' | 'sleep' | 'water'; value: number }) => void;
+  deleteMomCare: (id: string) => void;
+  pelvicLog: PelvicLog[];
+  addPelvic: (exercise: string) => void;
+  matAppts: MatAppt[];
+  addMatAppt: (input: { title: string; at: string; kind: 'appointment' | 'check'; prep?: string }) => void;
+  deleteMatAppt: (id: string) => void;
   clearAll: () => void;
 };
 
@@ -229,12 +256,18 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
   const [pregStatus, setPregStatusState] = useState<PregStatus>('active');
   const [pregAppts, setPregAppts] = useState<PregAppt[]>([]);
   const [pregVitals, setPregVitals] = useState<PregVital[]>([]);
+  const [lastPeriod, setLastPeriodState] = useState<string | null>(null);
+  const [cycleLength, setCycleLengthState] = useState<number>(28);
+  const [ttcItems, setTtcItems] = useState<TtcItem[]>([]);
+  const [momCare, setMomCare] = useState<MomCare[]>([]);
+  const [pelvicLog, setPelvicLog] = useState<PelvicLog[]>([]);
+  const [matAppts, setMatAppts] = useState<MatAppt[]>([]);
 
   useEffect(() => {
     let active = true;
     (async () => {
       try {
-        const [rawE, rawC, rawA, rawEv, rawV, rawM, rawG, rawR, rawCh, rawMs, rawCg, rawEx, rawCu, rawDue, rawCi, rawMb, rawEp, rawRec, rawTz, rawTip, rawBp, rawNm, rawPs, rawPa, rawPv] = await Promise.all([
+        const [rawE, rawC, rawA, rawEv, rawV, rawM, rawG, rawR, rawCh, rawMs, rawCg, rawEx, rawCu, rawDue, rawCi, rawMb, rawEp, rawRec, rawTz, rawTip, rawBp, rawNm, rawPs, rawPa, rawPv, rawLp, rawCl, rawTtc, rawMc, rawPel, rawMa] = await Promise.all([
           AsyncStorage.getItem(ENTRIES_KEY),
           AsyncStorage.getItem(CHILDREN_KEY),
           AsyncStorage.getItem(ACTIVE_KEY),
@@ -260,6 +293,12 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
           AsyncStorage.getItem(PREGSTATUS_KEY),
           AsyncStorage.getItem(PREGAPPT_KEY),
           AsyncStorage.getItem(PREGVITAL_KEY),
+          AsyncStorage.getItem(LASTPERIOD_KEY),
+          AsyncStorage.getItem(CYCLELEN_KEY),
+          AsyncStorage.getItem(TTC_KEY),
+          AsyncStorage.getItem(MOMCARE_KEY),
+          AsyncStorage.getItem(PELVIC_KEY),
+          AsyncStorage.getItem(MATAPPT_KEY),
         ]);
         if (!active) return;
         if (rawE) setEntries(JSON.parse(rawE));
@@ -287,6 +326,12 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
         if (rawPs) setPregStatusState(JSON.parse(rawPs));
         if (rawPa) setPregAppts(JSON.parse(rawPa));
         if (rawPv) setPregVitals(JSON.parse(rawPv));
+        if (rawLp) setLastPeriodState(JSON.parse(rawLp));
+        if (rawCl) setCycleLengthState(JSON.parse(rawCl));
+        if (rawTtc) setTtcItems(JSON.parse(rawTtc));
+        if (rawMc) setMomCare(JSON.parse(rawMc));
+        if (rawPel) setPelvicLog(JSON.parse(rawPel));
+        if (rawMa) setMatAppts(JSON.parse(rawMa));
       } catch {
         // Corrupt/missing cache → start empty. Never crash on storage.
       } finally {
@@ -321,6 +366,12 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
   useEffect(() => { if (!loading) AsyncStorage.setItem(PREGSTATUS_KEY, JSON.stringify(pregStatus)).catch(() => {}); }, [pregStatus, loading]);
   useEffect(() => { if (!loading) AsyncStorage.setItem(PREGAPPT_KEY, JSON.stringify(pregAppts)).catch(() => {}); }, [pregAppts, loading]);
   useEffect(() => { if (!loading) AsyncStorage.setItem(PREGVITAL_KEY, JSON.stringify(pregVitals)).catch(() => {}); }, [pregVitals, loading]);
+  useEffect(() => { if (!loading) AsyncStorage.setItem(LASTPERIOD_KEY, JSON.stringify(lastPeriod)).catch(() => {}); }, [lastPeriod, loading]);
+  useEffect(() => { if (!loading) AsyncStorage.setItem(CYCLELEN_KEY, JSON.stringify(cycleLength)).catch(() => {}); }, [cycleLength, loading]);
+  useEffect(() => { if (!loading) AsyncStorage.setItem(TTC_KEY, JSON.stringify(ttcItems)).catch(() => {}); }, [ttcItems, loading]);
+  useEffect(() => { if (!loading) AsyncStorage.setItem(MOMCARE_KEY, JSON.stringify(momCare)).catch(() => {}); }, [momCare, loading]);
+  useEffect(() => { if (!loading) AsyncStorage.setItem(PELVIC_KEY, JSON.stringify(pelvicLog)).catch(() => {}); }, [pelvicLog, loading]);
+  useEffect(() => { if (!loading) AsyncStorage.setItem(MATAPPT_KEY, JSON.stringify(matAppts)).catch(() => {}); }, [matAppts, loading]);
 
   const addChild = useCallback((input: { name: string; color: ChildColor; birthDate?: string }) => {
     const child: Child = { id: newId(), name: input.name.trim(), color: input.color, birthDate: input.birthDate?.trim() || undefined };
@@ -477,6 +528,19 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
   }, []);
   const deletePregVital = useCallback((id: string) => setPregVitals((prev) => prev.filter((v) => v.id !== id)), []);
 
+  const setLastPeriod = useCallback((dd: string | null) => setLastPeriodState(dd?.trim() || null), []);
+  const setCycleLength = useCallback((n: number) => setCycleLengthState(n > 0 ? n : 28), []);
+  const addTtc = useCallback((label: string) => setTtcItems((prev) => [...prev, { id: newId(), label: label.trim(), checked: false }]), []);
+  const toggleTtc = useCallback((id: string) => setTtcItems((prev) => prev.map((i) => (i.id === id ? { ...i, checked: !i.checked } : i))), []);
+  const deleteTtc = useCallback((id: string) => setTtcItems((prev) => prev.filter((i) => i.id !== id)), []);
+  const addMomCare = useCallback((input: { kind: 'comfort' | 'sleep' | 'water'; value: number }) => setMomCare((prev) => [{ id: newId(), at: new Date().toISOString(), ...input }, ...prev]), []);
+  const deleteMomCare = useCallback((id: string) => setMomCare((prev) => prev.filter((m) => m.id !== id)), []);
+  const addPelvic = useCallback((exercise: string) => setPelvicLog((prev) => [{ id: newId(), at: new Date().toISOString(), exercise }, ...prev]), []);
+  const addMatAppt = useCallback((input: { title: string; at: string; kind: 'appointment' | 'check'; prep?: string }) => {
+    setMatAppts((prev) => [...prev, { id: newId(), title: input.title.trim(), at: input.at, kind: input.kind, prep: input.prep?.trim() || undefined }].sort((a, b) => a.at.localeCompare(b.at)));
+  }, []);
+  const deleteMatAppt = useCallback((id: string) => setMatAppts((prev) => prev.filter((a) => a.id !== id)), []);
+
   const clearAll = useCallback(() => { setEntries([]); setEvents([]); }, []);
 
   const activeChild = useMemo(() => children.find((c) => c.id === activeId) ?? null, [children, activeId]);
@@ -502,9 +566,14 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
       pregStatus, setPregStatus,
       pregAppts, addPregAppt, deletePregAppt,
       pregVitals, addPregVital, deletePregVital,
+      lastPeriod, setLastPeriod, cycleLength, setCycleLength,
+      ttcItems, addTtc, toggleTtc, deleteTtc,
+      momCare, addMomCare, deleteMomCare,
+      pelvicLog, addPelvic,
+      matAppts, addMatAppt, deleteMatAppt,
       clearAll,
     }),
-    [loading, children, activeChild, setActiveChild, addChild, updateChild, deleteChild, entries, addEntry, deleteEntry, events, addEvent, deleteEvent, vaccines, addVaccine, updateVaccine, deleteVaccine, medications, addMedication, toggleMedication, deleteMedication, growth, addGrowth, deleteGrowth, routines, addRoutine, addRoutineStep, toggleStep, resetRoutine, deleteRoutine, chores, addChore, toggleChore, deleteChore, milestones, addMilestone, deleteMilestone, caregivers, addCaregiver, deleteCaregiver, custody, setCustodyDay, expenses, addExpense, toggleExpenseSettled, deleteExpense, dueDate, setDueDate, checkins, addCheckin, deleteCheckin, maternalBirth, setMaternalBirth, epdsResults, addEpdsResult, deleteEpdsResult, recoveryLogs, addRecoveryLog, deleteRecoveryLog, tzContacts, addTzContact, deleteTzContact, savedTips, saveTip, deleteTip, birthPrep, addBirthPrep, toggleBirthPrep, deleteBirthPrep, savedNames, saveName, deleteName, pregStatus, setPregStatus, pregAppts, addPregAppt, deletePregAppt, pregVitals, addPregVital, deletePregVital, clearAll],
+    [loading, children, activeChild, setActiveChild, addChild, updateChild, deleteChild, entries, addEntry, deleteEntry, events, addEvent, deleteEvent, vaccines, addVaccine, updateVaccine, deleteVaccine, medications, addMedication, toggleMedication, deleteMedication, growth, addGrowth, deleteGrowth, routines, addRoutine, addRoutineStep, toggleStep, resetRoutine, deleteRoutine, chores, addChore, toggleChore, deleteChore, milestones, addMilestone, deleteMilestone, caregivers, addCaregiver, deleteCaregiver, custody, setCustodyDay, expenses, addExpense, toggleExpenseSettled, deleteExpense, dueDate, setDueDate, checkins, addCheckin, deleteCheckin, maternalBirth, setMaternalBirth, epdsResults, addEpdsResult, deleteEpdsResult, recoveryLogs, addRecoveryLog, deleteRecoveryLog, tzContacts, addTzContact, deleteTzContact, savedTips, saveTip, deleteTip, birthPrep, addBirthPrep, toggleBirthPrep, deleteBirthPrep, savedNames, saveName, deleteName, pregStatus, setPregStatus, pregAppts, addPregAppt, deletePregAppt, pregVitals, addPregVital, deletePregVital, lastPeriod, setLastPeriod, cycleLength, setCycleLength, ttcItems, addTtc, toggleTtc, deleteTtc, momCare, addMomCare, deleteMomCare, pelvicLog, addPelvic, matAppts, addMatAppt, deleteMatAppt, clearAll],
   );
 
   return <DataContext.Provider value={value}>{node}</DataContext.Provider>;
