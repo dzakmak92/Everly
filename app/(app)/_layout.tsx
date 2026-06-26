@@ -11,9 +11,11 @@ import { color } from '../../src/theme/tokens';
  * a card so the back button returns to wherever you came from (not always Today).
  */
 function Shell() {
-  const { loading, children } = useData();
+  const { loading, children, dueDate, maternalBirth } = useData();
   if (loading) return <Splash />;
-  if (children.length === 0) return <Onboarding />;
+  // Onboarding is done once there's a child OR a started Mum&Me journey
+  // (a first-time pregnant user has no child yet, just a due date).
+  if (children.length === 0 && !dueDate && !maternalBirth) return <Onboarding />;
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: color.canvas } }}>
       <Stack.Screen name="(tabs)" />

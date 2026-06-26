@@ -147,7 +147,7 @@ type DataValue = {
   children: Child[];
   activeChild: Child | null;
   setActiveChild: (id: string) => void;
-  addChild: (input: { name: string; color: ChildColor; birthDate?: string }) => void;
+  addChild: (input: { name: string; color: ChildColor; birthDate?: string }) => string;
   updateChild: (id: string, patch: Partial<Pick<Child, 'name' | 'color' | 'birthDate'>>) => void;
   deleteChild: (id: string) => void;
   entries: Entry[]; // newest first
@@ -408,6 +408,7 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
     const child: Child = { id: newId(), name: input.name.trim(), color: input.color, birthDate: input.birthDate?.trim() || undefined };
     setChildren((prev) => [...prev, child]);
     setActiveId((cur) => cur ?? child.id);
+    return child.id;
   }, []);
 
   const updateChild = useCallback((id: string, patch: Partial<Pick<Child, 'name' | 'color' | 'birthDate'>>) => {

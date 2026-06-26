@@ -7,6 +7,7 @@ import { Button, Field, Notice } from './forms';
 import { DateField } from './DateField';
 import { useData, CHILD_COLORS, type ChildColor } from '../lib/store';
 import { useSupabase } from '../lib/supabase';
+import { dueDateFromLmp } from '../lib/pregnancy';
 
 /** Intro slides shown before first child creation. */
 const SLIDES: { title: string; body: string; accent: string }[] = [
@@ -19,15 +20,18 @@ const SLIDES: { title: string; body: string; accent: string }[] = [
 
 export function Onboarding() {
   const insets = useSafeAreaInsets();
-  const { addChild } = useData();
+  const { addChild, setDueDate } = useData();
   const { profile, session } = useSupabase();
   const parentName = profile?.name || session?.user?.email?.split('@')[0] || 'there';
 
   const [step, setStep] = useState(0); // 0..SLIDES.length-1 = slides, SLIDES.length = form
   const formStep = SLIDES.length;
+  const [mode, setMode] = useState<'child' | 'expecting'>('child');
   const [name, setName] = useState('');
   const [birthDate, setBirthDate] = useState('');
   const [colorKey, setColorKey] = useState<ChildColor>(CHILD_COLORS[0]);
+  const [dueIn, setDueIn] = useState('');
+  const [lmpIn, setLmpIn] = useState('');
   const [error, setError] = useState('');
 
   const total = SLIDES.length + 1;
@@ -35,6 +39,12 @@ export function Onboarding() {
 
   function finish() {
     setError('');
+    if (mode === 'expecting') {
+      const dd = dueIn.trim() || (lmpIn.trim() ? dueDateFromLmp(lmpIn.trim()) : '');
+      if (!dd) { setError('Add your due date, or your last period date.'); return; }
+      setDueDate(dd);
+      return;
+    }
     if (!name.trim()) { setError("Enter your child's name."); return; }
     addChild({ name, color: colorKey, birthDate });
   }
@@ -69,24 +79,53 @@ export function Onboarding() {
         ) : (
           <View style={{ gap: 16 }}>
             <Text style={{ fontFamily: font.display700, fontSize: 28, color: color.ink }}>Welcome, {parentName} 👋</Text>
-            <Text style={{ fontFamily: font.body400, fontSize: 15, color: color.inkSecondary, lineHeight: 22 }}>Add your first child to get started. Everything stays on your device.</Text>
-            <Field label="Name" value={name} onChangeText={setName} placeholder="e.g. Oliver" autoCapitalize="words" />
-            <DateField label="Birth date (optional)" value={birthDate} onChangeText={setBirthDate} optional />
-            <View style={{ gap: 10 }}>
-              <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 0.8, textTransform: 'uppercase', color: color.muted }}>Colour</Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-                {CHILD_COLORS.map((k) => {
-                  const t = childToken[k]; const sel = k === colorKey;
-                  return (
-                    <Pressable key={k} onPress={() => setColorKey(k)}>
-                      <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: t.fill, borderWidth: sel ? 3 : 1, borderColor: sel ? t.stroke : color.hairline, alignItems: 'center', justifyContent: 'center' }}>
-                        <View style={{ width: 14, height: 14, borderRadius: 7, backgroundColor: t.stroke }} />
-                      </View>
-                    </Pressable>
-                  );
-                })}
-              </View>
+            <Text style={{ fontFamily: font.body400, fontSize: 15, color: color.inkSecondary, lineHeight: 22 }}>How would you like to start? Everything stays on your device.</Text>
+
+            {/* Path chooser: a child already here, or expecting one */}
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              {([
+                { k: 'child', title: 'My child is here', sub: 'Track from newborn to teen', accent: '#6B6FC9' },
+                { k: 'expecting', title: "I'm expecting", sub: 'Start your Mum&Me journey', accent: '#3A9B8A' },
+              ] as const).map((opt) => {
+                const sel = mode === opt.k;
+                return (
+                  <Pressable key={opt.k} onPress={() => { setMode(opt.k); setError(''); }} style={{ flex: 1 }}>
+                    <View style={{ borderRadius: radius.card, padding: 14, gap: 4, backgroundColor: sel ? '#fff' : 'transparent', borderWidth: 2, borderColor: sel ? opt.accent : color.hairline }}>
+                      <Text style={{ fontFamily: font.body700, fontSize: 14, color: sel ? opt.accent : color.ink }}>{opt.title}</Text>
+                      <Text style={{ fontFamily: font.body400, fontSize: 12, color: color.muted, lineHeight: 16 }}>{opt.sub}</Text>
+                    </View>
+                  </Pressable>
+                );
+              })}
             </View>
+
+            {mode === 'child' ? (
+              <>
+                <Field label="Name" value={name} onChangeText={setName} placeholder="e.g. Oliver" autoCapitalize="words" />
+                <DateField label="Birth date (optional)" value={birthDate} onChangeText={setBirthDate} optional />
+                <View style={{ gap: 10 }}>
+                  <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 0.8, textTransform: 'uppercase', color: color.muted }}>Colour</Text>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+                    {CHILD_COLORS.map((k) => {
+                      const t = childToken[k]; const sel = k === colorKey;
+                      return (
+                        <Pressable key={k} onPress={() => setColorKey(k)}>
+                          <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: t.fill, borderWidth: sel ? 3 : 1, borderColor: sel ? t.stroke : color.hairline, alignItems: 'center', justifyContent: 'center' }}>
+                            <View style={{ width: 14, height: 14, borderRadius: 7, backgroundColor: t.stroke }} />
+                          </View>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </View>
+              </>
+            ) : (
+              <>
+                <DateField label="Due date" value={dueIn} onChangeText={setDueIn} />
+                <Text style={{ fontFamily: font.body400, fontSize: 12.5, color: color.muted }}>Don't know it yet? Add the first day of your last period instead and we'll estimate it.</Text>
+                <DateField label="Last period (optional)" value={lmpIn} onChangeText={setLmpIn} optional />
+              </>
+            )}
             <Notice text={error} />
           </View>
         )}
@@ -105,7 +144,7 @@ export function Onboarding() {
         {!onForm ? (
           <Button label={step === SLIDES.length - 1 ? 'Get started' : 'Next'} onPress={() => setStep((s) => s + 1)} style={{ flex: 2 }} />
         ) : (
-          <Button label="Create profile" onPress={finish} style={{ flex: 2 }} />
+          <Button label={mode === 'expecting' ? 'Start Mum&Me' : 'Create profile'} onPress={finish} style={{ flex: 2 }} />
         )}
       </View>
     </ScrollView>
