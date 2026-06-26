@@ -88,7 +88,7 @@ export type ContractionSession = { id: string; at: string; durationSec: number; 
 export type TzContact = { id: string; name: string; tz: string; location?: string };
 export type SavedTip = { id: string; at: string; text: string };
 
-export type Caregiver = { id: string; name: string };
+export type Caregiver = { id: string; name: string; role?: string };
 /** Expense paidBy is 'me' or a caregiver id; splitPct = the other party's share. */
 export type Expense = { id: string; label: string; amount: number; paidBy: string; splitPct: number; settled: boolean; at: string };
 /** Weekly custody pattern: weekday 0(Sun)–6(Sat) → 'me' | caregiverId. */
@@ -185,7 +185,7 @@ type DataValue = {
   addMilestone: (input: { childId: string; title: string; date: string; note?: string }) => void;
   deleteMilestone: (id: string) => void;
   caregivers: Caregiver[];
-  addCaregiver: (name: string) => void;
+  addCaregiver: (name: string, role?: string) => void;
   deleteCaregiver: (id: string) => void;
   custody: Custody;
   setCustodyDay: (weekday: number, who: string) => void;
@@ -514,7 +514,7 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
   }, []);
   const deleteMilestone = useCallback((id: string) => setMilestones((prev) => prev.filter((m) => m.id !== id)), []);
 
-  const addCaregiver = useCallback((name: string) => setCaregivers((prev) => [...prev, { id: newId(), name: name.trim() }]), []);
+  const addCaregiver = useCallback((name: string, role?: string) => setCaregivers((prev) => [...prev, { id: newId(), name: name.trim(), role: role?.trim() || undefined }]), []);
   const deleteCaregiver = useCallback((id: string) => {
     setCaregivers((prev) => prev.filter((c) => c.id !== id));
     setCustody((prev) => { const next = { ...prev }; for (const k of Object.keys(next)) if (next[+k] === id) next[+k] = 'me'; return next; });
