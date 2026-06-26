@@ -7,6 +7,7 @@ import { color, font, radius, shadow, childToken } from '../../src/theme/tokens'
 import { useData, type Milestone, type Child } from '../../src/lib/store';
 import { ageLabel } from '../../src/lib/age';
 import { BAND_LABEL, type EpdsBand } from '../../src/lib/epds';
+import { youStoryEvents } from '../../src/lib/story';
 import { Silhouette } from '../../src/components/ui';
 import { Star, Heart, Camera, Bottle, Activity, Leaf, Download, Plus, Archive, X, ChevronLeft } from '../../src/components/icons';
 import { DateField } from '../../src/components/DateField';
@@ -79,6 +80,7 @@ export default function TimelineTab() {
     maternalBirth,
     epdsResults,
     recoveryLogs,
+    pregArchive,
   } = useData();
 
   // ── Subject selection ────────────────────────────────────────────────────
@@ -143,6 +145,7 @@ export default function TimelineTab() {
             maternalBirth={maternalBirth}
             epdsResults={epdsResults}
             recoveryLogs={recoveryLogs}
+            pregArchive={pregArchive}
           />
         )}
       </ScrollView>
@@ -468,36 +471,19 @@ function YouStory({
   maternalBirth,
   epdsResults,
   recoveryLogs,
+  pregArchive,
 }: {
   lastPeriod: string | null;
   dueDate: string | null;
   maternalBirth: string | null;
   epdsResults: ReturnType<typeof useData>['epdsResults'];
   recoveryLogs: ReturnType<typeof useData>['recoveryLogs'];
+  pregArchive: ReturnType<typeof useData>['pregArchive'];
 }) {
   type Ev = { at: string; title: string; sub?: string };
   const evs = useMemo<Ev[]>(() => {
-    const out: Ev[] = [];
-    if (lastPeriod) out.push({ at: lastPeriod, title: 'Preconception', sub: 'Started trying / cycle tracking' });
-    if (dueDate)
-      out.push({
-        at: new Date(new Date(`${dueDate}T00:00:00`).getTime() - 280 * 86400000).toISOString(),
-        title: 'Pregnancy began',
-        sub: `Due ${dueDate}`,
-      });
-    if (maternalBirth) out.push({ at: maternalBirth, title: 'Baby born', sub: 'Welcome to the world' });
-    epdsResults.forEach((r) =>
-      out.push({ at: r.at, title: 'Wellbeing check-in', sub: `${r.total}/30 · ${BAND_LABEL[r.band as EpdsBand]}` }),
-    );
-    if (recoveryLogs.length)
-      out.push({
-        at: recoveryLogs[recoveryLogs.length - 1].at,
-        title: 'Recovery tracking began',
-        sub: `${recoveryLogs.length} entries logged`,
-      });
-    out.sort((a, b) => b.at.localeCompare(a.at));
-    return out;
-  }, [lastPeriod, dueDate, maternalBirth, epdsResults, recoveryLogs]);
+    return youStoryEvents({ lastPeriod, dueDate, maternalBirth, pregArchive, epdsResults, recoveryLogs });
+  }, [lastPeriod, dueDate, maternalBirth, pregArchive, epdsResults, recoveryLogs]);
 
   return (
     <View style={{ gap: 16 }}>

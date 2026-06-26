@@ -18,6 +18,7 @@ import {
   gestFromDueDate, weekContent, MOODS, PREG_SYMPTOMS, RED_FLAGS_CALL_NOW, RED_FLAGS_CALL_SOON, dueDateFromLmp, TRIMESTER_TIPS, BABY_NAMES,
 } from '../../../src/lib/pregnancy';
 import { EPDS_QUESTIONS, scoreEpds, BAND_LABEL, CRISIS_RESOURCES } from '../../../src/lib/epds';
+import { youStoryEvents } from '../../../src/lib/story';
 import {
   useData, entriesOn, upcomingEvents, entryDetail, ENTRY_META, quickLogKinds, MOOD_LABELS, CHILD_COLORS,
   type EntryKind, type FeedSide, type DiaperType, type Child, type Lochia, type ChildColor, type PregArchive,
@@ -1183,20 +1184,36 @@ function WellbeingPanel() {
   );
 }
 
+const COMFORT_LABELS = ['Painful', 'Some pain', 'Okay', 'Comfortable'];
+const WATER_GOAL = 2200;
+
 function RecoveryPanel() {
-  const { recoveryLogs, addRecoveryLog } = useData();
+  const { recoveryLogs, addRecoveryLog, momCare, addMomCare } = useData();
   const [sys, setSys] = useState('');
   const [dia, setDia] = useState('');
   const [lochia, setLochia] = useState<Lochia | null>(null);
   const [note, setNote] = useState('');
+  const [hrs, setHrs] = useState('');
   const recent = recoveryLogs.slice(0, 3);
+
+  const isToday = (iso: string) => new Date(iso).toDateString() === new Date().toDateString();
+  const todayWater = momCare.filter((m) => m.kind === 'water' && isToday(m.at)).reduce((s, m) => s + m.value, 0);
+  const lastComfort = momCare.find((m) => m.kind === 'comfort');
+  const comfortToday = lastComfort && isToday(lastComfort.at) ? lastComfort.value : null;
+  const weekSleep = momCare.filter((m) => m.kind === 'sleep' && new Date(m.at).getTime() >= Date.now() - 7 * 86400000);
+  const avgSleep = weekSleep.length ? (weekSleep.reduce((s, m) => s + m.value, 0) / weekSleep.length).toFixed(1) : null;
+
   const save = () => {
     if (!sys && !dia && !lochia && !note.trim()) return;
     addRecoveryLog({ systolic: numOrUndef(sys), diastolic: numOrUndef(dia), lochia: lochia ?? undefined, note: note.trim() || undefined });
     setSys(''); setDia(''); setLochia(null); setNote('');
   };
+  const logSleep = () => { const v = numOrUndef(hrs); if (v == null) return; addMomCare({ kind: 'sleep', value: v }); setHrs(''); };
+
   return (
     <View style={{ gap: 14 }}>
+      {/* Vitals */}
+      <PanelLabel>Vitals</PanelLabel>
       <View style={{ flexDirection: 'row', gap: 10 }}>
         <View style={{ flex: 1 }}><Field label="Systolic" value={sys} onChangeText={setSys} placeholder="e.g. 118" /></View>
         <View style={{ flex: 1 }}><Field label="Diastolic" value={dia} onChangeText={setDia} placeholder="e.g. 76" /></View>
@@ -1220,6 +1237,37 @@ function RecoveryPanel() {
           })}
         </View>
       )}
+
+      {/* Looking after you */}
+      <View style={{ height: 1, backgroundColor: color.hairline }} />
+      <PanelLabel>Breastfeeding comfort today</PanelLabel>
+      <View style={{ flexDirection: 'row', gap: 6 }}>
+        {COMFORT_LABELS.map((c, i) => {
+          const sel = comfortToday === i;
+          return (
+            <Pressable key={c} onPress={() => addMomCare({ kind: 'comfort', value: i })} style={{ flex: 1, paddingVertical: 10, borderRadius: radius.tile, alignItems: 'center', backgroundColor: sel ? color.maternalTeal : color.canvas }}>
+              <Text style={{ fontFamily: font.body600, fontSize: 11, color: sel ? '#fff' : color.ink, textAlign: 'center' }}>{c}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      <PanelLabel>Your sleep · 7-day avg</PanelLabel>
+      <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 10 }}>
+        <Text style={{ fontFamily: font.display700, fontSize: 22, color: color.ink }}>{avgSleep ? `${avgSleep}h` : '—'}</Text>
+        <View style={{ flex: 1 }}><Field label="" value={hrs} onChangeText={setHrs} placeholder="Hours slept" /></View>
+        <Button label="Log" onPress={logSleep} style={{ paddingHorizontal: 16 }} />
+      </View>
+
+      <PanelLabel>Hydration today · {(todayWater / 1000).toFixed(1)} / {(WATER_GOAL / 1000).toFixed(1)} L</PanelLabel>
+      <ProgressBar pct={Math.min(100, Math.round((todayWater / WATER_GOAL) * 100))} track={color.canvas} colors={['#6BBFAE', color.maternalTeal]} />
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        {[250, 500].map((ml) => (
+          <Pressable key={ml} onPress={() => addMomCare({ kind: 'water', value: ml })} style={{ flex: 1, paddingVertical: 11, borderRadius: radius.tile, alignItems: 'center', backgroundColor: color.canvas, borderWidth: 1, borderColor: color.hairline }}>
+            <Text style={{ fontFamily: font.body700, fontSize: 13, color: color.tealDeep }}>+{ml} ml</Text>
+          </Pressable>
+        ))}
+      </View>
     </View>
   );
 }
@@ -1352,32 +1400,29 @@ function PlanningPanel() {
 }
 
 function StoryPanel({ maternalBirth, ppWeeks }: { maternalBirth: string | null; ppWeeks: number }) {
-  const { epdsResults, recoveryLogs, milestones } = useData();
-  const latestEpds = epdsResults[0];
-  const latestRecovery = recoveryLogs[0];
-  const recentMilestones = milestones.slice(0, 3);
+  const { lastPeriod, dueDate, epdsResults, recoveryLogs, pregArchive } = useData();
+  const events = youStoryEvents({ lastPeriod, dueDate, maternalBirth, pregArchive, epdsResults, recoveryLogs });
   return (
     <View style={{ gap: 12 }}>
-      <View style={{ backgroundColor: color.canvas, borderRadius: radius.tile, padding: 14, gap: 4 }}>
-        <PanelLabel>Recap</PanelLabel>
-        <Text style={{ fontFamily: font.body600, fontSize: 13, color: color.ink }}>
-          {maternalBirth ? `${ppWeeks} weeks postpartum` : 'Postpartum journey'}
-        </Text>
-        <Text style={{ fontFamily: font.body400, fontSize: 12.5, color: color.inkSecondary }}>
-          Wellbeing: {latestEpds ? (BAND_LABEL[latestEpds.band as keyof typeof BAND_LABEL] ?? latestEpds.band) : 'not checked yet'}
-        </Text>
-        <Text style={{ fontFamily: font.body400, fontSize: 12.5, color: color.inkSecondary }}>
-          Recovery: {latestRecovery
-            ? [latestRecovery.systolic || latestRecovery.diastolic ? `${latestRecovery.systolic ?? '–'}/${latestRecovery.diastolic ?? '–'}` : null, latestRecovery.lochia ? `lochia ${latestRecovery.lochia}` : null].filter(Boolean).join(' · ') || 'logged'
-            : 'no logs yet'}
-        </Text>
-      </View>
-      <View style={{ gap: 8 }}>
-        <PanelLabel>Recent milestones</PanelLabel>
-        {recentMilestones.length === 0 ? <EmptyHint text="No milestones recorded yet." /> : recentMilestones.map((m) => (
-          <PanelRow key={m.id} title={m.title} sub={dateOnlyLabel(m.date)} />
-        ))}
-      </View>
+      <Text style={{ fontFamily: font.body400, fontSize: 12.5, color: color.muted }}>
+        Your journey, built from what you track — preconception to now.
+      </Text>
+      {events.length === 0 ? (
+        <EmptyHint text="Your story fills in as you track your cycle, pregnancy, birth and recovery." />
+      ) : (
+        events.map((e, i) => (
+          <View key={i} style={{ flexDirection: 'row', gap: 12 }}>
+            <View style={{ alignItems: 'center' }}>
+              <View style={{ width: 11, height: 11, borderRadius: 6, backgroundColor: color.maternalTeal, marginTop: 4 }} />
+              {i < events.length - 1 && <View style={{ width: 2, flex: 1, backgroundColor: color.hairline, marginTop: 2 }} />}
+            </View>
+            <View style={{ flex: 1, backgroundColor: color.canvas, borderRadius: radius.tile, padding: 12, marginBottom: 2 }}>
+              <Text style={{ fontFamily: font.body700, fontSize: 13.5, color: color.ink }}>{e.title}</Text>
+              <Text style={{ fontFamily: font.body400, fontSize: 12, color: color.muted, marginTop: 2 }}>{dateOnlyLabel(e.at)}{e.sub ? ` · ${e.sub}` : ''}</Text>
+            </View>
+          </View>
+        ))
+      )}
     </View>
   );
 }
