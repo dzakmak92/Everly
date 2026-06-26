@@ -47,7 +47,7 @@ export function Onboarding() {
       {/* Header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
-          <Logo width={24} height={28} color={color.primary} />
+          <Logo width={24} height={28} />
           <Text style={{ fontFamily: font.display700, fontSize: 20, color: color.ink }}>Everly</Text>
         </View>
         {!onForm && (

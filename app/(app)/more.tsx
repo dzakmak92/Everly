@@ -3,7 +3,7 @@ import { ScrollView, View, Text, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, font, radius, shadow } from '../../src/theme/tokens';
-import { BabyBean, Heart, Plus, Clock, Activity, CheckCircle, User, MessageSquare, Calendar, Leaf, Star, Settings, Shield } from '../../src/components/icons';
+import { BabyBean, Heart, Plus, Clock, Activity, CheckCircle, User, MessageSquare, Calendar, Leaf, Star, Settings, Shield, Syringe, Camera } from '../../src/components/icons';
 
 type Item = { label: string; to: string; icon: React.ReactNode; bg: string };
 const Ic = (C: any, c: string) => <C size={20} color={c} />;
@@ -14,6 +14,13 @@ const SECTIONS: { title: string; items: Item[] }[] = [
     items: [
       { label: 'Pregnancy', to: '/(app)/pregnancy', icon: Ic(BabyBean, '#6B6FC9'), bg: '#E7E4FB' },
       { label: 'Mum&Me · You', to: '/(app)/maternal', icon: Ic(Heart, '#2C8475'), bg: '#D8F0E6' },
+    ],
+  },
+  {
+    title: 'Health & memories',
+    items: [
+      { label: 'Health records', to: '/(app)/health', icon: Ic(Syringe, '#B04070'), bg: '#FBE0EA' },
+      { label: 'Timeline', to: '/(app)/timeline', icon: Ic(Camera, '#B5662E'), bg: '#FCE6D8' },
     ],
   },
   {

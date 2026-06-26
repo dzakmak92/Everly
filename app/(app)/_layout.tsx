@@ -1,11 +1,23 @@
 import React from 'react';
+import { Pressable, View } from 'react-native';
 import { Redirect, Tabs } from 'expo-router';
 import { useSupabase } from '../../src/lib/supabase';
 import { DataProvider, useData } from '../../src/lib/store';
 import { Splash } from '../../src/components/forms';
 import { Onboarding } from '../../src/components/Onboarding';
-import { color, font } from '../../src/theme/tokens';
-import { Home, Calendar, Heart, Clock, Grid } from '../../src/components/icons';
+import { color, font, shadow } from '../../src/theme/tokens';
+import { Home, Calendar, User, Grid, Plus } from '../../src/components/icons';
+
+/** Raised center FAB used as the quick-add tab button. */
+function FabButton({ onPress }: { onPress?: (e: any) => void }) {
+  return (
+    <Pressable onPress={onPress} style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={[{ width: 54, height: 54, borderRadius: 27, backgroundColor: color.primary, alignItems: 'center', justifyContent: 'center', marginTop: -22 }, shadow.periwinkleButton]}>
+        <Plus size={26} color="#fff" />
+      </View>
+    </Pressable>
+  );
+}
 
 function AppTabs() {
   return (
@@ -27,10 +39,12 @@ function AppTabs() {
     >
       <Tabs.Screen name="index" options={{ title: 'Today', tabBarIcon: ({ color: c, size }) => <Home size={size} color={c as string} /> }} />
       <Tabs.Screen name="calendar" options={{ title: 'Calendar', tabBarIcon: ({ color: c, size }) => <Calendar size={size} color={c as string} /> }} />
-      <Tabs.Screen name="health" options={{ title: 'Health', tabBarIcon: ({ color: c, size }) => <Heart size={size} color={c as string} /> }} />
-      <Tabs.Screen name="timeline" options={{ title: 'Timeline', tabBarIcon: ({ color: c, size }) => <Clock size={size} color={c as string} /> }} />
+      <Tabs.Screen name="quick-add" options={{ title: '', tabBarButton: (p) => <FabButton onPress={p.onPress as any} /> }} />
+      <Tabs.Screen name="family" options={{ title: 'Family', tabBarIcon: ({ color: c, size }) => <User size={size} color={c as string} /> }} />
       <Tabs.Screen name="more" options={{ title: 'More', tabBarIcon: ({ color: c, size }) => <Grid size={size} color={c as string} /> }} />
       {/* Non-tab routes (reachable via navigation, hidden from the tab bar). */}
+      <Tabs.Screen name="health" options={{ href: null }} />
+      <Tabs.Screen name="timeline" options={{ href: null }} />
       <Tabs.Screen name="settings" options={{ href: null }} />
       <Tabs.Screen name="plans" options={{ href: null }} />
       <Tabs.Screen name="kick-counter" options={{ href: null }} />
@@ -44,7 +58,6 @@ function AppTabs() {
       <Tabs.Screen name="digest" options={{ href: null }} />
       <Tabs.Screen name="timezones" options={{ href: null }} />
       <Tabs.Screen name="insights" options={{ href: null }} />
-      <Tabs.Screen name="quick-add" options={{ href: null }} />
       <Tabs.Screen name="nightlog" options={{ href: null }} />
       <Tabs.Screen name="rhythm" options={{ href: null }} />
       <Tabs.Screen name="kiosk" options={{ href: null }} />
