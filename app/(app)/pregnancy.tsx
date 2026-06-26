@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, font, radius, shadow } from '../../src/theme/tokens';
 import { Button, Field } from '../../src/components/forms';
+import { DateField } from '../../src/components/DateField';
 import { ProgressBar } from '../../src/components/ui';
 import { ChevronLeft, ChevronRight } from '../../src/components/icons';
 import { useData } from '../../src/lib/store';
@@ -141,9 +142,9 @@ export default function Pregnancy() {
         <Pressable onPress={() => setDueOpen(false)} style={{ flex: 1, backgroundColor: 'rgba(40,18,50,0.35)', justifyContent: 'center', paddingHorizontal: 28 }}>
           <Pressable onPress={() => {}} style={[{ backgroundColor: color.canvas, borderRadius: radius.card, padding: 20, gap: 14 }, shadow.card]}>
             <Text style={{ fontFamily: font.display700, fontSize: 18, color: color.ink }}>Due date</Text>
-            <Field label="Due date (YYYY-MM-DD)" value={dueIn} onChangeText={setDueIn} placeholder="2026-09-01" />
-            <Text style={{ fontFamily: font.body400, fontSize: 12, color: color.muted }}>Or enter your last period date and we'll estimate it:</Text>
-            <Field label="Last period (YYYY-MM-DD)" value={lmpIn} onChangeText={setLmpIn} placeholder="2025-11-24" />
+            <DateField label="Due date" value={dueIn} onChangeText={setDueIn} placeholder="Pick your due date" />
+            <Text style={{ fontFamily: font.body400, fontSize: 12, color: color.muted }}>Or pick your last period date and we'll estimate it:</Text>
+            <DateField label="Last period" value={lmpIn} onChangeText={setLmpIn} placeholder="Pick last period date" />
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <Button label="Cancel" variant="secondary" onPress={() => setDueOpen(false)} style={{ flex: 1 }} />
               <Button label="Save" onPress={saveDue} style={{ flex: 1 }} />

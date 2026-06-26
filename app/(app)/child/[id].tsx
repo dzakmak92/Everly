@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path, Circle, Ellipse } from 'react-native-svg';
 import { color, font, radius, shadow, childToken } from '../../../src/theme/tokens';
 import { Button, Field } from '../../../src/components/forms';
+import { DateField } from '../../../src/components/DateField';
 import { Silhouette } from '../../../src/components/ui';
 import {
   ChevronLeft, Plus, Clock, Bottle, Syringe, Star, Activity as ActivityIcon,
@@ -349,7 +350,7 @@ export default function ChildProfile() {
 
             {modal === 'edit' && <>
               <Field label="Name" value={name} onChangeText={setName} autoCapitalize="words" />
-              <Field label="Birth date (YYYY-MM-DD)" value={birth} onChangeText={setBirth} placeholder="2024-02-14" />
+              <DateField label="Birth date" value={birth} onChangeText={setBirth} placeholder="Pick birth date" />
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
                 {CHILD_COLORS.map((k) => {
                   const ct = childToken[k]; const s = k === colorKey;
@@ -359,7 +360,7 @@ export default function ChildProfile() {
             </>}
             {modal === 'vaccine' && <>
               <Field label="Vaccine" value={name} onChangeText={setName} placeholder="e.g. 6-in-1" autoCapitalize="sentences" />
-              <Field label="Due date (optional)" value={f1} onChangeText={setF1} placeholder="YYYY-MM-DD" />
+              <DateField label="Due date (optional)" value={f1} onChangeText={setF1} optional />
             </>}
             {modal === 'med' && <>
               <Field label="Medication" value={name} onChangeText={setName} placeholder="e.g. Vitamin D" autoCapitalize="sentences" />
@@ -372,7 +373,7 @@ export default function ChildProfile() {
             </>}
             {modal === 'milestone' && <>
               <Field label="Milestone" value={name} onChangeText={setName} placeholder="e.g. First smile" autoCapitalize="sentences" />
-              <Field label="Date (YYYY-MM-DD)" value={f1} onChangeText={setF1} placeholder="2026-06-25" />
+              <DateField label="Date" value={f1} onChangeText={setF1} placeholder="Pick a date" />
               <Field label="Note (optional)" value={f2} onChangeText={setF2} placeholder="Anything to remember" autoCapitalize="sentences" />
             </>}
 
