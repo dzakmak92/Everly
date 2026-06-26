@@ -7,17 +7,20 @@ import { Button, Field } from '../../../src/components/forms';
 import { Logo } from '../../../src/components/Logo';
 import {
   ChevronRight, Bottle, Calendar as CalendarIcon, Syringe,
-  Heart, Calendar as CalIcon, Activity, Smile, Shield, CheckCircle, Star, Leaf,
+  Heart, Calendar as CalIcon, Activity, Smile, Shield, CheckCircle, Star, Leaf, X, Plus, ChevronLeft,
 } from '../../../src/components/icons';
 import { EntryIcon } from '../../../src/components/EntryIcon';
 import { Silhouette, ProgressBar } from '../../../src/components/ui';
 import { DateField } from '../../../src/components/DateField';
 import { useSupabase } from '../../../src/lib/supabase';
 import { ageLabel, stageFrom } from '../../../src/lib/age';
-import { gestFromDueDate } from '../../../src/lib/pregnancy';
+import {
+  gestFromDueDate, weekContent, MOODS, PREG_SYMPTOMS, RED_FLAGS_CALL_NOW, RED_FLAGS_CALL_SOON,
+} from '../../../src/lib/pregnancy';
+import { EPDS_QUESTIONS, scoreEpds, BAND_LABEL, CRISIS_RESOURCES } from '../../../src/lib/epds';
 import {
   useData, entriesOn, upcomingEvents, entryDetail, ENTRY_META, quickLogKinds, MOOD_LABELS,
-  type EntryKind, type FeedSide, type DiaperType, type Child,
+  type EntryKind, type FeedSide, type DiaperType, type Child, type Lochia,
 } from '../../../src/lib/store';
 
 const todayISO = () => {
@@ -159,7 +162,6 @@ export default function Today() {
           maternalBirth={maternalBirth}
           pregAppts={pregAppts}
           matAppts={matAppts}
-          router={router}
           onArrived={() => { setHandoffDate(todayISO()); setHandoffOpen(true); }}
         />
       )}
@@ -389,17 +391,18 @@ function YouPill({ active, label, onPress }: { active: boolean; label: string; o
 type ApptLike = { id: string; title: string; at: string };
 
 function MaternityView({
-  dueDate, maternalBirth, pregAppts, matAppts, router, onArrived,
+  dueDate, maternalBirth, pregAppts, matAppts, onArrived,
 }: {
   dueDate: string | null;
   maternalBirth: string | null;
   pregAppts: ApptLike[];
   matAppts: ApptLike[];
-  router: ReturnType<typeof useRouter>;
   onArrived: () => void;
 }) {
   const derived: 'pregnancy' | 'postpartum' = maternalBirth ? 'postpartum' : 'pregnancy';
   const [phase, setPhase] = useState<'pregnancy' | 'postpartum'>(derived);
+  // Accordion grid: one card open at a time, panel renders full-width below.
+  const [openCard, setOpenCard] = useState<string | null>(null);
   const now = Date.now();
 
   // Hero numbers.
@@ -407,25 +410,27 @@ function MaternityView({
   const ppDays = maternalBirth ? Math.max(0, Math.floor((now - ppTime(maternalBirth)) / PP_MS)) : 0;
   const ppWeeks = Math.floor(ppDays / 7);
 
-  // Feature tiles per phase (2-column grid).
+  // Feature tiles per phase (2-column grid). `key` is the panel selector.
   const tiles =
     phase === 'pregnancy'
       ? [
-          { key: 'checkin', label: 'Daily check-in', bg: '#D8F0E6', icon: <Smile size={20} color="#2C8475" />, to: '/(app)/pregnancy' },
-          { key: 'week', label: 'Week-by-week', bg: '#E7E4FB', icon: <Activity size={20} color={color.primary} />, to: '/(app)/preg-week' },
-          { key: 'appts', label: 'Appointments', bg: '#DCEBFA', icon: <CalIcon size={20} color="#2C5F90" />, to: '/(app)/preg-appointments' },
-          { key: 'triage', label: 'When to call', bg: '#FBE0EA', icon: <Shield size={20} color="#B04070" />, to: '/(app)/preg-vitals' },
-          { key: 'prep', label: 'Birth prep', bg: '#FBF1CE', icon: <CheckCircle size={20} color="#7A5C20" />, to: '/(app)/preg-birthprep' },
-          { key: 'names', label: 'Baby names', bg: '#E7E4FB', icon: <Star size={20} color={color.primary} />, to: '/(app)/preg-names' },
+          { key: 'checkin', label: 'Daily check-in', bg: '#D8F0E6', icon: <Smile size={20} color="#2C8475" /> },
+          { key: 'week', label: 'Week-by-week', bg: '#E7E4FB', icon: <Activity size={20} color={color.primary} /> },
+          { key: 'appts', label: 'Appointments', bg: '#DCEBFA', icon: <CalIcon size={20} color="#2C5F90" /> },
+          { key: 'triage', label: 'When to call', bg: '#FBE0EA', icon: <Shield size={20} color="#B04070" /> },
+          { key: 'prep', label: 'Birth prep', bg: '#FBF1CE', icon: <CheckCircle size={20} color="#7A5C20" /> },
+          { key: 'names', label: 'Baby names', bg: '#E7E4FB', icon: <Star size={20} color={color.primary} /> },
         ]
       : [
-          { key: 'epds', label: 'Wellbeing', bg: '#E7E4FB', icon: <Smile size={20} color={color.primary} />, to: '/(app)/epds' },
-          { key: 'recovery', label: 'Recovery', bg: '#D8F0E6', icon: <Shield size={20} color="#2C8475" />, to: '/(app)/maternal' },
-          { key: 'appts', label: 'Appointments', bg: '#DCEBFA', icon: <CalIcon size={20} color="#2C5F90" />, to: '/(app)/preg-appointments?tab=maternal' },
-          { key: 'pelvic', label: 'Pelvic floor', bg: '#FBE0EA', icon: <Activity size={20} color="#B04070" />, to: '/(app)/mat-pelvic' },
-          { key: 'next', label: 'Planning next', bg: '#E6EFDD', icon: <Leaf size={20} color="#6E9A4E" /> as any, to: '/(app)/mat-preconception' },
-          { key: 'story', label: 'Your story', bg: '#FCE6D8', icon: <Star size={20} color="#B5662E" />, to: '/(app)/timeline?subject=you' },
+          { key: 'epds', label: 'Wellbeing', bg: '#E7E4FB', icon: <Smile size={20} color={color.primary} /> },
+          { key: 'recovery', label: 'Recovery', bg: '#D8F0E6', icon: <Shield size={20} color="#2C8475" /> },
+          { key: 'matappts', label: 'Appointments', bg: '#DCEBFA', icon: <CalIcon size={20} color="#2C5F90" /> },
+          { key: 'pelvic', label: 'Pelvic floor', bg: '#FBE0EA', icon: <Activity size={20} color="#B04070" /> },
+          { key: 'next', label: 'Planning next', bg: '#E6EFDD', icon: <Leaf size={20} color="#6E9A4E" /> },
+          { key: 'story', label: 'Your story', bg: '#FCE6D8', icon: <Star size={20} color="#B5662E" /> },
         ];
+
+  const openTile = tiles.find((t) => t.key === openCard) ?? null;
 
   // Up next — soonest first, max 2, future only.
   const source = phase === 'pregnancy' ? pregAppts : matAppts;
@@ -441,14 +446,14 @@ function MaternityView({
         {(['pregnancy', 'postpartum'] as const).map((p) => {
           const on = p === phase;
           return (
-            <Pressable key={p} onPress={() => setPhase(p)} style={{ flex: 1, paddingVertical: 9, borderRadius: radius.pill, alignItems: 'center', backgroundColor: on ? color.primary : 'transparent' }}>
+            <Pressable key={p} onPress={() => { setPhase(p); setOpenCard(null); }} style={{ flex: 1, paddingVertical: 9, borderRadius: radius.pill, alignItems: 'center', backgroundColor: on ? color.primary : 'transparent' }}>
               <Text style={{ fontFamily: on ? font.body700 : font.body600, fontSize: 13, color: on ? '#fff' : color.inkSecondary }}>{p === 'pregnancy' ? 'Pregnancy' : 'Postpartum'}</Text>
             </Pressable>
           );
         })}
       </View>
 
-      {/* Teal status hero (non-navigating — the feature tiles below are the way in) */}
+      {/* Teal status hero */}
       <View style={[{ backgroundColor: color.maternalTeal, borderRadius: radius.card, padding: 20, gap: 14 }, shadow.card]}>
         {phase === 'pregnancy' ? (
           <>
@@ -470,19 +475,40 @@ function MaternityView({
         )}
       </View>
 
-      {/* Feature grid */}
+      {/* Feature grid — tapping a card expands it inline (panel below the grid) */}
       <View style={{ gap: 10 }}>
         <Label>{phase === 'pregnancy' ? 'This week' : 'Looking after you'}</Label>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-          {tiles.map((t) => (
-            <Pressable key={t.key} onPress={() => router.push(t.to as any)} style={({ pressed }) => [{ width: '47.5%', flexGrow: 1, opacity: pressed ? 0.82 : 1 }]}>
-              <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 14, gap: 9 }, shadow.card]}>
-                <View style={{ width: 42, height: 42, borderRadius: 13, backgroundColor: t.bg, alignItems: 'center', justifyContent: 'center' }}>{t.icon}</View>
-                <Text style={{ fontFamily: font.body700, fontSize: 13.5, color: color.ink }}>{t.label}</Text>
-              </View>
-            </Pressable>
-          ))}
+          {tiles.map((t) => {
+            const active = t.key === openCard;
+            return (
+              <Pressable
+                key={t.key}
+                onPress={() => setOpenCard((cur) => (cur === t.key ? null : t.key))}
+                style={({ pressed }) => [{ width: '47.5%', flexGrow: 1, opacity: pressed ? 0.82 : 1 }]}
+              >
+                <View style={[{ backgroundColor: active ? '#E0F4EF' : '#fff', borderRadius: radius.card, padding: 14, gap: 9, borderWidth: 2, borderColor: active ? color.maternalTeal : 'transparent' }, shadow.card]}>
+                  <View style={{ width: 42, height: 42, borderRadius: 13, backgroundColor: t.bg, alignItems: 'center', justifyContent: 'center' }}>{t.icon}</View>
+                  <Text style={{ fontFamily: font.body700, fontSize: 13.5, color: active ? color.tealInk : color.ink }}>{t.label}</Text>
+                </View>
+              </Pressable>
+            );
+          })}
         </View>
+
+        {/* Inline expanded panel — full width, directly below the grid */}
+        {openTile && (
+          <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 16, gap: 14, borderWidth: 2, borderColor: color.maternalTeal }, shadow.card]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <View style={{ width: 36, height: 36, borderRadius: 11, backgroundColor: openTile.bg, alignItems: 'center', justifyContent: 'center' }}>{openTile.icon}</View>
+              <Text style={{ flex: 1, fontFamily: font.display700, fontSize: 17, color: color.ink }}>{openTile.label}</Text>
+              <Pressable onPress={() => setOpenCard(null)} hitSlop={10} style={{ padding: 2 }}>
+                <X size={20} color={color.muted} />
+              </Pressable>
+            </View>
+            <CardPanel cardKey={openTile.key} dueDate={dueDate} maternalBirth={maternalBirth} ppWeeks={ppWeeks} onClose={() => setOpenCard(null)} />
+          </View>
+        )}
       </View>
 
       {/* Up next */}
@@ -517,6 +543,474 @@ function MaternityView({
           </View>
         </Pressable>
       )}
+    </View>
+  );
+}
+
+/* ── Inline accordion panels ──────────────────────────────────────────────── */
+
+const dateOnlyLabel = (iso: string) =>
+  new Date(iso.length <= 10 ? `${iso}T00:00:00` : iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+const numOrUndef = (s: string) => { const v = parseFloat(s); return isNaN(v) ? undefined : v; };
+
+/** Small uppercase mini-label used inside panels. */
+function PanelLabel({ children }: { children: React.ReactNode }) {
+  return <Text style={{ fontFamily: font.body700, fontSize: 10.5, letterSpacing: 0.9, textTransform: 'uppercase', color: color.muted }}>{children}</Text>;
+}
+
+/** Wrapping multi-select chip row (selected = teal). */
+function WrapChips({ options, selected, onToggle }: { options: string[]; selected: string[]; onToggle: (v: string) => void }) {
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+      {options.map((opt) => {
+        const sel = selected.includes(opt);
+        return (
+          <Pressable key={opt} onPress={() => onToggle(opt)} style={{ paddingVertical: 8, paddingHorizontal: 13, borderRadius: radius.pill, backgroundColor: sel ? color.maternalTeal : '#fff', borderWidth: 1, borderColor: sel ? color.maternalTeal : color.hairline }}>
+            <Text style={{ fontFamily: font.body600, fontSize: 12.5, color: sel ? '#fff' : color.ink }}>{opt}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+/** Single-select wrapping chip row. */
+function SelectChips({ options, value, onChange }: { options: string[]; value: string | null; onChange: (v: string) => void }) {
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+      {options.map((opt) => {
+        const sel = opt === value;
+        return (
+          <Pressable key={opt} onPress={() => onChange(opt)} style={{ paddingVertical: 9, paddingHorizontal: 14, borderRadius: radius.pill, backgroundColor: sel ? color.maternalTeal : '#fff', borderWidth: 1, borderColor: sel ? color.maternalTeal : color.hairline }}>
+            <Text style={{ fontFamily: font.body600, fontSize: 12.5, color: sel ? '#fff' : color.ink }}>{opt}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+function EmptyHint({ text }: { text: string }) {
+  return <Text style={{ fontFamily: font.body400, fontSize: 12.5, color: color.muted }}>{text}</Text>;
+}
+
+/** A small bordered list row with optional trailing delete. */
+function PanelRow({ title, sub, onDelete }: { title: string; sub?: string; onDelete?: () => void }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: color.canvas, borderRadius: radius.tile, paddingVertical: 10, paddingHorizontal: 12 }}>
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontFamily: font.body700, fontSize: 13, color: color.ink }}>{title}</Text>
+        {sub ? <Text style={{ fontFamily: font.body400, fontSize: 12, color: color.muted, marginTop: 2 }}>{sub}</Text> : null}
+      </View>
+      {onDelete && (
+        <Pressable onPress={onDelete} hitSlop={8} style={{ padding: 2 }}><X size={16} color={color.faint} /></Pressable>
+      )}
+    </View>
+  );
+}
+
+/** A checklist row (toggle + optional delete). */
+function CheckRow({ label, checked, onToggle, onDelete }: { label: string; checked: boolean; onToggle: () => void; onDelete?: () => void }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: color.canvas, borderRadius: radius.tile, paddingVertical: 10, paddingHorizontal: 12 }}>
+      <Pressable onPress={onToggle} hitSlop={8} style={{ width: 22, height: 22, borderRadius: 7, alignItems: 'center', justifyContent: 'center', backgroundColor: checked ? color.maternalTeal : '#fff', borderWidth: 1.5, borderColor: checked ? color.maternalTeal : color.hairline }}>
+        {checked && <CheckCircle size={14} color="#fff" />}
+      </Pressable>
+      <Text style={{ flex: 1, fontFamily: font.body600, fontSize: 13, color: color.ink, textDecorationLine: checked ? 'line-through' : 'none' }}>{label}</Text>
+      {onDelete && <Pressable onPress={onDelete} hitSlop={8} style={{ padding: 2 }}><X size={16} color={color.faint} /></Pressable>}
+    </View>
+  );
+}
+
+function CardPanel({ cardKey, dueDate, maternalBirth, ppWeeks, onClose }: { cardKey: string; dueDate: string | null; maternalBirth: string | null; ppWeeks: number; onClose: () => void }) {
+  switch (cardKey) {
+    case 'checkin': return <CheckinPanel onClose={onClose} />;
+    case 'week': return <WeekPanel dueDate={dueDate} />;
+    case 'appts': return <PregApptsPanel />;
+    case 'triage': return <TriagePanel />;
+    case 'prep': return <BirthPrepPanel />;
+    case 'names': return <NamesPanel />;
+    case 'epds': return <WellbeingPanel />;
+    case 'recovery': return <RecoveryPanel />;
+    case 'matappts': return <MatApptsPanel />;
+    case 'pelvic': return <PelvicPanel />;
+    case 'next': return <PlanningPanel />;
+    case 'story': return <StoryPanel maternalBirth={maternalBirth} ppWeeks={ppWeeks} />;
+    default: return null;
+  }
+}
+
+/* PREGNANCY ---------------------------------------------------------------- */
+
+function CheckinPanel({ onClose }: { onClose: () => void }) {
+  const { checkins, addCheckin } = useData();
+  const [mood, setMood] = useState<number>(2);
+  const [symptoms, setSymptoms] = useState<string[]>([]);
+  const [weight, setWeight] = useState('');
+  const latest = checkins[0];
+  const toggleSym = (s: string) => setSymptoms((cur) => (cur.includes(s) ? cur.filter((x) => x !== s) : [...cur, s]));
+  const save = () => { addCheckin({ mood, symptoms, weightKg: numOrUndef(weight) }); onClose(); };
+  return (
+    <View style={{ gap: 14 }}>
+      {latest && (
+        <View style={{ backgroundColor: color.canvas, borderRadius: radius.tile, padding: 12 }}>
+          <PanelLabel>Latest check-in</PanelLabel>
+          <Text style={{ fontFamily: font.body600, fontSize: 13, color: color.ink, marginTop: 4 }}>
+            {MOODS[latest.mood] ?? '—'}{latest.weightKg ? ` · ${latest.weightKg} kg` : ''}{latest.symptoms.length ? ` · ${latest.symptoms.join(', ')}` : ''}
+          </Text>
+          <Text style={{ fontFamily: font.body400, fontSize: 11.5, color: color.muted, marginTop: 2 }}>{dayTimeOf(latest.at)}</Text>
+        </View>
+      )}
+      <View style={{ gap: 8 }}>
+        <PanelLabel>How are you feeling?</PanelLabel>
+        <SelectChips options={MOODS} value={MOODS[mood]} onChange={(v) => setMood(Math.max(0, MOODS.indexOf(v)))} />
+      </View>
+      <View style={{ gap: 8 }}>
+        <PanelLabel>Symptoms</PanelLabel>
+        <WrapChips options={PREG_SYMPTOMS} selected={symptoms} onToggle={toggleSym} />
+      </View>
+      <Field label="Weight (kg)" value={weight} onChangeText={setWeight} placeholder="e.g. 68.5" keyboardType="default" />
+      <Button label="Save check-in" onPress={save} />
+    </View>
+  );
+}
+
+function WeekPanel({ dueDate }: { dueDate: string | null }) {
+  const [week, setWeek] = useState<number>(() => gestFromDueDate(dueDate ?? undefined)?.week ?? 12);
+  const c = weekContent(week);
+  return (
+    <View style={{ gap: 14 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Pressable onPress={() => setWeek((w) => Math.max(1, w - 1))} hitSlop={8} style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: color.canvas, alignItems: 'center', justifyContent: 'center' }}>
+          <ChevronLeft size={20} color={color.tealDeep} />
+        </Pressable>
+        <Text style={{ fontFamily: font.display700, fontSize: 20, color: color.ink }}>Week {week}</Text>
+        <Pressable onPress={() => setWeek((w) => Math.min(42, w + 1))} hitSlop={8} style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: color.canvas, alignItems: 'center', justifyContent: 'center' }}>
+          <ChevronRight size={20} color={color.tealDeep} />
+        </Pressable>
+      </View>
+      <View style={{ backgroundColor: color.canvas, borderRadius: radius.tile, padding: 14, gap: 6 }}>
+        <Text style={{ fontFamily: font.body700, fontSize: 15, color: color.ink }}>Size of a {c.size}</Text>
+        <Text style={{ fontFamily: font.body500, fontSize: 13, color: color.inkSecondary }}>~{c.lengthCm} cm · ~{c.weightG} g</Text>
+        <Text style={{ fontFamily: font.body400, fontSize: 13, color: color.muted, marginTop: 2 }}>{c.note}</Text>
+      </View>
+    </View>
+  );
+}
+
+function PregApptsPanel() {
+  const { pregAppts, addPregAppt, deletePregAppt } = useData();
+  const now = Date.now();
+  const [title, setTitle] = useState('');
+  const [date, setDate] = useState(todayISO());
+  const upcoming = [...pregAppts]
+    .filter((a) => new Date(a.at).getTime() >= now)
+    .sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime())
+    .slice(0, 3);
+  const add = () => { if (!title.trim()) return; addPregAppt({ title, at: `${date}T09:00:00`, kind: 'appointment' }); setTitle(''); setDate(todayISO()); };
+  return (
+    <View style={{ gap: 14 }}>
+      <View style={{ gap: 8 }}>
+        <PanelLabel>Upcoming</PanelLabel>
+        {upcoming.length === 0 ? <EmptyHint text="No upcoming appointments yet." /> : upcoming.map((a) => (
+          <PanelRow key={a.id} title={a.title} sub={apptDateLabel(a.at)} onDelete={() => deletePregAppt(a.id)} />
+        ))}
+      </View>
+      <View style={{ gap: 10 }}>
+        <PanelLabel>Add appointment</PanelLabel>
+        <Field label="Title" value={title} onChangeText={setTitle} placeholder="e.g. 20-week scan" autoCapitalize="sentences" />
+        <DateField label="Date" value={date} onChangeText={setDate} />
+        <Button label="Add" onPress={add} />
+      </View>
+    </View>
+  );
+}
+
+function TriagePanel() {
+  return (
+    <View style={{ gap: 14 }}>
+      <View style={{ gap: 8 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <View style={{ backgroundColor: '#FBE0EA', borderRadius: radius.pill, paddingVertical: 4, paddingHorizontal: 11 }}>
+            <Text style={{ fontFamily: font.body700, fontSize: 11, color: color.roseInk }}>Call now</Text>
+          </View>
+        </View>
+        {RED_FLAGS_CALL_NOW.map((f, i) => (
+          <View key={i} style={{ flexDirection: 'row', gap: 8 }}>
+            <Text style={{ color: color.roseInk, fontFamily: font.body700 }}>•</Text>
+            <Text style={{ flex: 1, fontFamily: font.body500, fontSize: 13, color: color.ink }}>{f}</Text>
+          </View>
+        ))}
+      </View>
+      <View style={{ gap: 8 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <View style={{ backgroundColor: '#FBF1CE', borderRadius: radius.pill, paddingVertical: 4, paddingHorizontal: 11 }}>
+            <Text style={{ fontFamily: font.body700, fontSize: 11, color: color.goldInk }}>Call soon</Text>
+          </View>
+        </View>
+        {RED_FLAGS_CALL_SOON.map((f, i) => (
+          <View key={i} style={{ flexDirection: 'row', gap: 8 }}>
+            <Text style={{ color: color.goldInk, fontFamily: font.body700 }}>•</Text>
+            <Text style={{ flex: 1, fontFamily: font.body500, fontSize: 13, color: color.ink }}>{f}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function BirthPrepPanel() {
+  const { birthPrep, addBirthPrep, toggleBirthPrep } = useData();
+  const [label, setLabel] = useState('');
+  const add = () => { if (!label.trim()) return; addBirthPrep({ category: 'General', label }); setLabel(''); };
+  return (
+    <View style={{ gap: 14 }}>
+      <View style={{ gap: 8 }}>
+        <PanelLabel>Checklist</PanelLabel>
+        {birthPrep.length === 0 ? <EmptyHint text="Nothing on your list yet — add an item below." /> : birthPrep.map((i) => (
+          <CheckRow key={i.id} label={i.label} checked={i.checked} onToggle={() => toggleBirthPrep(i.id)} />
+        ))}
+      </View>
+      <View style={{ gap: 10 }}>
+        <Field label="Add item" value={label} onChangeText={setLabel} placeholder="e.g. Pack hospital bag" autoCapitalize="sentences" />
+        <Button label="Add" onPress={add} />
+      </View>
+    </View>
+  );
+}
+
+function NamesPanel() {
+  const { savedNames, saveName, deleteName } = useData();
+  const [name, setName] = useState('');
+  const [gender, setGender] = useState('Girl');
+  const add = () => { if (!name.trim()) return; saveName({ name: name.trim(), gender }); setName(''); };
+  return (
+    <View style={{ gap: 14 }}>
+      <View style={{ gap: 8 }}>
+        <PanelLabel>Saved names</PanelLabel>
+        {savedNames.length === 0 ? <EmptyHint text="No saved names yet." /> : savedNames.map((n) => (
+          <PanelRow key={n.id} title={n.name} sub={n.gender} onDelete={() => deleteName(n.id)} />
+        ))}
+      </View>
+      <View style={{ gap: 10 }}>
+        <Field label="Add a name" value={name} onChangeText={setName} placeholder="e.g. Maya" autoCapitalize="words" />
+        <SelectChips options={['Girl', 'Boy', 'Unisex']} value={gender} onChange={setGender} />
+        <Button label="Save name" onPress={add} />
+      </View>
+    </View>
+  );
+}
+
+/* POSTPARTUM --------------------------------------------------------------- */
+
+function WellbeingPanel() {
+  const { epdsResults, addEpdsResult } = useData();
+  const [running, setRunning] = useState(false);
+  const [step, setStep] = useState(0);
+  const [answers, setAnswers] = useState<number[]>([]);
+  const [done, setDone] = useState<{ total: number; band: string; selfHarmFlag: boolean } | null>(null);
+  const latest = epdsResults[0];
+
+  const start = () => { setRunning(true); setStep(0); setAnswers([]); setDone(null); };
+  const choose = (opt: number) => {
+    const next = [...answers]; next[step] = opt; setAnswers(next);
+    if (step + 1 < EPDS_QUESTIONS.length) { setStep(step + 1); return; }
+    const result = scoreEpds(next);
+    addEpdsResult(result);
+    setDone(result);
+    setRunning(false);
+  };
+
+  if (running) {
+    const q = EPDS_QUESTIONS[step];
+    return (
+      <View style={{ gap: 14 }}>
+        <PanelLabel>Question {step + 1} of {EPDS_QUESTIONS.length}</PanelLabel>
+        <Text style={{ fontFamily: font.body700, fontSize: 15, color: color.ink }}>{q.prompt}</Text>
+        <View style={{ gap: 8 }}>
+          {q.options.map((o, i) => (
+            <Pressable key={i} onPress={() => choose(i)} style={{ backgroundColor: color.canvas, borderRadius: radius.tile, paddingVertical: 13, paddingHorizontal: 14, borderWidth: 1, borderColor: color.hairline }}>
+              <Text style={{ fontFamily: font.body600, fontSize: 13, color: color.ink }}>{o.label}</Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
+    );
+  }
+
+  const shown = done ?? (latest ? { total: latest.total, band: latest.band, selfHarmFlag: latest.selfHarmFlag } : null);
+  const showCrisis = shown ? (shown.selfHarmFlag || shown.band === 'likely') : false;
+
+  return (
+    <View style={{ gap: 14 }}>
+      {shown ? (
+        <View style={{ backgroundColor: color.canvas, borderRadius: radius.tile, padding: 14, gap: 4 }}>
+          <PanelLabel>{done ? 'Your result' : 'Latest check'}</PanelLabel>
+          <Text style={{ fontFamily: font.body700, fontSize: 15, color: color.ink }}>{BAND_LABEL[shown.band as keyof typeof BAND_LABEL] ?? shown.band} · {shown.total}/30</Text>
+          {!done && latest && <Text style={{ fontFamily: font.body400, fontSize: 11.5, color: color.muted }}>{dayTimeOf(latest.at)}</Text>}
+        </View>
+      ) : (
+        <EmptyHint text="No wellbeing check yet. The EPDS is a quick 10-question screen." />
+      )}
+      {showCrisis && (
+        <View style={{ backgroundColor: '#FBE0EA', borderRadius: radius.tile, padding: 14, gap: 8 }}>
+          <Text style={{ fontFamily: font.body700, fontSize: 13, color: color.roseInk }}>You're not alone — please reach out</Text>
+          {CRISIS_RESOURCES.map((r, i) => (
+            <View key={i}>
+              <Text style={{ fontFamily: font.body700, fontSize: 12.5, color: color.ink }}>{r.name}</Text>
+              <Text style={{ fontFamily: font.body400, fontSize: 12, color: color.inkSecondary }}>{r.detail}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+      <Button label={shown ? 'Start a new check' : 'Start check'} onPress={start} />
+    </View>
+  );
+}
+
+function RecoveryPanel() {
+  const { recoveryLogs, addRecoveryLog } = useData();
+  const [sys, setSys] = useState('');
+  const [dia, setDia] = useState('');
+  const [lochia, setLochia] = useState<Lochia | null>(null);
+  const [note, setNote] = useState('');
+  const recent = recoveryLogs.slice(0, 3);
+  const save = () => {
+    if (!sys && !dia && !lochia && !note.trim()) return;
+    addRecoveryLog({ systolic: numOrUndef(sys), diastolic: numOrUndef(dia), lochia: lochia ?? undefined, note: note.trim() || undefined });
+    setSys(''); setDia(''); setLochia(null); setNote('');
+  };
+  return (
+    <View style={{ gap: 14 }}>
+      <View style={{ flexDirection: 'row', gap: 10 }}>
+        <View style={{ flex: 1 }}><Field label="Systolic" value={sys} onChangeText={setSys} placeholder="e.g. 118" /></View>
+        <View style={{ flex: 1 }}><Field label="Diastolic" value={dia} onChangeText={setDia} placeholder="e.g. 76" /></View>
+      </View>
+      <View style={{ gap: 8 }}>
+        <PanelLabel>Lochia (bleeding)</PanelLabel>
+        <SelectChips options={['none', 'light', 'moderate', 'heavy']} value={lochia} onChange={(v) => setLochia(v as Lochia)} />
+      </View>
+      <Field label="Note (optional)" value={note} onChangeText={setNote} placeholder="How are you healing?" autoCapitalize="sentences" />
+      <Button label="Save log" onPress={save} />
+      {recent.length > 0 && (
+        <View style={{ gap: 8 }}>
+          <PanelLabel>Recent</PanelLabel>
+          {recent.map((r) => {
+            const bits = [
+              r.systolic || r.diastolic ? `${r.systolic ?? '–'}/${r.diastolic ?? '–'}` : null,
+              r.lochia ? `lochia: ${r.lochia}` : null,
+              r.note || null,
+            ].filter(Boolean).join(' · ');
+            return <PanelRow key={r.id} title={bits || 'Logged'} sub={dayTimeOf(r.at)} />;
+          })}
+        </View>
+      )}
+    </View>
+  );
+}
+
+function MatApptsPanel() {
+  const { matAppts, addMatAppt, deleteMatAppt } = useData();
+  const now = Date.now();
+  const [title, setTitle] = useState('');
+  const [date, setDate] = useState(todayISO());
+  const upcoming = [...matAppts]
+    .filter((a) => new Date(a.at).getTime() >= now)
+    .sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime())
+    .slice(0, 3);
+  const add = () => { if (!title.trim()) return; addMatAppt({ title, at: `${date}T10:00:00`, kind: 'appointment' }); setTitle(''); setDate(todayISO()); };
+  return (
+    <View style={{ gap: 14 }}>
+      <View style={{ gap: 8 }}>
+        <PanelLabel>Upcoming</PanelLabel>
+        {upcoming.length === 0 ? <EmptyHint text="No upcoming appointments yet." /> : upcoming.map((a) => (
+          <PanelRow key={a.id} title={a.title} sub={apptDateLabel(a.at)} onDelete={() => deleteMatAppt(a.id)} />
+        ))}
+      </View>
+      <View style={{ gap: 10 }}>
+        <PanelLabel>Add appointment</PanelLabel>
+        <Field label="Title" value={title} onChangeText={setTitle} placeholder="e.g. 6-week check" autoCapitalize="sentences" />
+        <DateField label="Date" value={date} onChangeText={setDate} />
+        <Button label="Add" onPress={add} />
+      </View>
+    </View>
+  );
+}
+
+function PelvicPanel() {
+  const { pelvicLog, addPelvic } = useData();
+  const [exercise, setExercise] = useState('');
+  const recent = pelvicLog.slice(0, 3);
+  const add = () => { if (!exercise.trim()) return; addPelvic(exercise.trim()); setExercise(''); };
+  return (
+    <View style={{ gap: 14 }}>
+      <View style={{ gap: 10 }}>
+        <Field label="Log an exercise" value={exercise} onChangeText={setExercise} placeholder="e.g. Kegels × 10" autoCapitalize="sentences" />
+        <Button label="Add" onPress={add} />
+      </View>
+      <View style={{ gap: 8 }}>
+        <PanelLabel>Recent</PanelLabel>
+        {recent.length === 0 ? <EmptyHint text="No sessions logged yet." /> : recent.map((p) => (
+          <PanelRow key={p.id} title={p.exercise} sub={dayTimeOf(p.at)} />
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function PlanningPanel() {
+  const { lastPeriod, setLastPeriod, cycleLength, setCycleLength, ttcItems, addTtc, toggleTtc } = useData();
+  const [cycle, setCycle] = useState(String(cycleLength));
+  const [item, setItem] = useState('');
+  const add = () => { if (!item.trim()) return; addTtc(item.trim()); setItem(''); };
+  return (
+    <View style={{ gap: 14 }}>
+      <DateField label="Last period" value={lastPeriod ?? ''} onChangeText={(d) => setLastPeriod(d || null)} />
+      <View style={{ gap: 8 }}>
+        <Field label="Cycle length (days)" value={cycle} onChangeText={setCycle} placeholder="e.g. 28" />
+        <Button label="Save cycle length" variant="secondary" onPress={() => { const n = parseInt(cycle, 10); if (!isNaN(n)) setCycleLength(n); }} />
+      </View>
+      <View style={{ gap: 8 }}>
+        <PanelLabel>Trying-to-conceive checklist</PanelLabel>
+        {ttcItems.length === 0 ? <EmptyHint text="No items yet." /> : ttcItems.map((i) => (
+          <CheckRow key={i.id} label={i.label} checked={i.checked} onToggle={() => toggleTtc(i.id)} />
+        ))}
+      </View>
+      <View style={{ gap: 10 }}>
+        <Field label="Add item" value={item} onChangeText={setItem} placeholder="e.g. Start prenatal vitamins" autoCapitalize="sentences" />
+        <Button label="Add" onPress={add} />
+      </View>
+    </View>
+  );
+}
+
+function StoryPanel({ maternalBirth, ppWeeks }: { maternalBirth: string | null; ppWeeks: number }) {
+  const { epdsResults, recoveryLogs, milestones } = useData();
+  const latestEpds = epdsResults[0];
+  const latestRecovery = recoveryLogs[0];
+  const recentMilestones = milestones.slice(0, 3);
+  return (
+    <View style={{ gap: 12 }}>
+      <View style={{ backgroundColor: color.canvas, borderRadius: radius.tile, padding: 14, gap: 4 }}>
+        <PanelLabel>Recap</PanelLabel>
+        <Text style={{ fontFamily: font.body600, fontSize: 13, color: color.ink }}>
+          {maternalBirth ? `${ppWeeks} weeks postpartum` : 'Postpartum journey'}
+        </Text>
+        <Text style={{ fontFamily: font.body400, fontSize: 12.5, color: color.inkSecondary }}>
+          Wellbeing: {latestEpds ? (BAND_LABEL[latestEpds.band as keyof typeof BAND_LABEL] ?? latestEpds.band) : 'not checked yet'}
+        </Text>
+        <Text style={{ fontFamily: font.body400, fontSize: 12.5, color: color.inkSecondary }}>
+          Recovery: {latestRecovery
+            ? [latestRecovery.systolic || latestRecovery.diastolic ? `${latestRecovery.systolic ?? '–'}/${latestRecovery.diastolic ?? '–'}` : null, latestRecovery.lochia ? `lochia ${latestRecovery.lochia}` : null].filter(Boolean).join(' · ') || 'logged'
+            : 'no logs yet'}
+        </Text>
+      </View>
+      <View style={{ gap: 8 }}>
+        <PanelLabel>Recent milestones</PanelLabel>
+        {recentMilestones.length === 0 ? <EmptyHint text="No milestones recorded yet." /> : recentMilestones.map((m) => (
+          <PanelRow key={m.id} title={m.title} sub={dateOnlyLabel(m.date)} />
+        ))}
+      </View>
     </View>
   );
 }
