@@ -2,8 +2,8 @@ import React from 'react';
 import { ScrollView, View, Text, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { color, font, radius, shadow } from '../../src/theme/tokens';
-import { BabyBean, Heart, Clock, Activity, CheckCircle, User, Calendar, Star, Settings, Shield, Syringe, Camera, ChevronRight } from '../../src/components/icons';
+import { color, font, radius, shadow } from '../../../src/theme/tokens';
+import { BabyBean, Heart, Clock, Activity, CheckCircle, User, Calendar, Star, Settings, Shield, Syringe, Camera, ChevronRight } from '../../../src/components/icons';
 
 type Item = { label: string; sub: string; to: string; icon: React.ReactNode; bg: string };
 const Ic = (C: any, c: string) => <C size={19} color={c} />;

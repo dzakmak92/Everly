@@ -2,18 +2,18 @@ import React, { useState } from 'react';
 import { ScrollView, View, Text, Pressable, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { color, font, radius, shadow, childToken } from '../../src/theme/tokens';
-import { Button, Field } from '../../src/components/forms';
-import { Logo } from '../../src/components/Logo';
-import { ChevronRight, Bottle, Calendar as CalendarIcon, Syringe } from '../../src/components/icons';
-import { EntryIcon } from '../../src/components/EntryIcon';
-import { Silhouette } from '../../src/components/ui';
-import { useSupabase } from '../../src/lib/supabase';
-import { ageLabel, stageFrom } from '../../src/lib/age';
+import { color, font, radius, shadow, childToken } from '../../../src/theme/tokens';
+import { Button, Field } from '../../../src/components/forms';
+import { Logo } from '../../../src/components/Logo';
+import { ChevronRight, Bottle, Calendar as CalendarIcon, Syringe } from '../../../src/components/icons';
+import { EntryIcon } from '../../../src/components/EntryIcon';
+import { Silhouette } from '../../../src/components/ui';
+import { useSupabase } from '../../../src/lib/supabase';
+import { ageLabel, stageFrom } from '../../../src/lib/age';
 import {
   useData, entriesOn, upcomingEvents, entryDetail, ENTRY_META, quickLogKinds, MOOD_LABELS,
   type EntryKind, type FeedSide, type DiaperType, type Child,
-} from '../../src/lib/store';
+} from '../../../src/lib/store';
 
 function greeting() {
   const h = new Date().getHours();

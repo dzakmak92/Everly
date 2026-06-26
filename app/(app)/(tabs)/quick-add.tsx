@@ -4,16 +4,16 @@ import Svg, { Path } from 'react-native-svg';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { color, font, radius, shadow } from '../../src/theme/tokens';
-import { Button, Field } from '../../src/components/forms';
-import { ChevronLeft, Clock } from '../../src/components/icons';
-import { EntryIcon } from '../../src/components/EntryIcon';
-import { Silhouette } from '../../src/components/ui';
-import { stageFrom } from '../../src/lib/age';
+import { color, font, radius, shadow } from '../../../src/theme/tokens';
+import { Button, Field } from '../../../src/components/forms';
+import { ChevronLeft, Clock } from '../../../src/components/icons';
+import { EntryIcon } from '../../../src/components/EntryIcon';
+import { Silhouette } from '../../../src/components/ui';
+import { stageFrom } from '../../../src/lib/age';
 import {
   useData, entriesOn, entryDetail, ENTRY_META, quickLogKinds, MOOD_LABELS,
   type Entry, type EntryKind, type EntryDetails, type FeedSide, type DiaperType,
-} from '../../src/lib/store';
+} from '../../../src/lib/store';
 
 /* ── header sun / moon glyphs ────────────────────────────────────────────── */
 function Moon({ size = 20, color: c = '#9C9AB2' }: { size?: number; color?: string }) {
