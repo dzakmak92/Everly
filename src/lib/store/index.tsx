@@ -59,6 +59,12 @@ export type Milestone = { id: string; childId: string; title: string; date: stri
 
 export type PregCheckin = { id: string; at: string; mood: number; symptoms: string[]; weightKg?: number };
 
+export type BirthPrepItem = { id: string; category: string; label: string; checked: boolean };
+export type SavedName = { id: string; name: string; gender: string };
+export type PregStatus = 'active' | 'paused' | 'archived';
+export type PregAppt = { id: string; title: string; at: string; kind: 'appointment' | 'test'; result?: string };
+export type PregVital = { id: string; at: string; kind: 'glucose' | 'bp'; glucose?: number; systolic?: number; diastolic?: number; tag?: string };
+
 export type EpdsResult = { id: string; at: string; total: number; band: string; selfHarmFlag: boolean };
 export type Lochia = 'none' | 'light' | 'moderate' | 'heavy';
 export type RecoveryLog = { id: string; at: string; systolic?: number; diastolic?: number; lochia?: Lochia; note?: string };
@@ -100,6 +106,11 @@ const EPDS_KEY = 'everly.epds.v1';
 const RECOVERY_KEY = 'everly.recovery.v1';
 const TZ_KEY = 'everly.tzContacts.v1';
 const TIPS_KEY = 'everly.savedTips.v1';
+const BIRTHPREP_KEY = 'everly.birthPrep.v1';
+const NAMES_KEY = 'everly.savedNames.v1';
+const PREGSTATUS_KEY = 'everly.pregStatus.v1';
+const PREGAPPT_KEY = 'everly.pregAppts.v1';
+const PREGVITAL_KEY = 'everly.pregVitals.v1';
 
 function newId() {
   return `${Date.now().toString(36)}-${Math.floor(Math.random() * 1e6).toString(36)}`;
@@ -171,6 +182,21 @@ type DataValue = {
   savedTips: SavedTip[];
   saveTip: (text: string) => void;
   deleteTip: (id: string) => void;
+  birthPrep: BirthPrepItem[];
+  addBirthPrep: (input: { category: string; label: string }) => void;
+  toggleBirthPrep: (id: string) => void;
+  deleteBirthPrep: (id: string) => void;
+  savedNames: SavedName[];
+  saveName: (input: { name: string; gender: string }) => void;
+  deleteName: (id: string) => void;
+  pregStatus: PregStatus;
+  setPregStatus: (s: PregStatus) => void;
+  pregAppts: PregAppt[];
+  addPregAppt: (input: { title: string; at: string; kind: 'appointment' | 'test'; result?: string }) => void;
+  deletePregAppt: (id: string) => void;
+  pregVitals: PregVital[];
+  addPregVital: (input: { kind: 'glucose' | 'bp'; glucose?: number; systolic?: number; diastolic?: number; tag?: string }) => void;
+  deletePregVital: (id: string) => void;
   clearAll: () => void;
 };
 
@@ -198,12 +224,17 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
   const [recoveryLogs, setRecoveryLogs] = useState<RecoveryLog[]>([]);
   const [tzContacts, setTzContacts] = useState<TzContact[]>([]);
   const [savedTips, setSavedTips] = useState<SavedTip[]>([]);
+  const [birthPrep, setBirthPrep] = useState<BirthPrepItem[]>([]);
+  const [savedNames, setSavedNames] = useState<SavedName[]>([]);
+  const [pregStatus, setPregStatusState] = useState<PregStatus>('active');
+  const [pregAppts, setPregAppts] = useState<PregAppt[]>([]);
+  const [pregVitals, setPregVitals] = useState<PregVital[]>([]);
 
   useEffect(() => {
     let active = true;
     (async () => {
       try {
-        const [rawE, rawC, rawA, rawEv, rawV, rawM, rawG, rawR, rawCh, rawMs, rawCg, rawEx, rawCu, rawDue, rawCi, rawMb, rawEp, rawRec, rawTz, rawTip] = await Promise.all([
+        const [rawE, rawC, rawA, rawEv, rawV, rawM, rawG, rawR, rawCh, rawMs, rawCg, rawEx, rawCu, rawDue, rawCi, rawMb, rawEp, rawRec, rawTz, rawTip, rawBp, rawNm, rawPs, rawPa, rawPv] = await Promise.all([
           AsyncStorage.getItem(ENTRIES_KEY),
           AsyncStorage.getItem(CHILDREN_KEY),
           AsyncStorage.getItem(ACTIVE_KEY),
@@ -224,6 +255,11 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
           AsyncStorage.getItem(RECOVERY_KEY),
           AsyncStorage.getItem(TZ_KEY),
           AsyncStorage.getItem(TIPS_KEY),
+          AsyncStorage.getItem(BIRTHPREP_KEY),
+          AsyncStorage.getItem(NAMES_KEY),
+          AsyncStorage.getItem(PREGSTATUS_KEY),
+          AsyncStorage.getItem(PREGAPPT_KEY),
+          AsyncStorage.getItem(PREGVITAL_KEY),
         ]);
         if (!active) return;
         if (rawE) setEntries(JSON.parse(rawE));
@@ -246,6 +282,11 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
         if (rawRec) setRecoveryLogs(JSON.parse(rawRec));
         if (rawTz) setTzContacts(JSON.parse(rawTz));
         if (rawTip) setSavedTips(JSON.parse(rawTip));
+        if (rawBp) setBirthPrep(JSON.parse(rawBp));
+        if (rawNm) setSavedNames(JSON.parse(rawNm));
+        if (rawPs) setPregStatusState(JSON.parse(rawPs));
+        if (rawPa) setPregAppts(JSON.parse(rawPa));
+        if (rawPv) setPregVitals(JSON.parse(rawPv));
       } catch {
         // Corrupt/missing cache → start empty. Never crash on storage.
       } finally {
@@ -275,6 +316,11 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
   useEffect(() => { if (!loading) AsyncStorage.setItem(RECOVERY_KEY, JSON.stringify(recoveryLogs)).catch(() => {}); }, [recoveryLogs, loading]);
   useEffect(() => { if (!loading) AsyncStorage.setItem(TZ_KEY, JSON.stringify(tzContacts)).catch(() => {}); }, [tzContacts, loading]);
   useEffect(() => { if (!loading) AsyncStorage.setItem(TIPS_KEY, JSON.stringify(savedTips)).catch(() => {}); }, [savedTips, loading]);
+  useEffect(() => { if (!loading) AsyncStorage.setItem(BIRTHPREP_KEY, JSON.stringify(birthPrep)).catch(() => {}); }, [birthPrep, loading]);
+  useEffect(() => { if (!loading) AsyncStorage.setItem(NAMES_KEY, JSON.stringify(savedNames)).catch(() => {}); }, [savedNames, loading]);
+  useEffect(() => { if (!loading) AsyncStorage.setItem(PREGSTATUS_KEY, JSON.stringify(pregStatus)).catch(() => {}); }, [pregStatus, loading]);
+  useEffect(() => { if (!loading) AsyncStorage.setItem(PREGAPPT_KEY, JSON.stringify(pregAppts)).catch(() => {}); }, [pregAppts, loading]);
+  useEffect(() => { if (!loading) AsyncStorage.setItem(PREGVITAL_KEY, JSON.stringify(pregVitals)).catch(() => {}); }, [pregVitals, loading]);
 
   const addChild = useCallback((input: { name: string; color: ChildColor; birthDate?: string }) => {
     const child: Child = { id: newId(), name: input.name.trim(), color: input.color, birthDate: input.birthDate?.trim() || undefined };
@@ -412,6 +458,25 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
   const saveTip = useCallback((text: string) => setSavedTips((prev) => [{ id: newId(), at: new Date().toISOString(), text }, ...prev]), []);
   const deleteTip = useCallback((id: string) => setSavedTips((prev) => prev.filter((t) => t.id !== id)), []);
 
+  const addBirthPrep = useCallback((input: { category: string; label: string }) => setBirthPrep((prev) => [...prev, { id: newId(), category: input.category, label: input.label.trim(), checked: false }]), []);
+  const toggleBirthPrep = useCallback((id: string) => setBirthPrep((prev) => prev.map((i) => (i.id === id ? { ...i, checked: !i.checked } : i))), []);
+  const deleteBirthPrep = useCallback((id: string) => setBirthPrep((prev) => prev.filter((i) => i.id !== id)), []);
+
+  const saveName = useCallback((input: { name: string; gender: string }) => setSavedNames((prev) => (prev.some((n) => n.name === input.name) ? prev : [{ id: newId(), name: input.name, gender: input.gender }, ...prev])), []);
+  const deleteName = useCallback((id: string) => setSavedNames((prev) => prev.filter((n) => n.id !== id)), []);
+
+  const setPregStatus = useCallback((s: PregStatus) => setPregStatusState(s), []);
+
+  const addPregAppt = useCallback((input: { title: string; at: string; kind: 'appointment' | 'test'; result?: string }) => {
+    setPregAppts((prev) => [...prev, { id: newId(), title: input.title.trim(), at: input.at, kind: input.kind, result: input.result?.trim() || undefined }].sort((a, b) => a.at.localeCompare(b.at)));
+  }, []);
+  const deletePregAppt = useCallback((id: string) => setPregAppts((prev) => prev.filter((a) => a.id !== id)), []);
+
+  const addPregVital = useCallback((input: { kind: 'glucose' | 'bp'; glucose?: number; systolic?: number; diastolic?: number; tag?: string }) => {
+    setPregVitals((prev) => [{ id: newId(), at: new Date().toISOString(), ...input }, ...prev]);
+  }, []);
+  const deletePregVital = useCallback((id: string) => setPregVitals((prev) => prev.filter((v) => v.id !== id)), []);
+
   const clearAll = useCallback(() => { setEntries([]); setEvents([]); }, []);
 
   const activeChild = useMemo(() => children.find((c) => c.id === activeId) ?? null, [children, activeId]);
@@ -432,9 +497,14 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
       dueDate, setDueDate, checkins, addCheckin, deleteCheckin,
       maternalBirth, setMaternalBirth, epdsResults, addEpdsResult, deleteEpdsResult, recoveryLogs, addRecoveryLog, deleteRecoveryLog,
       tzContacts, addTzContact, deleteTzContact, savedTips, saveTip, deleteTip,
+      birthPrep, addBirthPrep, toggleBirthPrep, deleteBirthPrep,
+      savedNames, saveName, deleteName,
+      pregStatus, setPregStatus,
+      pregAppts, addPregAppt, deletePregAppt,
+      pregVitals, addPregVital, deletePregVital,
       clearAll,
     }),
-    [loading, children, activeChild, setActiveChild, addChild, updateChild, deleteChild, entries, addEntry, deleteEntry, events, addEvent, deleteEvent, vaccines, addVaccine, updateVaccine, deleteVaccine, medications, addMedication, toggleMedication, deleteMedication, growth, addGrowth, deleteGrowth, routines, addRoutine, addRoutineStep, toggleStep, resetRoutine, deleteRoutine, chores, addChore, toggleChore, deleteChore, milestones, addMilestone, deleteMilestone, caregivers, addCaregiver, deleteCaregiver, custody, setCustodyDay, expenses, addExpense, toggleExpenseSettled, deleteExpense, dueDate, setDueDate, checkins, addCheckin, deleteCheckin, maternalBirth, setMaternalBirth, epdsResults, addEpdsResult, deleteEpdsResult, recoveryLogs, addRecoveryLog, deleteRecoveryLog, tzContacts, addTzContact, deleteTzContact, savedTips, saveTip, deleteTip, clearAll],
+    [loading, children, activeChild, setActiveChild, addChild, updateChild, deleteChild, entries, addEntry, deleteEntry, events, addEvent, deleteEvent, vaccines, addVaccine, updateVaccine, deleteVaccine, medications, addMedication, toggleMedication, deleteMedication, growth, addGrowth, deleteGrowth, routines, addRoutine, addRoutineStep, toggleStep, resetRoutine, deleteRoutine, chores, addChore, toggleChore, deleteChore, milestones, addMilestone, deleteMilestone, caregivers, addCaregiver, deleteCaregiver, custody, setCustodyDay, expenses, addExpense, toggleExpenseSettled, deleteExpense, dueDate, setDueDate, checkins, addCheckin, deleteCheckin, maternalBirth, setMaternalBirth, epdsResults, addEpdsResult, deleteEpdsResult, recoveryLogs, addRecoveryLog, deleteRecoveryLog, tzContacts, addTzContact, deleteTzContact, savedTips, saveTip, deleteTip, birthPrep, addBirthPrep, toggleBirthPrep, deleteBirthPrep, savedNames, saveName, deleteName, pregStatus, setPregStatus, pregAppts, addPregAppt, deletePregAppt, pregVitals, addPregVital, deletePregVital, clearAll],
   );
 
   return <DataContext.Provider value={value}>{node}</DataContext.Provider>;

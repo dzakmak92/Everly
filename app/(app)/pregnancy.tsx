@@ -90,8 +90,15 @@ export default function Pregnancy() {
             <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: color.muted }}>Tools</Text>
             {([
               { label: 'Daily check-in', fn: () => setCiOpen(true) },
+              { label: 'Week-by-week', fn: () => router.push('/(app)/preg-week') },
               { label: 'Kick counter', fn: () => router.push('/(app)/kick-counter') },
               { label: 'Contraction timer', fn: () => router.push('/(app)/contractions') },
+              { label: 'Appointments & tests', fn: () => router.push('/(app)/preg-appointments') },
+              { label: 'Birth prep', fn: () => router.push('/(app)/preg-birthprep') },
+              { label: 'Baby names', fn: () => router.push('/(app)/preg-names') },
+              { label: 'Extra monitoring', fn: () => router.push('/(app)/preg-vitals') },
+              { label: 'When to call (triage)', fn: () => router.push('/(app)/preg-triage') },
+              { label: 'Care & support', fn: () => router.push('/(app)/preg-care') },
             ] as { label: string; fn: () => void }[]).map(({ label, fn }) => (
               <Pressable key={label} onPress={fn} style={[{ backgroundColor: '#fff', borderRadius: radius.cardSm, padding: 16, flexDirection: 'row', alignItems: 'center' }, shadow.card]}>
                 <Text style={{ flex: 1, fontFamily: font.body600, fontSize: 15, color: color.ink }}>{label}</Text>

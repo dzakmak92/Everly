@@ -47,6 +47,13 @@ function AppTabs() {
       <Tabs.Screen name="nightlog" options={{ href: null }} />
       <Tabs.Screen name="rhythm" options={{ href: null }} />
       <Tabs.Screen name="kiosk" options={{ href: null }} />
+      <Tabs.Screen name="preg-week" options={{ href: null }} />
+      <Tabs.Screen name="preg-birthprep" options={{ href: null }} />
+      <Tabs.Screen name="preg-names" options={{ href: null }} />
+      <Tabs.Screen name="preg-care" options={{ href: null }} />
+      <Tabs.Screen name="preg-appointments" options={{ href: null }} />
+      <Tabs.Screen name="preg-triage" options={{ href: null }} />
+      <Tabs.Screen name="preg-vitals" options={{ href: null }} />
       <Tabs.Screen name="child/[id]" options={{ href: null }} />
     </Tabs>
   );

@@ -76,3 +76,56 @@ export function weekContent(week: number): WeekContent {
 
 export const PREG_SYMPTOMS = ['Nausea', 'Fatigue', 'Heartburn', 'Back pain', 'Swelling', 'Headache', 'Braxton Hicks', 'Cramps'];
 export const MOODS = ['Rough', 'Okay', 'Good', 'Great', 'Amazing'];
+
+/** Body & nutrition tips by trimester (P02 tabs). */
+export const TRIMESTER_TIPS: Record<1 | 2 | 3, { body: string[]; nutrition: string[] }> = {
+  1: {
+    body: ['Fatigue and nausea are common — rest when you can.', 'Your blood volume is rising; stay hydrated.', 'Light movement and fresh air can ease symptoms.'],
+    nutrition: ['Take a folic-acid supplement daily.', 'Small, frequent meals help with nausea.', 'Avoid raw/undercooked foods and limit caffeine.'],
+  },
+  2: {
+    body: ['Energy often returns — a good time for gentle exercise.', 'You may feel first movements (quickening).', 'Skin and ligaments stretch; moisturise and stretch gently.'],
+    nutrition: ['Prioritise iron and calcium-rich foods.', 'Aim for steady, balanced meals.', 'Keep hydrating — 2L+ a day.'],
+  },
+  3: {
+    body: ['Baby is gaining weight; you may feel breathless.', 'Braxton Hicks (practice contractions) are normal.', 'Sleep on your side; use pillows for support.'],
+    nutrition: ['Smaller meals ease heartburn.', 'Keep up iron, calcium and omega-3s.', 'Stay hydrated and watch sodium for swelling.'],
+  },
+};
+
+/** A small curated names list for the swipe explorer (P07). */
+export const BABY_NAMES: { name: string; gender: 'Girl' | 'Boy' | 'Unisex'; origin: string; meaning: string }[] = [
+  { name: 'Olivia', gender: 'Girl', origin: 'Latin', meaning: 'Olive tree — peace' },
+  { name: 'Noah', gender: 'Boy', origin: 'Hebrew', meaning: 'Rest, comfort' },
+  { name: 'Emma', gender: 'Girl', origin: 'Germanic', meaning: 'Whole, universal' },
+  { name: 'Liam', gender: 'Boy', origin: 'Irish', meaning: 'Strong-willed protector' },
+  { name: 'Ava', gender: 'Girl', origin: 'Latin', meaning: 'Life, bird' },
+  { name: 'Oliver', gender: 'Boy', origin: 'Latin', meaning: 'Olive tree' },
+  { name: 'Mia', gender: 'Girl', origin: 'Italian', meaning: 'Mine, beloved' },
+  { name: 'Arthur', gender: 'Boy', origin: 'Celtic', meaning: 'Bear, strong' },
+  { name: 'Isla', gender: 'Girl', origin: 'Scottish', meaning: 'Island' },
+  { name: 'Leo', gender: 'Boy', origin: 'Latin', meaning: 'Lion' },
+  { name: 'Freya', gender: 'Girl', origin: 'Norse', meaning: 'Lady, goddess of love' },
+  { name: 'Rowan', gender: 'Unisex', origin: 'Irish', meaning: 'Little red one; rowan tree' },
+  { name: 'Maya', gender: 'Girl', origin: 'Sanskrit', meaning: 'Illusion; water' },
+  { name: 'Finn', gender: 'Boy', origin: 'Irish', meaning: 'Fair, white' },
+  { name: 'Sage', gender: 'Unisex', origin: 'Latin', meaning: 'Wise, healthy herb' },
+  { name: 'Ruby', gender: 'Girl', origin: 'Latin', meaning: 'Red gemstone' },
+  { name: 'Ezra', gender: 'Boy', origin: 'Hebrew', meaning: 'Helper' },
+  { name: 'Aria', gender: 'Girl', origin: 'Italian', meaning: 'Air; melody' },
+];
+
+export const RED_FLAGS_CALL_NOW = [
+  'Heavy vaginal bleeding',
+  'Severe or constant abdominal pain',
+  'A noticeable drop or stop in baby’s movements',
+  'Severe headache with vision changes or swelling',
+  'Waters breaking before 37 weeks',
+  'Fever over 38°C with feeling unwell',
+];
+export const RED_FLAGS_CALL_SOON = [
+  'Persistent vomiting, unable to keep fluids down',
+  'Painful or burning urination',
+  'Sudden swelling of face, hands or feet',
+  'Itching, especially hands and feet at night',
+];
