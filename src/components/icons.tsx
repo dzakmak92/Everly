@@ -245,6 +245,27 @@ export const Smile = ({ size = 18, color = '#6B6FC9', mood = 'good' }: IconProps
   );
 };
 
+/** Baby bottle — used for feed rows. */
+export const Bottle = ({ size = 22, color = '#2C8475' }: IconProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Path d="M9 8h6v11a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2z" {...stroke(color)} />
+    <Path d="M10 8V6h4v2" {...stroke(color)} />
+    <Path d="M10.5 6l-1-2h5l-1 2" {...stroke(color)} />
+    <Line x1="9" y1="13" x2="15" y2="13" {...stroke(color)} />
+  </Svg>
+);
+
+/** Syringe — used for vaccine rows. */
+export const Syringe = ({ size = 22, color = '#B04070' }: IconProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Path d="M18 2l4 4" {...stroke(color)} />
+    <Path d="M14 6l4 4" {...stroke(color)} />
+    <Path d="M17 7l-9 9-4 1 1-4 9-9z" {...stroke(color)} />
+    <Line x1="9" y1="11" x2="11" y2="13" {...stroke(color)} />
+    <Line x1="6.5" y1="13.5" x2="8.5" y2="15.5" {...stroke(color)} />
+  </Svg>
+);
+
 /** Baby / fetus glyph used on size cards. */
 export const BabyBean = ({ size = 36, color = '#D46E97' }: IconProps) => (
   <Svg width={size} height={size} viewBox="0 0 24 24">

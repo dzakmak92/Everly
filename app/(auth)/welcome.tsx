@@ -24,7 +24,7 @@ export default function Welcome() {
     >
       <View style={{ flex: 1, justifyContent: 'center', gap: 18 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <Logo width={40} height={46} color={color.primary} />
+          <Logo width={40} height={46} />
           <Text style={{ fontFamily: font.display700, fontSize: 38, color: color.ink }}>Everly</Text>
         </View>
         <Text style={{ fontFamily: font.display600, fontSize: 22, color: color.ink, lineHeight: 30 }}>

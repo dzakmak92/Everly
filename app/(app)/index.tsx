@@ -5,9 +5,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, font, radius, shadow, childToken } from '../../src/theme/tokens';
 import { Button, Field } from '../../src/components/forms';
 import { Logo } from '../../src/components/Logo';
-import { ChevronRight } from '../../src/components/icons';
+import { ChevronRight, Bottle, Calendar as CalendarIcon, Syringe } from '../../src/components/icons';
+import { Silhouette } from '../../src/components/ui';
 import { useSupabase } from '../../src/lib/supabase';
-import { ageLabel, stageFrom, STAGE_LABEL } from '../../src/lib/age';
+import { ageLabel } from '../../src/lib/age';
 import {
   useData, entriesOn, upcomingEvents, entryDetail, ENTRY_META,
   type EntryKind, type FeedSide, type DiaperType, type Child,
@@ -44,7 +45,8 @@ export default function Today() {
   const [mins, setMins] = useState('');
   const [note, setNote] = useState('');
 
-  const name = profile?.name || session?.user?.email?.split('@')[0] || 'there';
+  const rawName = profile?.name || session?.user?.email?.split('@')[0] || 'there';
+  const name = rawName.charAt(0).toUpperCase() + rawName.slice(1);
   const today = entriesOn(entries);
   const dateLabel = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
 
@@ -75,7 +77,7 @@ export default function Today() {
       showsVerticalScrollIndicator={false}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: 2 }}>
-        <Logo width={22} height={26} color={color.primary} />
+        <Logo width={22} height={26} />
         <Text style={{ fontFamily: font.display700, fontSize: 19, color: color.ink }}>Everly</Text>
       </View>
 
@@ -97,17 +99,17 @@ export default function Today() {
         <View style={{ gap: 10 }}>
           <Label>What's next</Label>
           {lastFeed && (
-            <FeedRow chipBg={ENTRY_META.feed.fill} dot={ENTRY_META.feed.ink}
-              title={`Last feed${lastFeed.side ? ` · ${lastFeed.side === 'bottle' ? 'Bottle' : lastFeed.side === 'left' ? 'Left' : 'Right'}` : ''}`}
+            <FeedRow chipBg={ENTRY_META.feed.fill} icon={<Bottle size={22} color={ENTRY_META.feed.ink} />}
+              title={`Last feed${lastFeed.side ? ` · ${lastFeed.side === 'bottle' ? 'Bottle' : lastFeed.side === 'left' ? 'Left side' : 'Right side'}` : ''}`}
               sub={`${childName(lastFeed.childId) ? childName(lastFeed.childId) + ' · ' : ''}${timeOf(lastFeed.at)}`}
               trailing={<Badge text={agoLabel(lastFeed.at)} bg="#E7E4FB" fg={color.primary} />} />
           )}
           {nextEvents.map((ev) => (
-            <FeedRow key={ev.id} chipBg="#E7E4FB" dot={color.primary} title={ev.title} sub={`${ev.location ? ev.location + ' · ' : ''}${dayTimeOf(ev.at)}`}
+            <FeedRow key={ev.id} chipBg="#E7E4FB" icon={<CalendarIcon size={22} color={color.primary} />} title={ev.title} sub={`${ev.location ? ev.location + ' · ' : ''}${dayTimeOf(ev.at)}`}
               trailing={<ChevronRight size={16} color={color.faint} />} />
           ))}
           {dueVax && (
-            <FeedRow chipBg={ENTRY_META.diaper.fill} dot={color.rose} title={`${childName(dueVax.childId) ? childName(dueVax.childId) + ' · ' : ''}${dueVax.name}`}
+            <FeedRow chipBg="#FBE0EA" icon={<Syringe size={22} color={color.rose} />} title={`${childName(dueVax.childId) ? childName(dueVax.childId) + ' · ' : ''}${dueVax.name}`}
               sub={dueVax.dueDate ? `Due ${dueVax.dueDate}` : 'Scheduled'} trailing={<Badge text="vaccine" bg="#FBE0EA" fg={color.rose} />} />
           )}
         </View>
@@ -183,11 +185,11 @@ function Badge({ text, bg, fg }: { text: string; bg: string; fg: string }) {
   return <View style={{ backgroundColor: bg, borderRadius: radius.pill, paddingVertical: 5, paddingHorizontal: 11 }}><Text style={{ fontFamily: font.body700, fontSize: 11, color: fg }}>{text}</Text></View>;
 }
 
-function FeedRow({ chipBg, dot, title, sub, trailing }: { chipBg: string; dot: string; title: string; sub: string; trailing?: React.ReactNode }) {
+function FeedRow({ chipBg, icon, title, sub, trailing }: { chipBg: string; icon: React.ReactNode; title: string; sub: string; trailing?: React.ReactNode }) {
   return (
     <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12 }, shadow.card]}>
       <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: chipBg, alignItems: 'center', justifyContent: 'center' }}>
-        <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: dot }} />
+        {icon}
       </View>
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={{ fontFamily: font.body700, fontSize: 14, color: color.ink }} numberOfLines={1}>{title}</Text>
@@ -203,13 +205,13 @@ function ChildPill({ child, active, onPress, onLong }: { child: Child; active: b
   return (
     <Pressable onPress={onPress} onLongPress={onLong} delayLongPress={250}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: active ? t.fill : '#fff', borderRadius: radius.pill, paddingVertical: 7, paddingRight: 14, paddingLeft: 7, borderWidth: 1.5, borderColor: active ? t.stroke : color.hairline }}>
-        <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: t.stroke, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ fontFamily: font.body700, fontSize: 13, color: '#fff' }}>{child.name.charAt(0).toUpperCase()}</Text>
+        <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: active ? t.stroke : t.fill, alignItems: 'center', justifyContent: 'center' }}>
+          <Silhouette size={18} fill={active ? '#fff' : t.stroke} />
         </View>
         <View>
           <Text style={{ fontFamily: font.body700, fontSize: 13, color: active ? t.stroke : color.ink }}>{child.name}</Text>
-          <Text style={{ fontFamily: font.body400, fontSize: 10, color: active ? t.stroke : color.muted, marginTop: 2 }}>
-            {child.birthDate ? `${ageLabel(child.birthDate)} · ${STAGE_LABEL[stageFrom(child.birthDate)]}` : 'Tap to view'}
+          <Text style={{ fontFamily: font.body400, fontSize: 11, color: active ? t.stroke : color.muted, marginTop: 2 }}>
+            {child.birthDate ? ageLabel(child.birthDate) : 'Tap to view'}
           </Text>
         </View>
       </View>
