@@ -6,6 +6,7 @@ import { color, font, radius, shadow, fill } from '../../src/theme/tokens';
 import { Button, Field } from '../../src/components/forms';
 import { DateField } from '../../src/components/DateField';
 import { ProgressBar } from '../../src/components/ui';
+import { MumMeSwitch } from '../../src/components/MumMeSwitch';
 import {
   ChevronLeft, ChevronRight,
   BabyBean, Heart, Calendar, Activity, CheckCircle, Shield, Star, Smile,
@@ -93,7 +94,8 @@ export default function Pregnancy() {
       <Pressable onPress={() => router.back()} style={{ width: 40, height: 40, justifyContent: 'center' }}>
         <ChevronLeft size={24} color={color.ink} />
       </Pressable>
-      <Text style={{ fontFamily: font.display700, fontSize: 28, color: color.ink }}>Pregnancy</Text>
+      <Text style={{ fontFamily: font.display700, fontSize: 28, color: color.ink }}>Mum&Me</Text>
+      <MumMeSwitch phase="pregnancy" />
 
       {!gest ? (
         <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 20, gap: 12 }, shadow.card]}>

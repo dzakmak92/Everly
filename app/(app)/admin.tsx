@@ -15,6 +15,19 @@ type AuditRow = { id: number; at: string; actor_admin_id: string | null; actor_r
 const TABS = ['Overview', 'Users', 'Billing', 'Config', 'Audit'] as const;
 type Tab = (typeof TABS)[number];
 
+type EditField = { key: string; type: 'bool' | 'number' | 'text'; val: string };
+function fieldFor(key: string, v: unknown): EditField {
+  if (typeof v === 'boolean') return { key, type: 'bool', val: v ? '1' : '0' };
+  if (typeof v === 'number') return { key, type: 'number', val: String(v) };
+  if (typeof v === 'string') return { key, type: 'text', val: v };
+  return { key, type: 'text', val: JSON.stringify(v) };
+}
+function coerceField(f: EditField): unknown {
+  if (f.type === 'bool') return f.val === '1';
+  if (f.type === 'number') { const n = Number(f.val); return Number.isNaN(n) ? f.val : n; }
+  try { return JSON.parse(f.val); } catch { return f.val; } // keep plain strings as-is
+}
+
 const humanize = (k: string) => k.replace(/[_.]/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase());
 const valuePreview = (v: unknown) => (typeof v === 'string' ? v : JSON.stringify(v));
 const shortDate = (iso?: string | null) => { if (!iso) return '—'; const d = new Date(iso); return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }); };
@@ -48,7 +61,8 @@ export default function Admin() {
   const [audit, setAudit] = useState<AuditRow[]>([]);
   const [msg, setMsg] = useState('');
   const [edit, setEdit] = useState<ConfigRow | null>(null);
-  const [draft, setDraft] = useState('');
+  const [fields, setFields] = useState<EditField[]>([]);
+  const [isObj, setIsObj] = useState(false);
   const [viewUser, setViewUser] = useState<Profile | null>(null);
   const [query, setQuery] = useState('');
 
@@ -89,15 +103,25 @@ export default function Admin() {
     const { error } = await supabase.from('feature_flags').update({ enabled: !enabled }).eq('key', key);
     if (error) { setFlags((prev) => prev.map((f) => (f.key === key ? { ...f, enabled } : f))); setMsg(`Could not update ${key}: ${error.message}`); }
   }
-  function openEdit(row: ConfigRow) { setEdit(row); setDraft(typeof row.value === 'string' ? row.value : JSON.stringify(row.value, null, 2)); }
+  function openEdit(row: ConfigRow) {
+    const v = row.value;
+    if (v && typeof v === 'object' && !Array.isArray(v)) {
+      setIsObj(true);
+      setFields(Object.entries(v as Record<string, unknown>).map(([k, val]) => fieldFor(k, val)));
+    } else {
+      setIsObj(false);
+      setFields([fieldFor('value', v)]);
+    }
+    setEdit(row);
+  }
+  function setFieldVal(i: number, val: string) { setFields((prev) => prev.map((f, j) => (j === i ? { ...f, val } : f))); }
   async function saveConfig() {
     if (!edit) return;
-    let parsed: unknown = draft;
-    try { parsed = JSON.parse(draft); } catch { /* keep as string */ }
+    const value = isObj ? Object.fromEntries(fields.map((f) => [f.key, coerceField(f)])) : coerceField(fields[0]);
     const key = edit.key; setMsg('');
-    const { error } = await supabase.from('config').update({ value: parsed as never }).eq('key', key);
+    const { error } = await supabase.from('config').update({ value: value as never }).eq('key', key);
     if (error) setMsg(`Could not save ${key}: ${error.message}`);
-    else setConfig((prev) => prev.map((c) => (c.key === key ? { ...c, value: parsed } : c)));
+    else setConfig((prev) => prev.map((c) => (c.key === key ? { ...c, value } : c)));
     setEdit(null);
   }
   async function toggleSuspend(p: Profile) {
@@ -320,13 +344,37 @@ export default function Admin() {
         </>
       )}
 
-      {/* config edit modal */}
+      {/* config edit modal — simple, type-aware (no JSON needed) */}
       <Modal visible={edit !== null} transparent animationType="fade" onRequestClose={() => setEdit(null)}>
         <Pressable onPress={() => setEdit(null)} style={{ flex: 1, backgroundColor: 'rgba(40,18,50,0.4)', justifyContent: 'center', paddingHorizontal: 24 }}>
-          <Pressable onPress={() => {}} style={[{ backgroundColor: color.canvas, borderRadius: radius.card, padding: 20, gap: 14 }, shadow.card]}>
-            <Text style={{ fontFamily: font.display700, fontSize: 18, color: color.ink }}>Edit config</Text>
-            <Text style={{ fontFamily: 'monospace', fontSize: 13, color: color.primary }}>{edit?.key}</Text>
-            <Field label="Value (JSON or text)" value={draft} onChangeText={setDraft} placeholder="value" autoCapitalize="none" multiline numberOfLines={6} monospace />
+          <Pressable onPress={() => {}} style={[{ backgroundColor: color.canvas, borderRadius: radius.card, padding: 20, gap: 14, maxHeight: '80%' }, shadow.card]}>
+            <Text style={{ fontFamily: font.display700, fontSize: 18, color: color.ink }}>{edit ? humanize(edit.key) : ''}</Text>
+            <Text style={{ fontFamily: font.body400, fontSize: 12, color: color.muted }}>Change the value and tap Save — it applies live, no redeploy.</Text>
+            <ScrollView style={{ maxHeight: 360 }} keyboardShouldPersistTaps="handled">
+              <View style={{ gap: 14 }}>
+                {fields.map((f, i) => (
+                  <View key={f.key} style={{ gap: 7 }}>
+                    {f.type === 'bool' ? (
+                      <>
+                        <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 0.8, textTransform: 'uppercase', color: color.muted }}>{isObj ? humanize(f.key) : 'Value'}</Text>
+                        <View style={{ flexDirection: 'row', gap: 8 }}>
+                          {(['1', '0'] as const).map((v) => {
+                            const on = f.val === v;
+                            return (
+                              <Pressable key={v} onPress={() => setFieldVal(i, v)} style={{ flex: 1, paddingVertical: 11, borderRadius: radius.tile, alignItems: 'center', backgroundColor: on ? color.primary : '#fff', borderWidth: 1, borderColor: on ? color.primary : color.hairline }}>
+                                <Text style={{ fontFamily: font.body700, fontSize: 13, color: on ? '#fff' : color.ink }}>{v === '1' ? 'On' : 'Off'}</Text>
+                              </Pressable>
+                            );
+                          })}
+                        </View>
+                      </>
+                    ) : (
+                      <Field label={isObj ? humanize(f.key) : 'Value'} value={f.val} onChangeText={(t) => setFieldVal(i, t)} placeholder={f.type === 'number' ? 'e.g. 30' : 'value'} keyboardType={f.type === 'number' ? 'default' : 'default'} autoCapitalize="none" />
+                    )}
+                  </View>
+                ))}
+              </View>
+            </ScrollView>
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <Button label="Cancel" variant="secondary" onPress={() => setEdit(null)} style={{ flex: 1 }} />
               <Button label="Save" onPress={saveConfig} style={{ flex: 1 }} />

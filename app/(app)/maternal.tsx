@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, font, radius, shadow } from '../../src/theme/tokens';
 import { Button, Field } from '../../src/components/forms';
 import { DateField } from '../../src/components/DateField';
+import { MumMeSwitch } from '../../src/components/MumMeSwitch';
 import { ChevronLeft, ChevronRight, Smile, Activity, Heart, Calendar, Camera, Leaf, Phone } from '../../src/components/icons';
 import { useData, type Lochia } from '../../src/lib/store';
 import { BAND_LABEL, CRISIS_RESOURCES, type EpdsBand } from '../../src/lib/epds';
@@ -61,7 +62,8 @@ export default function Maternal() {
       <Pressable onPress={() => router.back()} style={{ width: 40, height: 40, justifyContent: 'center' }}>
         <ChevronLeft size={24} color={color.ink} />
       </Pressable>
-      <Text style={{ fontFamily: font.display700, fontSize: 28, color: color.ink }}>Mum&Me · You</Text>
+      <Text style={{ fontFamily: font.display700, fontSize: 28, color: color.ink }}>Mum&Me</Text>
+      <MumMeSwitch phase="postpartum" />
 
       {/* Hero — postpartum week, or a friendly prompt to set the birth date */}
       {week == null ? (
