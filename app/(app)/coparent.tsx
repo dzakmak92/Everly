@@ -4,11 +4,20 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, font, radius, shadow } from '../../src/theme/tokens';
 import { Button, Field } from '../../src/components/forms';
-import { ChevronLeft } from '../../src/components/icons';
+import { ChevronLeft, Shield, Info, Check } from '../../src/components/icons';
+import { Silhouette } from '../../src/components/ui';
 import { useData } from '../../src/lib/store';
 
-const WD = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const money = (n: number) => `€${n.toFixed(2)}`;
+const WD = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+const WD_FULL = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MONTHS = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
+const money = (n: number) => `€${Number.isInteger(n) ? n : n.toFixed(2)}`;
+
+// Pastel tokens reused for the two parties.
+const MINT = '#D8F0E6';
+const MINT_INK = '#3FA98A';
+const PEACH = '#FCE6D8';
+const PEACH_INK = '#D9824F';
 
 export default function CoParent() {
   const router = useRouter();
@@ -25,7 +34,12 @@ export default function CoParent() {
   // Parties to cycle custody through: me + caregivers.
   const parties = [{ id: 'me', name: 'You' }, ...d.caregivers];
   const nameOf = (id: string) => (id === 'me' ? 'You' : d.caregivers.find((c) => c.id === id)?.name ?? '—');
-  const colorOf = (id: string) => (id === 'me' ? color.primary : color.accentRose);
+  const isMine = (id: string) => id === 'me';
+
+  // The "other parent" shown in the summary card / captions.
+  const otherParent = d.caregivers[0] ?? null;
+  const otherName = otherParent?.name ?? 'Co-parent';
+  const childName = d.activeChild?.name ?? 'Child';
 
   function cycleDay(wd: number) {
     const cur = d.custody[wd] ?? 'me';
@@ -41,7 +55,12 @@ export default function CoParent() {
     const share = (e.amount * e.splitPct) / 100;
     if (e.paidBy === 'me') owedToMe += share; else iOwe += share;
   }
-  const net = owedToMe - iOwe;
+  const net = owedToMe - iOwe; // >0 → other owes you; <0 → you owe other.
+  const settleAmount = Math.abs(net);
+
+  // Gauge split — proportion of the "you paid" side vs the "other owes" side.
+  const gaugeTotal = owedToMe + iOwe;
+  const youPct = gaugeTotal > 0 ? (owedToMe / gaugeTotal) * 100 : 50;
 
   function saveCg() { if (cgName.trim()) d.addCaregiver(cgName); setCgName(''); setAddCg(false); }
   function saveEx() {
@@ -49,83 +68,217 @@ export default function CoParent() {
     if (label.trim() && !isNaN(amt)) d.addExpense({ label, amount: amt, paidBy, splitPct: parseInt(split, 10) || 50 });
     setLabel(''); setAmount(''); setPaidBy('me'); setSplit('50'); setAddEx(false);
   }
+  function settleUp() {
+    // Settle every unsettled expense, clearing the running balance.
+    for (const e of d.expenses) if (!e.settled) d.toggleExpenseSettled(e.id);
+  }
+
+  // Build the 7-day custody strip starting today.
+  const today = new Date();
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const date = new Date(today);
+    date.setDate(today.getDate() + i);
+    const wd = date.getDay();
+    const who = d.custody[wd] ?? 'me';
+    const weekend = wd === 0 || wd === 6;
+    return { wd, dayOfMonth: date.getDate(), letter: WD[wd], who, weekend };
+  });
+  const monthLabel = MONTHS[today.getMonth()];
 
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: color.canvas }}
-      contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: insets.bottom + 28, paddingHorizontal: 22, gap: 16 }}
+      contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: insets.bottom + 28, paddingHorizontal: 20, gap: 16 }}
+      showsVerticalScrollIndicator={false}
     >
-      <Pressable onPress={() => router.back()} style={{ width: 40, height: 40, justifyContent: 'center' }}>
+      <Pressable onPress={() => router.back()} style={{ width: 40, height: 40, justifyContent: 'center', marginLeft: -6 }}>
         <ChevronLeft size={24} color={color.ink} />
       </Pressable>
-      <Text style={{ fontFamily: font.display700, fontSize: 28, color: color.ink }}>Co-Parent</Text>
 
-      {/* Caregivers */}
-      <View style={{ gap: 8 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: color.muted }}>Caregivers</Text>
-          <Pressable onPress={() => { setCgName(''); setAddCg(true); }}><Text style={{ fontFamily: font.body700, fontSize: 13, color: color.primary }}>+ Add</Text></Pressable>
-        </View>
-        <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 6 }, shadow.card]}>
-          <Row name="You" tag="Primary" />
-          {d.caregivers.map((c) => (
-            <Row key={c.id} name={c.name} tag="Co-parent" onDelete={() => d.deleteCaregiver(c.id)} />
-          ))}
-        </View>
+      {/* Title + child-context pill */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Text style={{ fontFamily: font.display700, fontSize: 22, color: color.ink }}>Co-parent</Text>
+        {d.activeChild && (
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 6,
+              backgroundColor: MINT,
+              borderRadius: radius.pill,
+              paddingVertical: 5,
+              paddingRight: 12,
+              paddingLeft: 5,
+            }}
+          >
+            <View style={{ width: 22, height: 22, backgroundColor: MINT_INK, borderRadius: 11, alignItems: 'center', justifyContent: 'center' }}>
+              <Silhouette size={11} fill="#fff" />
+            </View>
+            <Text style={{ fontFamily: font.body700, fontSize: 12, color: MINT_INK }}>{childName}</Text>
+          </View>
+        )}
       </View>
 
-      {/* Custody week */}
-      <View style={{ gap: 8 }}>
-        <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: color.muted }}>Custody · this week</Text>
-        <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 14, flexDirection: 'row', gap: 6 }, shadow.card]}>
-          {WD.map((w, i) => {
-            const who = d.custody[i] ?? 'me';
+      {/* Parent summary card */}
+      <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 18, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, shadow.card]}>
+        <View style={{ alignItems: 'center', gap: 6 }}>
+          <View style={{ width: 56, height: 56, backgroundColor: MINT, borderRadius: 28, alignItems: 'center', justifyContent: 'center' }}>
+            <Silhouette size={28} fill={MINT_INK} />
+          </View>
+          <Text style={{ fontFamily: font.body700, fontSize: 13, color: MINT_INK }}>You</Text>
+          <Text style={{ fontFamily: font.body400, fontSize: 10, color: color.muted }}>Primary</Text>
+        </View>
+
+        <View style={{ flex: 1, alignItems: 'center', gap: 8, paddingHorizontal: 6 }}>
+          <Text style={{ fontFamily: font.body400, fontSize: 11, color: color.muted }}>this week</Text>
+          <View style={{ width: 1, height: 26, backgroundColor: color.hairline }} />
+          <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.inkSecondary, textAlign: 'center' }}>{childName} stays:</Text>
+        </View>
+
+        <Pressable
+          onPress={otherParent ? () => d.deleteCaregiver(otherParent.id) : () => { setCgName(''); setAddCg(true); }}
+          style={{ alignItems: 'center', gap: 6 }}
+        >
+          <View style={{ width: 56, height: 56, backgroundColor: PEACH, borderRadius: 28, alignItems: 'center', justifyContent: 'center' }}>
+            <Silhouette size={28} fill={PEACH_INK} />
+          </View>
+          <Text style={{ fontFamily: font.body700, fontSize: 13, color: PEACH_INK }}>{otherName}</Text>
+          <Text style={{ fontFamily: font.body400, fontSize: 10, color: color.muted }}>{otherParent ? 'Tap to remove' : 'Tap to add'}</Text>
+        </Pressable>
+      </View>
+
+      {/* Custody strip */}
+      <View style={{ gap: 10 }}>
+        <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 1.1, textTransform: 'uppercase', color: color.muted, paddingLeft: 4 }}>
+          {monthLabel} custody
+        </Text>
+        <Text style={{ fontFamily: font.body400, fontSize: 11, color: color.muted, paddingLeft: 4, marginTop: -4 }}>
+          Tap a day to change who has {childName}.
+        </Text>
+        <View style={{ flexDirection: 'row', gap: 5 }}>
+          {days.map((day, i) => {
+            const mine = isMine(day.who);
+            const bg = mine ? MINT : PEACH;
+            const fg = mine ? MINT_INK : PEACH_INK;
             return (
-              <Pressable key={i} onPress={() => cycleDay(i)} style={{ flex: 1, alignItems: 'center', gap: 6 }}>
-                <Text style={{ fontFamily: font.body600, fontSize: 11, color: color.muted }}>{w}</Text>
-                <View style={{ width: '100%', height: 40, borderRadius: 10, backgroundColor: colorOf(who), alignItems: 'center', justifyContent: 'center' }}>
-                  <Text style={{ fontFamily: font.body700, fontSize: 11, color: '#fff' }}>{nameOf(who).charAt(0)}</Text>
-                </View>
+              <Pressable
+                key={i}
+                onPress={() => cycleDay(day.wd)}
+                style={{
+                  flex: 1,
+                  backgroundColor: bg,
+                  borderRadius: 12,
+                  paddingVertical: 12,
+                  paddingHorizontal: 2,
+                  alignItems: 'center',
+                  gap: 4,
+                  opacity: day.weekend ? 0.55 : 1,
+                }}
+              >
+                <Text style={{ fontFamily: font.body700, fontSize: 10, color: fg }}>{day.letter}</Text>
+                <Text style={{ fontFamily: font.body600, fontSize: 12, color: fg }}>{day.dayOfMonth}</Text>
               </Pressable>
             );
           })}
         </View>
-        <Text style={{ fontFamily: font.body400, fontSize: 12, color: color.muted }}>Tap a day to change who has the child.</Text>
-      </View>
-
-      {/* Balance */}
-      <View style={[{ backgroundColor: net >= 0 ? color.maternalTeal : color.rose, borderRadius: radius.card, padding: 18 }, shadow.card]}>
-        <Text style={{ fontFamily: font.body600, fontSize: 12, color: 'rgba(255,255,255,0.85)' }}>Running balance</Text>
-        <Text style={{ fontFamily: font.display700, fontSize: 24, color: '#fff', marginTop: 2 }}>
-          {net === 0 ? 'All settled' : net > 0 ? `You're owed ${money(net)}` : `You owe ${money(-net)}`}
-        </Text>
       </View>
 
       {/* Expenses */}
-      <View style={{ gap: 8 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: color.muted }}>Shared expenses</Text>
-          <Pressable onPress={() => { setLabel(''); setAmount(''); setPaidBy('me'); setSplit('50'); setAddEx(true); }}><Text style={{ fontFamily: font.body700, fontSize: 13, color: color.primary }}>+ Add</Text></Pressable>
+      <View style={{ gap: 10 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 4 }}>
+          <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 1.1, textTransform: 'uppercase', color: color.muted }}>Expenses</Text>
+          <Pressable onPress={() => { setLabel(''); setAmount(''); setPaidBy('me'); setSplit('50'); setAddEx(true); }}>
+            <Text style={{ fontFamily: font.body700, fontSize: 13, color: color.primary }}>+ Add</Text>
+          </Pressable>
         </View>
+
         {d.expenses.length === 0 ? (
-          <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 16, alignItems: 'center' }, shadow.card]}>
-            <Text style={{ fontFamily: font.body500, fontSize: 13, color: color.muted }}>No expenses yet.</Text>
+          <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 18, alignItems: 'center' }, shadow.card]}>
+            <Text style={{ fontFamily: font.body500, fontSize: 13, color: color.muted }}>No shared expenses yet.</Text>
           </View>
-        ) : d.expenses.map((e) => {
-          const share = (e.amount * e.splitPct) / 100;
-          const sub = e.settled ? 'Settled' : e.paidBy === 'me' ? `${d.caregivers.length ? nameOf(d.caregivers[0].id) : 'Co-parent'} owes ${money(share)}` : `You owe ${money(share)}`;
-          return (
-            <View key={e.id} style={[{ backgroundColor: '#fff', borderRadius: radius.cardSm, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10 }, shadow.card]}>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: font.body700, fontSize: 14, color: color.ink }}>{e.label} · {money(e.amount)}</Text>
-                <Text style={{ fontFamily: font.body400, fontSize: 12, color: color.muted, marginTop: 2 }}>Paid by {nameOf(e.paidBy)} · {e.splitPct}% split · {sub}</Text>
-              </View>
-              <Pressable onPress={() => d.toggleExpenseSettled(e.id)}><Text style={{ fontFamily: font.body700, fontSize: 12, color: e.settled ? color.muted : color.maternalTeal }}>{e.settled ? 'Reopen' : 'Settle'}</Text></Pressable>
-              <Pressable onPress={() => d.deleteExpense(e.id)} hitSlop={8} style={{ paddingHorizontal: 4 }}><Text style={{ fontFamily: font.body700, fontSize: 18, color: color.faint }}>×</Text></Pressable>
-            </View>
-          );
-        })}
+        ) : (
+          <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, overflow: 'hidden' }, shadow.card]}>
+            {d.expenses.map((e, idx) => {
+              const share = (e.amount * e.splitPct) / 100;
+              const dateLabel = new Date(e.at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+              const sub = `${e.splitPct}/${100 - e.splitPct} split · ${dateLabel}`;
+              const owerName = e.paidBy === 'me' ? otherName : 'You';
+              return (
+                <View key={e.id}>
+                  {idx > 0 && <View style={{ height: 1, backgroundColor: color.hairline, marginHorizontal: 16 }} />}
+                  <View style={{ paddingVertical: 14, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                    <View style={{ width: 40, height: 40, backgroundColor: e.settled ? MINT : '#FBE0EA', borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}>
+                      {e.settled ? <Info size={18} color={MINT_INK} /> : <Shield size={18} color={color.rose} />}
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontFamily: font.body700, fontSize: 14, color: color.ink }}>{e.label} · {money(e.amount)}</Text>
+                      <Text style={{ fontFamily: font.body400, fontSize: 11, color: color.muted, marginTop: 2 }}>{sub}</Text>
+                    </View>
+                    <View style={{ alignItems: 'flex-end', gap: 8 }}>
+                      <Pressable onPress={() => d.toggleExpenseSettled(e.id)}>
+                        {e.settled ? (
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: MINT, borderRadius: radius.pill, paddingVertical: 5, paddingHorizontal: 10 }}>
+                            <Text style={{ fontFamily: font.body700, fontSize: 11, color: MINT_INK }}>Settled</Text>
+                            <Check size={10} color={MINT_INK} />
+                          </View>
+                        ) : (
+                          <View style={{ backgroundColor: '#FBE0EA', borderRadius: radius.pill, paddingVertical: 5, paddingHorizontal: 10 }}>
+                            <Text style={{ fontFamily: font.body700, fontSize: 11, color: color.rose }}>{owerName} owes {money(share)}</Text>
+                          </View>
+                        )}
+                      </Pressable>
+                      <Pressable onPress={() => d.deleteExpense(e.id)} hitSlop={8}>
+                        <Text style={{ fontFamily: font.body700, fontSize: 11, color: color.faint }}>Remove</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        )}
       </View>
+
+      {/* Running balance */}
+      <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 18 }, shadow.card]}>
+        <Text style={{ fontFamily: font.body700, fontSize: 14, color: color.ink, marginBottom: 12 }}>Running balance</Text>
+        <View style={{ height: 10, borderRadius: radius.pill, overflow: 'hidden', flexDirection: 'row', marginBottom: 10, backgroundColor: PEACH }}>
+          <View style={{ width: `${youPct}%`, backgroundColor: MINT }} />
+        </View>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+          <Text style={{ fontFamily: font.body400, fontSize: 11, color: MINT_INK }}>You paid {money(owedToMe)}</Text>
+          <Text style={{ fontFamily: font.body700, fontSize: 11, color: PEACH_INK }}>
+            {net === 0 ? 'All settled' : net > 0 ? `${otherName} owes ${money(net)}` : `You owe ${money(-net)}`}
+          </Text>
+        </View>
+      </View>
+
+      {/* Settle Up CTA */}
+      <Pressable
+        onPress={settleUp}
+        disabled={settleAmount === 0}
+        style={[
+          {
+            backgroundColor: color.primary,
+            paddingVertical: 16,
+            paddingHorizontal: 16,
+            borderRadius: 14,
+            alignItems: 'center',
+            justifyContent: 'center',
+            opacity: settleAmount === 0 ? 0.5 : 1,
+          },
+          shadow.periwinkleButton,
+        ]}
+      >
+        <Text style={{ fontFamily: font.body800, fontSize: 15, color: '#fff' }}>
+          {settleAmount === 0 ? 'All settled' : `Settle Up · ${money(settleAmount)}`}
+        </Text>
+      </Pressable>
+
+      {/* Add co-parent affordance */}
+      <Pressable onPress={() => { setCgName(''); setAddCg(true); }} style={{ alignItems: 'center', paddingVertical: 4 }}>
+        <Text style={{ fontFamily: font.body700, fontSize: 13, color: color.primary }}>+ Add co-parent</Text>
+      </Pressable>
 
       {/* Add caregiver modal */}
       <Modal visible={addCg} transparent animationType="fade" onRequestClose={() => setAddCg(false)}>
@@ -168,15 +321,5 @@ export default function CoParent() {
         </Pressable>
       </Modal>
     </ScrollView>
-  );
-}
-
-function Row({ name, tag, onDelete }: { name: string; tag: string; onDelete?: () => void }) {
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 12, gap: 10 }}>
-      <Text style={{ flex: 1, fontFamily: font.body600, fontSize: 15, color: color.ink }}>{name}</Text>
-      <Text style={{ fontFamily: font.body500, fontSize: 12, color: color.muted }}>{tag}</Text>
-      {onDelete && <Pressable onPress={onDelete} hitSlop={8} style={{ paddingHorizontal: 4 }}><Text style={{ fontFamily: font.body700, fontSize: 18, color: color.faint }}>×</Text></Pressable>}
-    </View>
   );
 }
