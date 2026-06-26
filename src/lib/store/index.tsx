@@ -59,6 +59,10 @@ export type Milestone = { id: string; childId: string; title: string; date: stri
 
 export type PregCheckin = { id: string; at: string; mood: number; symptoms: string[]; weightKg?: number };
 
+export type EpdsResult = { id: string; at: string; total: number; band: string; selfHarmFlag: boolean };
+export type Lochia = 'none' | 'light' | 'moderate' | 'heavy';
+export type RecoveryLog = { id: string; at: string; systolic?: number; diastolic?: number; lochia?: Lochia; note?: string };
+
 export type Caregiver = { id: string; name: string };
 /** Expense paidBy is 'me' or a caregiver id; splitPct = the other party's share. */
 export type Expense = { id: string; label: string; amount: number; paidBy: string; splitPct: number; settled: boolean; at: string };
@@ -88,6 +92,9 @@ const EXPENSES_KEY = 'everly.expenses.v1';
 const CUSTODY_KEY = 'everly.custody.v1';
 const PREG_DUE_KEY = 'everly.pregDue.v1';
 const CHECKINS_KEY = 'everly.checkins.v1';
+const MAT_BIRTH_KEY = 'everly.maternalBirth.v1';
+const EPDS_KEY = 'everly.epds.v1';
+const RECOVERY_KEY = 'everly.recovery.v1';
 
 function newId() {
   return `${Date.now().toString(36)}-${Math.floor(Math.random() * 1e6).toString(36)}`;
@@ -145,6 +152,14 @@ type DataValue = {
   checkins: PregCheckin[];
   addCheckin: (input: { mood: number; symptoms: string[]; weightKg?: number }) => void;
   deleteCheckin: (id: string) => void;
+  maternalBirth: string | null;
+  setMaternalBirth: (d: string | null) => void;
+  epdsResults: EpdsResult[];
+  addEpdsResult: (input: { total: number; band: string; selfHarmFlag: boolean }) => void;
+  deleteEpdsResult: (id: string) => void;
+  recoveryLogs: RecoveryLog[];
+  addRecoveryLog: (input: { systolic?: number; diastolic?: number; lochia?: Lochia; note?: string }) => void;
+  deleteRecoveryLog: (id: string) => void;
   clearAll: () => void;
 };
 
@@ -167,12 +182,15 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
   const [custody, setCustody] = useState<Custody>({});
   const [dueDate, setDueDateState] = useState<string | null>(null);
   const [checkins, setCheckins] = useState<PregCheckin[]>([]);
+  const [maternalBirth, setMaternalBirthState] = useState<string | null>(null);
+  const [epdsResults, setEpdsResults] = useState<EpdsResult[]>([]);
+  const [recoveryLogs, setRecoveryLogs] = useState<RecoveryLog[]>([]);
 
   useEffect(() => {
     let active = true;
     (async () => {
       try {
-        const [rawE, rawC, rawA, rawEv, rawV, rawM, rawG, rawR, rawCh, rawMs, rawCg, rawEx, rawCu, rawDue, rawCi] = await Promise.all([
+        const [rawE, rawC, rawA, rawEv, rawV, rawM, rawG, rawR, rawCh, rawMs, rawCg, rawEx, rawCu, rawDue, rawCi, rawMb, rawEp, rawRec] = await Promise.all([
           AsyncStorage.getItem(ENTRIES_KEY),
           AsyncStorage.getItem(CHILDREN_KEY),
           AsyncStorage.getItem(ACTIVE_KEY),
@@ -188,6 +206,9 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
           AsyncStorage.getItem(CUSTODY_KEY),
           AsyncStorage.getItem(PREG_DUE_KEY),
           AsyncStorage.getItem(CHECKINS_KEY),
+          AsyncStorage.getItem(MAT_BIRTH_KEY),
+          AsyncStorage.getItem(EPDS_KEY),
+          AsyncStorage.getItem(RECOVERY_KEY),
         ]);
         if (!active) return;
         if (rawE) setEntries(JSON.parse(rawE));
@@ -205,6 +226,9 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
         if (rawCu) setCustody(JSON.parse(rawCu));
         if (rawDue) setDueDateState(JSON.parse(rawDue));
         if (rawCi) setCheckins(JSON.parse(rawCi));
+        if (rawMb) setMaternalBirthState(JSON.parse(rawMb));
+        if (rawEp) setEpdsResults(JSON.parse(rawEp));
+        if (rawRec) setRecoveryLogs(JSON.parse(rawRec));
       } catch {
         // Corrupt/missing cache → start empty. Never crash on storage.
       } finally {
@@ -229,6 +253,9 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
   useEffect(() => { if (!loading) AsyncStorage.setItem(CUSTODY_KEY, JSON.stringify(custody)).catch(() => {}); }, [custody, loading]);
   useEffect(() => { if (!loading) AsyncStorage.setItem(PREG_DUE_KEY, JSON.stringify(dueDate)).catch(() => {}); }, [dueDate, loading]);
   useEffect(() => { if (!loading) AsyncStorage.setItem(CHECKINS_KEY, JSON.stringify(checkins)).catch(() => {}); }, [checkins, loading]);
+  useEffect(() => { if (!loading) AsyncStorage.setItem(MAT_BIRTH_KEY, JSON.stringify(maternalBirth)).catch(() => {}); }, [maternalBirth, loading]);
+  useEffect(() => { if (!loading) AsyncStorage.setItem(EPDS_KEY, JSON.stringify(epdsResults)).catch(() => {}); }, [epdsResults, loading]);
+  useEffect(() => { if (!loading) AsyncStorage.setItem(RECOVERY_KEY, JSON.stringify(recoveryLogs)).catch(() => {}); }, [recoveryLogs, loading]);
 
   const addChild = useCallback((input: { name: string; color: ChildColor; birthDate?: string }) => {
     const child: Child = { id: newId(), name: input.name.trim(), color: input.color, birthDate: input.birthDate?.trim() || undefined };
@@ -349,6 +376,16 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
   }, []);
   const deleteCheckin = useCallback((id: string) => setCheckins((prev) => prev.filter((c) => c.id !== id)), []);
 
+  const setMaternalBirth = useCallback((db: string | null) => setMaternalBirthState(db?.trim() || null), []);
+  const addEpdsResult = useCallback((input: { total: number; band: string; selfHarmFlag: boolean }) => {
+    setEpdsResults((prev) => [{ id: newId(), at: new Date().toISOString(), ...input }, ...prev]);
+  }, []);
+  const deleteEpdsResult = useCallback((id: string) => setEpdsResults((prev) => prev.filter((r) => r.id !== id)), []);
+  const addRecoveryLog = useCallback((input: { systolic?: number; diastolic?: number; lochia?: Lochia; note?: string }) => {
+    setRecoveryLogs((prev) => [{ id: newId(), at: new Date().toISOString(), ...input }, ...prev]);
+  }, []);
+  const deleteRecoveryLog = useCallback((id: string) => setRecoveryLogs((prev) => prev.filter((r) => r.id !== id)), []);
+
   const clearAll = useCallback(() => { setEntries([]); setEvents([]); }, []);
 
   const activeChild = useMemo(() => children.find((c) => c.id === activeId) ?? null, [children, activeId]);
@@ -367,9 +404,10 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
       custody, setCustodyDay,
       expenses, addExpense, toggleExpenseSettled, deleteExpense,
       dueDate, setDueDate, checkins, addCheckin, deleteCheckin,
+      maternalBirth, setMaternalBirth, epdsResults, addEpdsResult, deleteEpdsResult, recoveryLogs, addRecoveryLog, deleteRecoveryLog,
       clearAll,
     }),
-    [loading, children, activeChild, setActiveChild, addChild, updateChild, deleteChild, entries, addEntry, deleteEntry, events, addEvent, deleteEvent, vaccines, addVaccine, updateVaccine, deleteVaccine, medications, addMedication, toggleMedication, deleteMedication, growth, addGrowth, deleteGrowth, routines, addRoutine, addRoutineStep, toggleStep, resetRoutine, deleteRoutine, chores, addChore, toggleChore, deleteChore, milestones, addMilestone, deleteMilestone, caregivers, addCaregiver, deleteCaregiver, custody, setCustodyDay, expenses, addExpense, toggleExpenseSettled, deleteExpense, dueDate, setDueDate, checkins, addCheckin, deleteCheckin, clearAll],
+    [loading, children, activeChild, setActiveChild, addChild, updateChild, deleteChild, entries, addEntry, deleteEntry, events, addEvent, deleteEvent, vaccines, addVaccine, updateVaccine, deleteVaccine, medications, addMedication, toggleMedication, deleteMedication, growth, addGrowth, deleteGrowth, routines, addRoutine, addRoutineStep, toggleStep, resetRoutine, deleteRoutine, chores, addChore, toggleChore, deleteChore, milestones, addMilestone, deleteMilestone, caregivers, addCaregiver, deleteCaregiver, custody, setCustodyDay, expenses, addExpense, toggleExpenseSettled, deleteExpense, dueDate, setDueDate, checkins, addCheckin, deleteCheckin, maternalBirth, setMaternalBirth, epdsResults, addEpdsResult, deleteEpdsResult, recoveryLogs, addRecoveryLog, deleteRecoveryLog, clearAll],
   );
 
   return <DataContext.Provider value={value}>{node}</DataContext.Provider>;

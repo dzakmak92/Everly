@@ -38,6 +38,8 @@ function AppTabs() {
       <Tabs.Screen name="routines" options={{ href: null }} />
       <Tabs.Screen name="coparent" options={{ href: null }} />
       <Tabs.Screen name="pregnancy" options={{ href: null }} />
+      <Tabs.Screen name="maternal" options={{ href: null }} />
+      <Tabs.Screen name="epds" options={{ href: null }} />
       <Tabs.Screen name="child/[id]" options={{ href: null }} />
     </Tabs>
   );
