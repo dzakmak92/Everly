@@ -89,6 +89,7 @@ export default function SettingsTab() {
           {[
             { label: 'Plans & billing', to: '/(app)/plans' },
             { label: 'Pregnancy', to: '/(app)/pregnancy' },
+            { label: 'Mum&Me · You (postpartum)', to: '/(app)/maternal' },
             { label: 'Routines & chores', to: '/(app)/routines' },
             { label: 'Co-parent', to: '/(app)/coparent' },
             { label: 'Kick counter', to: '/(app)/kick-counter' },
