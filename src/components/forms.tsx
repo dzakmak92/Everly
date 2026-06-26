@@ -75,6 +75,9 @@ export function Field({
   keyboardType,
   autoCapitalize = 'none',
   autoComplete,
+  multiline,
+  numberOfLines,
+  monospace,
 }: {
   label: string;
   value: string;
@@ -84,6 +87,9 @@ export function Field({
   keyboardType?: 'default' | 'email-address';
   autoCapitalize?: 'none' | 'sentences' | 'words';
   autoComplete?: 'email' | 'password' | 'name' | 'off';
+  multiline?: boolean;
+  numberOfLines?: number;
+  monospace?: boolean;
 }) {
   return (
     <View style={{ gap: 7 }}>
@@ -107,6 +113,9 @@ export function Field({
         keyboardType={keyboardType}
         autoCapitalize={autoCapitalize}
         autoComplete={autoComplete}
+        multiline={multiline}
+        numberOfLines={numberOfLines}
+        textAlignVertical={multiline ? 'top' : 'center'}
         style={{
           backgroundColor: '#fff',
           borderRadius: radius.tile,
@@ -114,9 +123,10 @@ export function Field({
           borderColor: color.hairline,
           paddingVertical: 14,
           paddingHorizontal: 16,
-          fontFamily: font.body500,
+          fontFamily: monospace ? 'monospace' : font.body500,
           fontSize: 15,
           color: color.ink,
+          minHeight: multiline ? (numberOfLines ?? 5) * 22 + 24 : undefined,
         }}
       />
     </View>
