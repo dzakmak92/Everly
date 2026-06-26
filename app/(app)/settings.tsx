@@ -89,6 +89,7 @@ export default function SettingsTab() {
           {[
             { label: 'Plans & billing', to: '/(app)/plans' },
             { label: 'Routines & chores', to: '/(app)/routines' },
+            { label: 'Co-parent', to: '/(app)/coparent' },
             { label: 'Kick counter', to: '/(app)/kick-counter' },
             { label: 'Contraction timer', to: '/(app)/contractions' },
             { label: 'Browse all designs', to: '/gallery' },
