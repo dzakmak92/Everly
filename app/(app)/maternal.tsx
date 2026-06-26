@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, font, radius, shadow } from '../../src/theme/tokens';
 import { Button, Field } from '../../src/components/forms';
+import { DateField } from '../../src/components/DateField';
 import { ChevronLeft, ChevronRight } from '../../src/components/icons';
 import { useData, type Lochia } from '../../src/lib/store';
 import { BAND_LABEL, CRISIS_RESOURCES, type EpdsBand } from '../../src/lib/epds';
@@ -157,7 +158,7 @@ export default function Maternal() {
         <Pressable onPress={() => setBirthOpen(false)} style={{ flex: 1, backgroundColor: 'rgba(40,18,50,0.35)', justifyContent: 'center', paddingHorizontal: 28 }}>
           <Pressable onPress={() => {}} style={[{ backgroundColor: color.canvas, borderRadius: radius.card, padding: 20, gap: 14 }, shadow.card]}>
             <Text style={{ fontFamily: font.display700, fontSize: 18, color: color.ink }}>Baby's birth date</Text>
-            <Field label="Birth date (YYYY-MM-DD)" value={birthIn} onChangeText={setBirthIn} placeholder="2026-05-12" />
+            <DateField label="Baby's birth date" value={birthIn} onChangeText={setBirthIn} />
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <Button label="Cancel" variant="secondary" onPress={() => setBirthOpen(false)} style={{ flex: 1 }} />
               <Button label="Save" onPress={saveBirth} style={{ flex: 1 }} />

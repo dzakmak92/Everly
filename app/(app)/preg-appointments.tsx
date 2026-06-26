@@ -4,6 +4,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, font, radius, shadow } from '../../src/theme/tokens';
 import { Button, Field } from '../../src/components/forms';
+import { DateField } from '../../src/components/DateField';
 import { ChevronLeft } from '../../src/components/icons';
 import { useData } from '../../src/lib/store';
 
@@ -123,7 +124,7 @@ export default function Appointments() {
               ))}
             </View>
             <Field label="Title" value={title} onChangeText={setTitle} placeholder={kind === 'test' ? 'e.g. GTT blood test' : 'e.g. 6-week GP check'} autoCapitalize="sentences" />
-            <Field label="Date (YYYY-MM-DD)" value={date} onChangeText={setDate} placeholder="2026-07-05" />
+            <DateField label="Date" value={date} onChangeText={setDate} placeholder="Pick a date" />
             {mode === 'pregnancy' && kind === 'test' && <Field label="Result (optional)" value={result} onChangeText={setResult} placeholder="e.g. Normal" autoCapitalize="sentences" />}
             {mode === 'maternal' && <Field label="Prep questions (optional)" value={prep} onChangeText={setPrep} placeholder="e.g. contraception, mood" autoCapitalize="sentences" />}
             <View style={{ flexDirection: 'row', gap: 10 }}>

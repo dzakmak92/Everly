@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, font, radius, shadow, childToken } from '../../src/theme/tokens';
 import { Button, Field, Notice } from '../../src/components/forms';
+import { DateField } from '../../src/components/DateField';
 import { ChevronRight } from '../../src/components/icons';
 import { Silhouette } from '../../src/components/ui';
 import { useData, CHILD_COLORS, type ChildColor } from '../../src/lib/store';
@@ -70,7 +71,7 @@ export default function Family() {
           <Pressable onPress={() => {}} style={[{ backgroundColor: color.canvas, borderRadius: radius.card, padding: 20, gap: 14 }, shadow.card]}>
             <Text style={{ fontFamily: font.display700, fontSize: 18, color: color.ink }}>Add a child</Text>
             <Field label="Name" value={name} onChangeText={setName} placeholder="e.g. Oliver" autoCapitalize="words" />
-            <Field label="Birth date (optional)" value={birth} onChangeText={setBirth} placeholder="YYYY-MM-DD" />
+            <DateField label="Birth date (optional)" value={birth} onChangeText={setBirth} optional />
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
               {CHILD_COLORS.map((k) => {
                 const t = childToken[k]; const sel = k === colorKey;

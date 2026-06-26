@@ -4,6 +4,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, font, radius, shadow, childToken } from '../../src/theme/tokens';
 import { Button, Field } from '../../src/components/forms';
+import { DateField } from '../../src/components/DateField';
 import { ChevronLeft, ChevronRight, Check } from '../../src/components/icons';
 import { useData } from '../../src/lib/store';
 import { useEntitlement } from '../../src/lib/entitlement';
@@ -150,7 +151,7 @@ export default function Preconception() {
         <Pressable onPress={() => setOpen(false)} style={{ flex: 1, backgroundColor: 'rgba(40,18,50,0.35)', justifyContent: 'center', paddingHorizontal: 28 }}>
           <Pressable onPress={() => {}} style={[{ backgroundColor: color.canvas, borderRadius: radius.card, padding: 20, gap: 14 }, shadow.card]}>
             <Text style={{ fontFamily: font.display700, fontSize: 18, color: color.ink }}>Cycle details</Text>
-            <Field label="Last period start (YYYY-MM-DD)" value={lp} onChangeText={setLp} placeholder="2026-06-10" />
+            <DateField label="Last period start" value={lp} onChangeText={setLp} placeholder="Pick last period date" />
             <Field label="Average cycle length (days)" value={cl} onChangeText={setCl} placeholder="28" />
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <Button label="Cancel" variant="secondary" onPress={() => setOpen(false)} style={{ flex: 1 }} />

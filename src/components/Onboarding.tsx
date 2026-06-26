@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, font, radius, childToken } from '../theme/tokens';
 import { Logo } from './Logo';
 import { Button, Field, Notice } from './forms';
+import { DateField } from './DateField';
 import { useData, CHILD_COLORS, type ChildColor } from '../lib/store';
 import { useSupabase } from '../lib/supabase';
 
@@ -70,7 +71,7 @@ export function Onboarding() {
             <Text style={{ fontFamily: font.display700, fontSize: 28, color: color.ink }}>Welcome, {parentName} 👋</Text>
             <Text style={{ fontFamily: font.body400, fontSize: 15, color: color.inkSecondary, lineHeight: 22 }}>Add your first child to get started. Everything stays on your device.</Text>
             <Field label="Name" value={name} onChangeText={setName} placeholder="e.g. Oliver" autoCapitalize="words" />
-            <Field label="Birth date (optional)" value={birthDate} onChangeText={setBirthDate} placeholder="YYYY-MM-DD" />
+            <DateField label="Birth date (optional)" value={birthDate} onChangeText={setBirthDate} optional />
             <View style={{ gap: 10 }}>
               <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 0.8, textTransform: 'uppercase', color: color.muted }}>Colour</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>

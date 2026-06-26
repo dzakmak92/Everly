@@ -9,6 +9,7 @@ import { ageLabel } from '../../src/lib/age';
 import { BAND_LABEL, type EpdsBand } from '../../src/lib/epds';
 import { Silhouette } from '../../src/components/ui';
 import { Star, Heart, Camera, Bottle, Activity, Leaf, Download, Plus, Archive, X, ChevronLeft } from '../../src/components/icons';
+import { DateField } from '../../src/components/DateField';
 
 /* A10 · Lifelong Timeline — unified "Story" screen.
    A subject switcher at the top selects whose story to show:
@@ -445,7 +446,7 @@ function ChildStory({
             </View>
 
             <Field label="Milestone" value={title} onChangeText={setTitle} placeholder="e.g. First smile" autoCapitalize="sentences" />
-            <Field label="Date (YYYY-MM-DD)" value={date} onChangeText={setDate} placeholder="2026-06-25" />
+            <DateField label="Date" value={date} onChangeText={setDate} placeholder="Pick a date" />
             <Field label="Note (optional)" value={note} onChangeText={setNote} placeholder="Anything to remember" autoCapitalize="sentences" />
             <Pressable
               onPress={save}
