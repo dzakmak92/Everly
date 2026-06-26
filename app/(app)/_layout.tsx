@@ -18,9 +18,9 @@ function AppTabs() {
           backgroundColor: '#fff',
           borderTopColor: color.hairline,
           borderTopWidth: 1,
-          height: 66,
+          height: 76,
           paddingTop: 8,
-          paddingBottom: 10,
+          paddingBottom: 18,
         },
         tabBarLabelStyle: { fontFamily: font.body600, fontSize: 11 },
       }}
