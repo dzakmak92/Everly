@@ -2,15 +2,41 @@ import React, { useState } from 'react';
 import { ScrollView, View, Text, Pressable, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { color, font, radius, shadow } from '../../src/theme/tokens';
+import { color, font, radius, shadow, fill } from '../../src/theme/tokens';
 import { Button, Field } from '../../src/components/forms';
 import { DateField } from '../../src/components/DateField';
 import { ProgressBar } from '../../src/components/ui';
-import { ChevronLeft, ChevronRight } from '../../src/components/icons';
+import {
+  ChevronLeft, ChevronRight,
+  BabyBean, Heart, Calendar, Activity, CheckCircle, Shield, Star, Smile,
+} from '../../src/components/icons';
 import { useData } from '../../src/lib/store';
 import { gestFromDueDate, weekContent, dueDateFromLmp, PREG_SYMPTOMS, MOODS } from '../../src/lib/pregnancy';
 
 const num = (s: string) => { const v = parseFloat(s); return isNaN(v) ? undefined : v; };
+
+const Ic = (C: any, c: string) => <C size={19} color={c} />;
+
+/** Icon-led grouped row (matches the More hub style). */
+function ToolRow({ icon, bg, label, sub, onPress, first }: { icon: React.ReactNode; bg: string; label: string; sub: string; onPress: () => void; first: boolean }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 14, paddingHorizontal: 16, borderTopWidth: first ? 0 : 1, borderTopColor: color.hairline, backgroundColor: pressed ? '#FAF9FE' : '#fff' })}
+    >
+      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }}>{icon}</View>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text style={{ fontFamily: font.body700, fontSize: 15, color: color.ink }}>{label}</Text>
+        <Text style={{ fontFamily: font.body400, fontSize: 12.5, color: color.muted, marginTop: 2 }} numberOfLines={1}>{sub}</Text>
+      </View>
+      <ChevronRight size={18} color={color.faint} />
+    </Pressable>
+  );
+}
+
+const SectionLabel = ({ children }: { children: React.ReactNode }) => (
+  <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 1.1, textTransform: 'uppercase', color: color.muted, paddingLeft: 4 }}>{children}</Text>
+);
 
 export default function Pregnancy() {
   const router = useRouter();
@@ -28,6 +54,23 @@ export default function Pregnancy() {
   const gest = gestFromDueDate(dueDate ?? undefined);
   const content = gest ? weekContent(gest.week) : null;
   const weights = checkins.filter((c) => c.weightKg != null);
+
+  const trackTools = gest
+    ? [
+        { icon: Ic(Smile, '#2C8475'), bg: fill.mint, label: 'Daily check-in', sub: 'Log mood, symptoms & weight', fn: () => setCiOpen(true) },
+        { icon: Ic(BabyBean, '#6B6FC9'), bg: fill.lilac, label: 'Week-by-week', sub: "Baby's growth & weekly tips", fn: () => router.push('/(app)/preg-week') },
+        { icon: Ic(Shield, '#B04070'), bg: fill.blush, label: 'Monitoring & when to call', sub: 'Vitals and warning signs', fn: () => router.push('/(app)/preg-vitals') },
+        { icon: Ic(Calendar, '#2C5F90'), bg: fill.sky, label: 'Appointments & tests', sub: 'Scans, screenings & visits', fn: () => router.push('/(app)/preg-appointments') },
+      ]
+    : [];
+  const prepTools = gest
+    ? [
+        { icon: Ic(CheckCircle, '#7A5C20'), bg: fill.butter, label: 'Birth prep', sub: 'Hospital bag & birth plan', fn: () => router.push('/(app)/preg-birthprep') },
+        { icon: Ic(Star, '#6B6FC9'), bg: fill.lilac, label: 'Baby names', sub: 'Explore and shortlist names', fn: () => router.push('/(app)/preg-names') },
+        { icon: Ic(Activity, '#2C8475'), bg: fill.mint, label: 'Labour & movement', sub: 'Kick counter & contractions', fn: () => router.push('/(app)/kick-counter') },
+        { icon: Ic(Heart, '#B04070'), bg: fill.blush, label: 'Care & support', sub: 'Wellbeing and who to lean on', fn: () => router.push('/(app)/preg-care') },
+      ]
+    : [];
 
   function saveDue() {
     const dd = dueIn.trim() || (lmpIn.trim() ? dueDateFromLmp(lmpIn.trim()) : '');
@@ -62,7 +105,7 @@ export default function Pregnancy() {
         </View>
       ) : (
         <>
-          {/* Week card */}
+          {/* Week hero */}
           <View style={[{ backgroundColor: color.maternalTeal, borderRadius: radius.card, padding: 20, gap: 12 }, shadow.card]}>
             <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' }}>
               <View>
@@ -74,36 +117,63 @@ export default function Pregnancy() {
             <ProgressBar pct={Math.round(gest.progress * 100)} colors={['#FFFFFF', '#E0F4EF']} track="rgba(255,255,255,0.25)" />
           </View>
 
-          {/* Baby size */}
+          {/* Overview stats */}
+          <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 18, flexDirection: 'row' }, shadow.card]}>
+            {[
+              { value: String(gest.trimester), label: 'Trimester' },
+              { value: String(gest.daysToGo), label: 'Days to go' },
+              { value: String(checkins.length), label: checkins.length === 1 ? 'Check-in' : 'Check-ins' },
+            ].map((s, i) => (
+              <React.Fragment key={s.label}>
+                {i > 0 && <View style={{ width: 1, backgroundColor: color.hairline, marginVertical: 2 }} />}
+                <View style={{ flex: 1, alignItems: 'center' }}>
+                  <Text style={{ fontFamily: font.display700, fontSize: 22, color: color.ink }}>{s.value}</Text>
+                  <Text style={{ fontFamily: font.body500, fontSize: 11.5, color: color.muted, marginTop: 2, textAlign: 'center' }}>{s.label}</Text>
+                </View>
+              </React.Fragment>
+            ))}
+          </View>
+
+          {/* Baby this week */}
           {content && (
-            <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 18 }, shadow.card]}>
-              <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: color.muted }}>Baby this week</Text>
-              <Text style={{ fontFamily: font.display700, fontSize: 20, color: color.ink, marginTop: 4 }}>Size of a {content.size.toLowerCase()}</Text>
-              <Text style={{ fontFamily: font.body400, fontSize: 13, color: color.inkSecondary, marginTop: 2 }}>
-                {content.lengthCm > 0 ? `~${content.lengthCm} cm` : ''}{content.weightG > 0 ? ` · ~${content.weightG} g` : ''}
-              </Text>
-              <Text style={{ fontFamily: font.body400, fontSize: 13, color: color.inkSecondary, marginTop: 6 }}>{content.note}</Text>
+            <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 18, gap: 14 }, shadow.card]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+                <View style={{ width: 52, height: 52, borderRadius: 16, backgroundColor: fill.lilac, alignItems: 'center', justifyContent: 'center' }}>
+                  <BabyBean size={30} color={color.primary} />
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: color.muted }}>Baby this week</Text>
+                  <Text style={{ fontFamily: font.display700, fontSize: 19, color: color.ink, marginTop: 3 }}>Size of a {content.size.toLowerCase()}</Text>
+                  {(content.lengthCm > 0 || content.weightG > 0) && (
+                    <Text style={{ fontFamily: font.body400, fontSize: 13, color: color.inkSecondary, marginTop: 1 }}>
+                      {content.lengthCm > 0 ? `~${content.lengthCm} cm` : ''}{content.weightG > 0 ? ` · ~${content.weightG} g` : ''}
+                    </Text>
+                  )}
+                </View>
+              </View>
+              <Text style={{ fontFamily: font.body400, fontSize: 13, color: color.inkSecondary }}>{content.note}</Text>
+              <Button label="Log daily check-in" onPress={() => setCiOpen(true)} />
             </View>
           )}
 
-          {/* Tools */}
-          <View style={{ gap: 8 }}>
-            <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: color.muted }}>Tools</Text>
-            {([
-              { label: 'Daily check-in', fn: () => setCiOpen(true) },
-              { label: 'Week-by-week', fn: () => router.push('/(app)/preg-week') },
-              { label: 'Labour & movement', fn: () => router.push('/(app)/kick-counter') },
-              { label: 'Appointments & tests', fn: () => router.push('/(app)/preg-appointments') },
-              { label: 'Birth prep', fn: () => router.push('/(app)/preg-birthprep') },
-              { label: 'Baby names', fn: () => router.push('/(app)/preg-names') },
-              { label: 'Monitoring & when to call', fn: () => router.push('/(app)/preg-vitals') },
-              { label: 'Care & support', fn: () => router.push('/(app)/preg-care') },
-            ] as { label: string; fn: () => void }[]).map(({ label, fn }) => (
-              <Pressable key={label} onPress={fn} style={[{ backgroundColor: '#fff', borderRadius: radius.cardSm, padding: 16, flexDirection: 'row', alignItems: 'center' }, shadow.card]}>
-                <Text style={{ flex: 1, fontFamily: font.body600, fontSize: 15, color: color.ink }}>{label}</Text>
-                <ChevronRight size={18} color={color.faint} />
-              </Pressable>
-            ))}
+          {/* Track tools */}
+          <View style={{ gap: 10 }}>
+            <SectionLabel>Track</SectionLabel>
+            <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, overflow: 'hidden' }, shadow.card]}>
+              {trackTools.map((t, i) => (
+                <ToolRow key={t.label} icon={t.icon} bg={t.bg} label={t.label} sub={t.sub} onPress={t.fn} first={i === 0} />
+              ))}
+            </View>
+          </View>
+
+          {/* Prepare & learn tools */}
+          <View style={{ gap: 10 }}>
+            <SectionLabel>Prepare &amp; learn</SectionLabel>
+            <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, overflow: 'hidden' }, shadow.card]}>
+              {prepTools.map((t, i) => (
+                <ToolRow key={t.label} icon={t.icon} bg={t.bg} label={t.label} sub={t.sub} onPress={t.fn} first={i === 0} />
+              ))}
+            </View>
           </View>
 
           {/* Weight */}
@@ -117,7 +187,7 @@ export default function Pregnancy() {
 
           {/* Recent check-ins */}
           <View style={{ gap: 8 }}>
-            <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: color.muted }}>Recent check-ins</Text>
+            <SectionLabel>Your check-ins</SectionLabel>
             {checkins.length === 0 ? (
               <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 16, alignItems: 'center' }, shadow.card]}>
                 <Text style={{ fontFamily: font.body500, fontSize: 13, color: color.muted }}>No check-ins yet.</Text>
