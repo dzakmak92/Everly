@@ -31,14 +31,21 @@ export default function Routines() {
   const [modal, setModal] = useState<null | 'chore' | 'routine' | { stepFor: string }>(null);
   const [label, setLabel] = useState('');
   const [points, setPoints] = useState('10');
+  const [confirmRedeem, setConfirmRedeem] = useState(false);
 
   const childId = d.activeChild?.id;
   // Scope to the active child when one is selected; otherwise show all.
   const routines = childId ? d.routines.filter((r) => r.childId === childId) : d.routines;
   const chores = childId ? d.chores.filter((c) => c.childId === childId) : d.chores;
 
-  const balance = chores.filter((c) => c.done).reduce((s, c) => s + c.points, 0);
+  const doneChores = chores.filter((c) => c.done);
+  const balance = doneChores.reduce((s, c) => s + c.points, 0);
   const earned = (balance * 0.1).toFixed(2); // simple on-device conversion (€0.10 / pt)
+
+  function redeem() {
+    doneChores.forEach((c) => d.toggleChore(c.id));
+    setConfirmRedeem(false);
+  }
 
   const childName = d.activeChild?.name ?? null;
   const age = d.activeChild?.birthDate ? ageLabel(d.activeChild.birthDate) : null;
@@ -206,14 +213,12 @@ export default function Routines() {
               borderRadius: radius.pill,
               paddingVertical: 10,
               paddingHorizontal: 18,
-              opacity: pressed ? 0.85 : 1,
+              opacity: doneChores.length === 0 ? 0.5 : pressed ? 0.85 : 1,
             },
             shadow.periwinkleButton,
           ]}
-          onPress={() => {
-            // Redeem clears the earned (done) chores so balance starts fresh.
-            chores.filter((c) => c.done).forEach((c) => d.toggleChore(c.id));
-          }}
+          disabled={doneChores.length === 0}
+          onPress={() => setConfirmRedeem(true)}
         >
           <Text style={{ fontFamily: font.body700, fontSize: 13, color: '#fff' }}>Redeem</Text>
         </Pressable>
@@ -239,6 +244,27 @@ export default function Routines() {
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <Button label="Cancel" variant="secondary" onPress={() => setModal(null)} style={{ flex: 1 }} />
               <Button label="Save" onPress={save} style={{ flex: 1 }} />
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Confirm redeem modal */}
+      <Modal visible={confirmRedeem} transparent animationType="fade" onRequestClose={() => setConfirmRedeem(false)}>
+        <Pressable
+          onPress={() => setConfirmRedeem(false)}
+          style={{ flex: 1, backgroundColor: 'rgba(40,18,50,0.35)', justifyContent: 'center', paddingHorizontal: 28 }}
+        >
+          <Pressable onPress={() => {}} style={[{ backgroundColor: color.canvas, borderRadius: radius.card, padding: 20, gap: 14 }, shadow.card]}>
+            <Text style={{ fontFamily: font.display700, fontSize: 18, color: color.ink }}>
+              Redeem {balance} {balance === 1 ? 'point' : 'points'}?
+            </Text>
+            <Text style={{ fontFamily: font.body400, fontSize: 13, color: color.muted, lineHeight: 19 }}>
+              This clears the {doneChores.length} completed {doneChores.length === 1 ? 'chore' : 'chores'} and resets the balance.
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <Button label="Cancel" variant="secondary" onPress={() => setConfirmRedeem(false)} style={{ flex: 1 }} />
+              <Button label="Redeem" onPress={redeem} style={{ flex: 1 }} />
             </View>
           </Pressable>
         </Pressable>

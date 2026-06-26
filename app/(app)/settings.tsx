@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, font, radius, shadow, childToken } from '../../src/theme/tokens';
 import { Button, Field, Notice } from '../../src/components/forms';
-import { ChevronRight, Shield, Star, Plus, Check } from '../../src/components/icons';
+import { ChevronRight, ChevronLeft, Shield, Star, Plus, Check } from '../../src/components/icons';
 import { Silhouette } from '../../src/components/ui';
 import { useSupabase, signOut } from '../../src/lib/supabase';
 import { useData, CHILD_COLORS, type ChildColor } from '../../src/lib/store';
@@ -68,6 +68,9 @@ export default function SettingsTab() {
       contentContainerStyle={{ paddingTop: insets.top + 12, paddingBottom: insets.bottom + 28, paddingHorizontal: 20, gap: 12 }}
       showsVerticalScrollIndicator={false}
     >
+      <Pressable onPress={() => router.back()} hitSlop={8} style={{ width: 40, height: 40, justifyContent: 'center' }}>
+        <ChevronLeft size={24} color={color.ink} />
+      </Pressable>
       <Text style={{ fontFamily: font.display700, fontSize: 24, color: color.ink, marginBottom: 6 }}>Settings</Text>
 
       {/* Account card — avatar + name/email + plan pill */}

@@ -53,7 +53,12 @@ export default function Maternal() {
   function openBirth() { setBirthIn(birth ?? ''); setBirthOpen(true); }
   function saveBirth() { if (birthIn.trim()) d.setMaternalBirth(birthIn.trim()); setBirthIn(''); setBirthOpen(false); }
   function saveRec() {
-    d.addRecoveryLog({ systolic: numI(sys), diastolic: numI(dia), lochia, note });
+    const systolic = numI(sys);
+    const diastolic = numI(dia);
+    const trimmedNote = note.trim();
+    // 'light' is the reset default — treat lochia as provided only if the user changed it.
+    const hasData = systolic != null || diastolic != null || lochia !== 'light' || trimmedNote.length > 0;
+    if (hasData) d.addRecoveryLog({ systolic, diastolic, lochia, note: trimmedNote });
     setSys(''); setDia(''); setLochia('light'); setNote(''); setRecOpen(false);
   }
 
@@ -101,8 +106,8 @@ export default function Maternal() {
       {/* Wellbeing (EPDS) */}
       <Pressable onPress={() => router.push('/(app)/epds')} style={({ pressed }) => [{ backgroundColor: pressed ? '#FAF9FE' : '#fff', borderRadius: radius.card, padding: 18 }, shadow.card]}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-          <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: latestEpds ? BAND_TINT[latestEpds.band as EpdsBand].bg : '#E7E4FB', alignItems: 'center', justifyContent: 'center' }}>
-            <Smile size={20} color={latestEpds ? BAND_TINT[latestEpds.band as EpdsBand].ink : '#6B6FC9'} />
+          <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: latestEpds ? (BAND_TINT[latestEpds.band as EpdsBand] ?? BAND_TINT.low).bg : '#E7E4FB', alignItems: 'center', justifyContent: 'center' }}>
+            <Smile size={20} color={latestEpds ? (BAND_TINT[latestEpds.band as EpdsBand] ?? BAND_TINT.low).ink : '#6B6FC9'} />
           </View>
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text style={{ fontFamily: font.body700, fontSize: 15, color: color.ink }}>Wellbeing check-in</Text>

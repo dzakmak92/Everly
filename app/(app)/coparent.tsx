@@ -30,6 +30,7 @@ export default function CoParent() {
   const [amount, setAmount] = useState('');
   const [paidBy, setPaidBy] = useState('me');
   const [split, setSplit] = useState('50');
+  const [confirmRemove, setConfirmRemove] = useState<{ id: string; name: string } | null>(null);
 
   // Parties to cycle custody through: me + caregivers.
   const parties = [{ id: 'me', name: 'You' }, ...d.caregivers];
@@ -57,6 +58,18 @@ export default function CoParent() {
   }
   const net = owedToMe - iOwe; // >0 → other owes you; <0 → you owe other.
   const settleAmount = Math.abs(net);
+  const hasUnsettled = d.expenses.some((e) => !e.settled);
+
+  // Summary line, robust for 0 and 1 co-parent (the common cases).
+  let balanceLabel: string;
+  if (!hasUnsettled || settleAmount === 0) {
+    balanceLabel = 'All settled';
+  } else if (!otherParent) {
+    // No co-parent on record — can't attribute the balance to a named person.
+    balanceLabel = net > 0 ? `Owed to you ${money(net)}` : `You owe ${money(-net)}`;
+  } else {
+    balanceLabel = net > 0 ? `${otherName} owes ${money(net)}` : `You owe ${money(-net)}`;
+  }
 
   // Gauge split — proportion of the "you paid" side vs the "other owes" side.
   const gaugeTotal = owedToMe + iOwe;
@@ -136,7 +149,7 @@ export default function CoParent() {
         </View>
 
         <Pressable
-          onPress={otherParent ? () => d.deleteCaregiver(otherParent.id) : () => { setCgName(''); setAddCg(true); }}
+          onPress={otherParent ? () => setConfirmRemove({ id: otherParent.id, name: otherParent.name }) : () => { setCgName(''); setAddCg(true); }}
           style={{ alignItems: 'center', gap: 6 }}
         >
           <View style={{ width: 56, height: 56, backgroundColor: PEACH, borderRadius: 28, alignItems: 'center', justifyContent: 'center' }}>
@@ -248,7 +261,7 @@ export default function CoParent() {
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
           <Text style={{ fontFamily: font.body400, fontSize: 11, color: MINT_INK }}>You paid {money(owedToMe)}</Text>
           <Text style={{ fontFamily: font.body700, fontSize: 11, color: PEACH_INK }}>
-            {net === 0 ? 'All settled' : net > 0 ? `${otherName} owes ${money(net)}` : `You owe ${money(-net)}`}
+            {balanceLabel}
           </Text>
         </View>
       </View>
@@ -256,7 +269,7 @@ export default function CoParent() {
       {/* Settle Up CTA */}
       <Pressable
         onPress={settleUp}
-        disabled={settleAmount === 0}
+        disabled={!hasUnsettled}
         style={[
           {
             backgroundColor: color.primary,
@@ -265,13 +278,13 @@ export default function CoParent() {
             borderRadius: 14,
             alignItems: 'center',
             justifyContent: 'center',
-            opacity: settleAmount === 0 ? 0.5 : 1,
+            opacity: !hasUnsettled ? 0.5 : 1,
           },
           shadow.periwinkleButton,
         ]}
       >
         <Text style={{ fontFamily: font.body800, fontSize: 15, color: '#fff' }}>
-          {settleAmount === 0 ? 'All settled' : `Settle Up · ${money(settleAmount)}`}
+          {!hasUnsettled ? 'All settled' : settleAmount === 0 ? 'Settle Up' : `Settle Up · ${money(settleAmount)}`}
         </Text>
       </Pressable>
 
@@ -316,6 +329,22 @@ export default function CoParent() {
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <Button label="Cancel" variant="secondary" onPress={() => setAddEx(false)} style={{ flex: 1 }} />
               <Button label="Add" onPress={saveEx} style={{ flex: 1 }} />
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Confirm remove co-parent modal */}
+      <Modal visible={confirmRemove !== null} transparent animationType="fade" onRequestClose={() => setConfirmRemove(null)}>
+        <Pressable onPress={() => setConfirmRemove(null)} style={{ flex: 1, backgroundColor: 'rgba(40,18,50,0.35)', justifyContent: 'center', paddingHorizontal: 28 }}>
+          <Pressable onPress={() => {}} style={[{ backgroundColor: color.canvas, borderRadius: radius.card, padding: 20, gap: 14 }, shadow.card]}>
+            <Text style={{ fontFamily: font.display700, fontSize: 18, color: color.ink }}>Remove {confirmRemove?.name ?? 'co-parent'}?</Text>
+            <Text style={{ fontFamily: font.body400, fontSize: 13, color: color.muted, lineHeight: 19 }}>
+              This also removes their custody days. This can't be undone.
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <Button label="Cancel" variant="secondary" onPress={() => setConfirmRemove(null)} style={{ flex: 1 }} />
+              <Button label="Remove" onPress={() => { if (confirmRemove) d.deleteCaregiver(confirmRemove.id); setConfirmRemove(null); }} style={{ flex: 1 }} />
             </View>
           </Pressable>
         </Pressable>

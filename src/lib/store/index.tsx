@@ -79,6 +79,9 @@ export type MomCare = { id: string; at: string; kind: 'comfort' | 'sleep' | 'wat
 export type PelvicLog = { id: string; at: string; exercise: string };
 export type MatAppt = { id: string; title: string; at: string; kind: 'appointment' | 'check'; prep?: string };
 
+export type KickSession = { id: string; at: string; count: number; durationMin?: number };
+export type ContractionSession = { id: string; at: string; durationSec: number; intervalSec?: number };
+
 export type TzContact = { id: string; name: string; tz: string; location?: string };
 export type SavedTip = { id: string; at: string; text: string };
 
@@ -132,6 +135,8 @@ const TTC_KEY = 'everly.ttc.v1';
 const PELVIC_KEY = 'everly.pelvic.v1';
 const MOMCARE_KEY = 'everly.momCare.v1';
 const MATAPPT_KEY = 'everly.matAppts.v1';
+const KICKSESSIONS_KEY = 'everly.kickSessions.v1';
+const CONTRACTIONS_KEY = 'everly.contractions.v1';
 
 function newId() {
   return `${Date.now().toString(36)}-${Math.floor(Math.random() * 1e6).toString(36)}`;
@@ -234,6 +239,14 @@ type DataValue = {
   matAppts: MatAppt[];
   addMatAppt: (input: { title: string; at: string; kind: 'appointment' | 'check'; prep?: string }) => void;
   deleteMatAppt: (id: string) => void;
+  kickSessions: KickSession[]; // newest first
+  addKickSession: (input: { count: number; durationMin?: number }) => void;
+  deleteKickSession: (id: string) => void;
+  clearKickSessions: () => void;
+  contractionSessions: ContractionSession[]; // newest first
+  addContraction: (input: { durationSec: number; intervalSec?: number }) => void;
+  deleteContraction: (id: string) => void;
+  clearContractions: () => void;
   clearAll: () => void;
 };
 
@@ -272,12 +285,14 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
   const [momCare, setMomCare] = useState<MomCare[]>([]);
   const [pelvicLog, setPelvicLog] = useState<PelvicLog[]>([]);
   const [matAppts, setMatAppts] = useState<MatAppt[]>([]);
+  const [kickSessions, setKickSessions] = useState<KickSession[]>([]);
+  const [contractionSessions, setContractionSessions] = useState<ContractionSession[]>([]);
 
   useEffect(() => {
     let active = true;
     (async () => {
       try {
-        const [rawE, rawC, rawA, rawEv, rawV, rawM, rawG, rawR, rawCh, rawMs, rawCg, rawEx, rawCu, rawDue, rawCi, rawMb, rawEp, rawRec, rawTz, rawTip, rawBp, rawNm, rawPs, rawPa, rawPv, rawLp, rawCl, rawTtc, rawMc, rawPel, rawMa] = await Promise.all([
+        const [rawE, rawC, rawA, rawEv, rawV, rawM, rawG, rawR, rawCh, rawMs, rawCg, rawEx, rawCu, rawDue, rawCi, rawMb, rawEp, rawRec, rawTz, rawTip, rawBp, rawNm, rawPs, rawPa, rawPv, rawLp, rawCl, rawTtc, rawMc, rawPel, rawMa, rawKs, rawCon] = await Promise.all([
           AsyncStorage.getItem(ENTRIES_KEY),
           AsyncStorage.getItem(CHILDREN_KEY),
           AsyncStorage.getItem(ACTIVE_KEY),
@@ -309,6 +324,8 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
           AsyncStorage.getItem(MOMCARE_KEY),
           AsyncStorage.getItem(PELVIC_KEY),
           AsyncStorage.getItem(MATAPPT_KEY),
+          AsyncStorage.getItem(KICKSESSIONS_KEY),
+          AsyncStorage.getItem(CONTRACTIONS_KEY),
         ]);
         if (!active) return;
         if (rawE) setEntries(JSON.parse(rawE));
@@ -342,6 +359,8 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
         if (rawMc) setMomCare(JSON.parse(rawMc));
         if (rawPel) setPelvicLog(JSON.parse(rawPel));
         if (rawMa) setMatAppts(JSON.parse(rawMa));
+        if (rawKs) setKickSessions(JSON.parse(rawKs));
+        if (rawCon) setContractionSessions(JSON.parse(rawCon));
       } catch {
         // Corrupt/missing cache → start empty. Never crash on storage.
       } finally {
@@ -382,6 +401,8 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
   useEffect(() => { if (!loading) AsyncStorage.setItem(MOMCARE_KEY, JSON.stringify(momCare)).catch(() => {}); }, [momCare, loading]);
   useEffect(() => { if (!loading) AsyncStorage.setItem(PELVIC_KEY, JSON.stringify(pelvicLog)).catch(() => {}); }, [pelvicLog, loading]);
   useEffect(() => { if (!loading) AsyncStorage.setItem(MATAPPT_KEY, JSON.stringify(matAppts)).catch(() => {}); }, [matAppts, loading]);
+  useEffect(() => { if (!loading) AsyncStorage.setItem(KICKSESSIONS_KEY, JSON.stringify(kickSessions)).catch(() => {}); }, [kickSessions, loading]);
+  useEffect(() => { if (!loading) AsyncStorage.setItem(CONTRACTIONS_KEY, JSON.stringify(contractionSessions)).catch(() => {}); }, [contractionSessions, loading]);
 
   const addChild = useCallback((input: { name: string; color: ChildColor; birthDate?: string }) => {
     const child: Child = { id: newId(), name: input.name.trim(), color: input.color, birthDate: input.birthDate?.trim() || undefined };
@@ -552,6 +573,18 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
   }, []);
   const deleteMatAppt = useCallback((id: string) => setMatAppts((prev) => prev.filter((a) => a.id !== id)), []);
 
+  const addKickSession = useCallback((input: { count: number; durationMin?: number }) => {
+    setKickSessions((prev) => [{ id: newId(), at: new Date().toISOString(), count: input.count, durationMin: input.durationMin }, ...prev]);
+  }, []);
+  const deleteKickSession = useCallback((id: string) => setKickSessions((prev) => prev.filter((s) => s.id !== id)), []);
+  const clearKickSessions = useCallback(() => setKickSessions([]), []);
+
+  const addContraction = useCallback((input: { durationSec: number; intervalSec?: number }) => {
+    setContractionSessions((prev) => [{ id: newId(), at: new Date().toISOString(), durationSec: input.durationSec, intervalSec: input.intervalSec }, ...prev]);
+  }, []);
+  const deleteContraction = useCallback((id: string) => setContractionSessions((prev) => prev.filter((s) => s.id !== id)), []);
+  const clearContractions = useCallback(() => setContractionSessions([]), []);
+
   const clearAll = useCallback(() => { setEntries([]); setEvents([]); }, []);
 
   const activeChild = useMemo(() => children.find((c) => c.id === activeId) ?? null, [children, activeId]);
@@ -582,9 +615,11 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
       momCare, addMomCare, deleteMomCare,
       pelvicLog, addPelvic,
       matAppts, addMatAppt, deleteMatAppt,
+      kickSessions, addKickSession, deleteKickSession, clearKickSessions,
+      contractionSessions, addContraction, deleteContraction, clearContractions,
       clearAll,
     }),
-    [loading, children, activeChild, setActiveChild, addChild, updateChild, deleteChild, entries, addEntry, deleteEntry, events, addEvent, deleteEvent, vaccines, addVaccine, updateVaccine, deleteVaccine, medications, addMedication, toggleMedication, deleteMedication, growth, addGrowth, deleteGrowth, routines, addRoutine, addRoutineStep, toggleStep, resetRoutine, deleteRoutine, chores, addChore, toggleChore, deleteChore, milestones, addMilestone, deleteMilestone, caregivers, addCaregiver, deleteCaregiver, custody, setCustodyDay, expenses, addExpense, toggleExpenseSettled, deleteExpense, dueDate, setDueDate, checkins, addCheckin, deleteCheckin, maternalBirth, setMaternalBirth, epdsResults, addEpdsResult, deleteEpdsResult, recoveryLogs, addRecoveryLog, deleteRecoveryLog, tzContacts, addTzContact, deleteTzContact, savedTips, saveTip, deleteTip, birthPrep, addBirthPrep, toggleBirthPrep, deleteBirthPrep, savedNames, saveName, deleteName, pregStatus, setPregStatus, pregAppts, addPregAppt, deletePregAppt, pregVitals, addPregVital, deletePregVital, lastPeriod, setLastPeriod, cycleLength, setCycleLength, ttcItems, addTtc, toggleTtc, deleteTtc, momCare, addMomCare, deleteMomCare, pelvicLog, addPelvic, matAppts, addMatAppt, deleteMatAppt, clearAll],
+    [loading, children, activeChild, setActiveChild, addChild, updateChild, deleteChild, entries, addEntry, deleteEntry, events, addEvent, deleteEvent, vaccines, addVaccine, updateVaccine, deleteVaccine, medications, addMedication, toggleMedication, deleteMedication, growth, addGrowth, deleteGrowth, routines, addRoutine, addRoutineStep, toggleStep, resetRoutine, deleteRoutine, chores, addChore, toggleChore, deleteChore, milestones, addMilestone, deleteMilestone, caregivers, addCaregiver, deleteCaregiver, custody, setCustodyDay, expenses, addExpense, toggleExpenseSettled, deleteExpense, dueDate, setDueDate, checkins, addCheckin, deleteCheckin, maternalBirth, setMaternalBirth, epdsResults, addEpdsResult, deleteEpdsResult, recoveryLogs, addRecoveryLog, deleteRecoveryLog, tzContacts, addTzContact, deleteTzContact, savedTips, saveTip, deleteTip, birthPrep, addBirthPrep, toggleBirthPrep, deleteBirthPrep, savedNames, saveName, deleteName, pregStatus, setPregStatus, pregAppts, addPregAppt, deletePregAppt, pregVitals, addPregVital, deletePregVital, lastPeriod, setLastPeriod, cycleLength, setCycleLength, ttcItems, addTtc, toggleTtc, deleteTtc, momCare, addMomCare, deleteMomCare, pelvicLog, addPelvic, matAppts, addMatAppt, deleteMatAppt, kickSessions, addKickSession, deleteKickSession, clearKickSessions, contractionSessions, addContraction, deleteContraction, clearContractions, clearAll],
   );
 
   return <DataContext.Provider value={value}>{node}</DataContext.Provider>;

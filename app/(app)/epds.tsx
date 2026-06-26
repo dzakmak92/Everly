@@ -75,7 +75,7 @@ export default function Epds() {
           <ChevronLeft size={24} color={color.ink} />
         </Pressable>
         <View style={{ flex: 1 }}>
-          <ProgressBar pct={Math.round(((i) / 10) * 100)} colors={['#3A9B8A', '#2C8475']} />
+          <ProgressBar pct={Math.round(((i + 1) / 10) * 100)} colors={['#3A9B8A', '#2C8475']} />
         </View>
       </View>
 

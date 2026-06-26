@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 import { color, font, radius, shadow, childToken } from '../../src/theme/tokens';
 import { Silhouette } from '../../src/components/ui';
-import { Shield, Syringe, Activity, Check, ChevronRight } from '../../src/components/icons';
+import { Shield, Syringe, Activity, Check, ChevronRight, ChevronLeft } from '../../src/components/icons';
 import { PremiumGate } from '../../src/components/PremiumGate';
 import { useData, type Child, type Vaccine, type Medication, type Growth } from '../../src/lib/store';
 
@@ -85,6 +85,9 @@ export default function HealthTab() {
       showsVerticalScrollIndicator={false}
     >
       {/* header */}
+      <Pressable onPress={() => router.back()} hitSlop={8} style={{ width: 40, height: 40, justifyContent: 'center' }}>
+        <ChevronLeft size={24} color={c.ink} />
+      </Pressable>
       <View style={{ paddingHorizontal: 2 }}>
         <Text style={{ fontFamily: f.display700, fontSize: 26, color: c.ink }}>Health</Text>
         <Text style={{ fontFamily: f.body400, fontSize: 13, color: c.muted, marginTop: 4 }}>

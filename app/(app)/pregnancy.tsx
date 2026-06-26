@@ -42,11 +42,13 @@ const SectionLabel = ({ children }: { children: React.ReactNode }) => (
 export default function Pregnancy() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { dueDate, setDueDate, checkins, addCheckin, deleteCheckin } = useData();
+  const { dueDate, setDueDate, setMaternalBirth, checkins, addCheckin, deleteCheckin } = useData();
 
   const [dueOpen, setDueOpen] = useState(false);
   const [dueIn, setDueIn] = useState('');
   const [lmpIn, setLmpIn] = useState('');
+  const [arrivedOpen, setArrivedOpen] = useState(false);
+  const [birthIn, setBirthIn] = useState('');
   const [ciOpen, setCiOpen] = useState(false);
   const [mood, setMood] = useState(2);
   const [symptoms, setSymptoms] = useState<string[]>([]);
@@ -73,6 +75,9 @@ export default function Pregnancy() {
       ]
     : [];
 
+  function confirmArrived() {
+    if (birthIn.trim()) { setMaternalBirth(birthIn.trim()); setArrivedOpen(false); router.replace('/(app)/maternal' as any); }
+  }
   function saveDue() {
     const dd = dueIn.trim() || (lmpIn.trim() ? dueDateFromLmp(lmpIn.trim()) : '');
     if (dd) setDueDate(dd);
@@ -206,8 +211,37 @@ export default function Pregnancy() {
               </View>
             ))}
           </View>
+
+          {/* Manual handoff to postpartum */}
+          <Pressable onPress={() => { setBirthIn(new Date().toISOString().slice(0, 10)); setArrivedOpen(true); }} style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1 }]}>
+            <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1.5, borderColor: color.maternalTeal }, shadow.card]}>
+              <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: '#E0F4EF', alignItems: 'center', justifyContent: 'center' }}>
+                <CheckCircle size={22} color={color.maternalTeal} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: font.body700, fontSize: 14.5, color: color.tealInk }}>Baby has arrived 🎉</Text>
+                <Text style={{ fontFamily: font.body400, fontSize: 12.5, color: color.muted, marginTop: 2 }}>Move into your postpartum journey</Text>
+              </View>
+              <ChevronRight size={16} color={color.maternalTeal} />
+            </View>
+          </Pressable>
         </>
       )}
+
+      {/* Baby-arrived modal */}
+      <Modal visible={arrivedOpen} transparent animationType="fade" onRequestClose={() => setArrivedOpen(false)}>
+        <Pressable onPress={() => setArrivedOpen(false)} style={{ flex: 1, backgroundColor: 'rgba(40,18,50,0.35)', justifyContent: 'center', paddingHorizontal: 28 }}>
+          <Pressable onPress={() => {}} style={[{ backgroundColor: color.canvas, borderRadius: radius.card, padding: 20, gap: 14 }, shadow.card]}>
+            <Text style={{ fontFamily: font.display700, fontSize: 18, color: color.ink }}>Baby has arrived 🎉</Text>
+            <Text style={{ fontFamily: font.body400, fontSize: 13, color: color.inkSecondary }}>Set the birth date to move Mum&Me into your postpartum journey. Your pregnancy stays saved as history.</Text>
+            <DateField label="Baby's birth date" value={birthIn} onChangeText={setBirthIn} />
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <Button label="Cancel" variant="secondary" onPress={() => setArrivedOpen(false)} style={{ flex: 1 }} />
+              <Button label="Confirm" onPress={confirmArrived} style={{ flex: 1 }} />
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       {/* Due date modal */}
       <Modal visible={dueOpen} transparent animationType="fade" onRequestClose={() => setDueOpen(false)}>
@@ -221,6 +255,11 @@ export default function Pregnancy() {
               <Button label="Cancel" variant="secondary" onPress={() => setDueOpen(false)} style={{ flex: 1 }} />
               <Button label="Save" onPress={saveDue} style={{ flex: 1 }} />
             </View>
+            {dueDate && (
+              <Pressable onPress={() => { setDueDate(null); setDueIn(''); setLmpIn(''); setDueOpen(false); }} style={{ alignItems: 'center', paddingTop: 2 }}>
+                <Text style={{ fontFamily: font.body700, fontSize: 13, color: color.rose }}>Remove due date</Text>
+              </Pressable>
+            )}
           </Pressable>
         </Pressable>
       </Modal>

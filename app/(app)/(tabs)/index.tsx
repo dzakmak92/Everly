@@ -355,11 +355,13 @@ function ChildPill({ child, active, onPress, onLong }: { child: Child; active: b
 /* ── You (maternity) journey ────────────────────────────────────────────── */
 
 const PP_MS = 86400000;
+/** Parse a YYYY-MM-DD as local midnight (avoids a UTC off-by-one). */
+const ppTime = (d: string) => new Date(d.length <= 10 ? `${d}T00:00:00` : d).getTime();
 
 /** Status label for the People-row "You" pill. */
 function youStatusLabel(dueDate: string | null, maternalBirth: string | null): string {
   if (maternalBirth) {
-    const days = Math.max(0, Math.floor((Date.now() - new Date(maternalBirth).getTime()) / PP_MS));
+    const days = Math.max(0, Math.floor((Date.now() - ppTime(maternalBirth)) / PP_MS));
     return `Week ${Math.floor(days / 7)} pp`;
   }
   const g = gestFromDueDate(dueDate ?? undefined);
@@ -402,7 +404,7 @@ function MaternityView({
 
   // Hero numbers.
   const gest = gestFromDueDate(dueDate ?? undefined);
-  const ppDays = maternalBirth ? Math.max(0, Math.floor((now - new Date(maternalBirth).getTime()) / PP_MS)) : 0;
+  const ppDays = maternalBirth ? Math.max(0, Math.floor((now - ppTime(maternalBirth)) / PP_MS)) : 0;
   const ppWeeks = Math.floor(ppDays / 7);
 
   // Feature tiles per phase (2-column grid).
@@ -446,34 +448,27 @@ function MaternityView({
         })}
       </View>
 
-      {/* Teal hero */}
-      <Pressable onPress={() => router.push((phase === 'pregnancy' ? '/(app)/pregnancy' : '/(app)/maternal') as any)}>
-        <View style={[{ backgroundColor: color.maternalTeal, borderRadius: radius.card, padding: 20, gap: 14 }, shadow.card]}>
-          <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-            <View style={{ flex: 1 }}>
-              {phase === 'pregnancy' ? (
-                <>
-                  <Text style={{ fontFamily: font.display700, fontSize: 24, color: '#fff' }}>{gest ? `Week ${gest.week}` : 'Pregnancy'}</Text>
-                  <Text style={{ fontFamily: font.body500, fontSize: 13, color: 'rgba(255,255,255,0.85)', marginTop: 4 }}>
-                    {gest ? `${gest.daysToGo} days to go · Trimester ${gest.trimester}` : 'Add a due date to begin'}
-                  </Text>
-                </>
-              ) : (
-                <>
-                  <Text style={{ fontFamily: font.display700, fontSize: 24, color: '#fff' }}>{maternalBirth ? `Week ${ppWeeks} postpartum` : 'Postpartum'}</Text>
-                  <Text style={{ fontFamily: font.body500, fontSize: 13, color: 'rgba(255,255,255,0.85)', marginTop: 4 }}>
-                    {maternalBirth ? `Day ${ppDays} · Fourth trimester` : 'Unlocks after your baby arrives'}
-                  </Text>
-                </>
-              )}
-            </View>
-            <Text style={{ fontFamily: font.body700, fontSize: 13, color: '#fff' }}>Open →</Text>
-          </View>
-          {phase === 'pregnancy' && gest && (
-            <ProgressBar pct={Math.round(gest.progress * 100)} track="rgba(255,255,255,0.25)" colors={['#FFFFFF', '#E0F4EF']} />
-          )}
-        </View>
-      </Pressable>
+      {/* Teal status hero (non-navigating — the feature tiles below are the way in) */}
+      <View style={[{ backgroundColor: color.maternalTeal, borderRadius: radius.card, padding: 20, gap: 14 }, shadow.card]}>
+        {phase === 'pregnancy' ? (
+          <>
+            <Text style={{ fontFamily: font.display700, fontSize: 24, color: '#fff' }}>{gest ? `Week ${gest.week}` : 'Pregnancy'}</Text>
+            <Text style={{ fontFamily: font.body500, fontSize: 13, color: 'rgba(255,255,255,0.85)', marginTop: 4 }}>
+              {gest ? `${gest.daysToGo} days to go · Trimester ${gest.trimester}` : 'Add a due date to begin'}
+            </Text>
+          </>
+        ) : (
+          <>
+            <Text style={{ fontFamily: font.display700, fontSize: 24, color: '#fff' }}>{maternalBirth ? `Week ${ppWeeks} postpartum` : 'Postpartum'}</Text>
+            <Text style={{ fontFamily: font.body500, fontSize: 13, color: 'rgba(255,255,255,0.85)', marginTop: 4 }}>
+              {maternalBirth ? `Day ${ppDays} · Fourth trimester` : 'Unlocks after your baby arrives'}
+            </Text>
+          </>
+        )}
+        {phase === 'pregnancy' && gest && (
+          <ProgressBar pct={Math.round(gest.progress * 100)} track="rgba(255,255,255,0.25)" colors={['#FFFFFF', '#E0F4EF']} />
+        )}
+      </View>
 
       {/* Feature grid */}
       <View style={{ gap: 10 }}>
