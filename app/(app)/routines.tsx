@@ -8,6 +8,7 @@ import { ChevronLeft, Check, Star, Plus } from '../../src/components/icons';
 import { Silhouette } from '../../src/components/ui';
 import { useData } from '../../src/lib/store';
 import type { Routine } from '../../src/lib/store';
+import { ageLabel } from '../../src/lib/age';
 
 type Tab = 'morning' | 'evening' | 'chores';
 
@@ -21,18 +22,6 @@ const TILE_TOKENS = [
   childToken.peach,
   childToken.sage,
 ];
-
-/** Whole-number age in years from an ISO birthDate (YYYY-MM-DD). */
-function ageYears(birthDate?: string): number | null {
-  if (!birthDate) return null;
-  const d = new Date(birthDate);
-  if (isNaN(d.getTime())) return null;
-  const now = new Date();
-  let yrs = now.getFullYear() - d.getFullYear();
-  const m = now.getMonth() - d.getMonth();
-  if (m < 0 || (m === 0 && now.getDate() < d.getDate())) yrs -= 1;
-  return yrs >= 0 ? yrs : null;
-}
 
 export default function Routines() {
   const router = useRouter();
@@ -52,7 +41,7 @@ export default function Routines() {
   const earned = (balance * 0.1).toFixed(2); // simple on-device conversion (€0.10 / pt)
 
   const childName = d.activeChild?.name ?? null;
-  const age = ageYears(d.activeChild?.birthDate);
+  const age = d.activeChild?.birthDate ? ageLabel(d.activeChild.birthDate) : null;
 
   // Tab → matching routine by name keyword. The first match wins.
   const period = tab === 'morning' ? 'morning' : 'evening';
@@ -142,7 +131,7 @@ export default function Routines() {
             </View>
             <Text style={{ fontFamily: font.body700, fontSize: 11, color: color.primary }}>
               {childName}
-              {age != null ? ` · ${age}yr` : ''}
+              {age != null ? ` · ${age}` : ''}
             </Text>
           </View>
         ) : null}

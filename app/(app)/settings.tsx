@@ -125,8 +125,8 @@ export default function SettingsTab() {
                 opacity: pressed ? 0.7 : 1,
               })}
             >
-              <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: t.fill, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ fontFamily: font.body700, fontSize: 14, color: t.stroke }}>{ch.name.charAt(0).toUpperCase()}</Text>
+              <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: t.fill, alignItems: 'center', justifyContent: 'center' }}>
+                <Silhouette size={18} fill={t.stroke} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontFamily: font.body700, fontSize: 13, color: color.ink }}>{ch.name}</Text>
