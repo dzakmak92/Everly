@@ -40,6 +40,10 @@ function AppTabs() {
       <Tabs.Screen name="pregnancy" options={{ href: null }} />
       <Tabs.Screen name="maternal" options={{ href: null }} />
       <Tabs.Screen name="epds" options={{ href: null }} />
+      <Tabs.Screen name="digest" options={{ href: null }} />
+      <Tabs.Screen name="timezones" options={{ href: null }} />
+      <Tabs.Screen name="insights" options={{ href: null }} />
+      <Tabs.Screen name="quick-add" options={{ href: null }} />
       <Tabs.Screen name="child/[id]" options={{ href: null }} />
     </Tabs>
   );
