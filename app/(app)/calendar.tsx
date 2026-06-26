@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { ScrollView, View, Text, Pressable, Modal } from 'react-native';
+import { ScrollView, View, Text, Pressable, Modal, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, font, radius, shadow, fill } from '../../src/theme/tokens';
-import { ChevronLeft, ChevronRight, Calendar, Shield, Activity, Heart, X } from '../../src/components/icons';
+import { ChevronLeft, ChevronRight, Calendar, Shield, Activity, Heart, X, Search } from '../../src/components/icons';
 import { Button, Field } from '../../src/components/forms';
 import { useData, ENTRY_META, entryDetail, EntryKind, EventItem, Entry } from '../../src/lib/store';
+import { useWeather, WeatherGlyph, searchCity, wxColor, type WxLocation, type DayWx } from '../../src/lib/weather';
 
 /* Calendar — Monday-start month grid, view-mode pills, today-filled cell,
  * per-category dots, and rich selected-day rows. Design parity with A04. */
@@ -43,6 +44,7 @@ function entryTile(kind: EntryKind): { bg: string; stroke: string; Icon: typeof 
 export default function CalendarTab() {
   const insets = useSafeAreaInsets();
   const { entries, events, addEvent, deleteEvent, activeChild } = useData();
+  const wx = useWeather();
 
   const now = new Date();
   const [view, setView] = useState({ y: now.getFullYear(), m: now.getMonth() });
@@ -51,6 +53,7 @@ export default function CalendarTab() {
   const [addOpen, setAddOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [time, setTime] = useState('09:00');
+  const [wxOpen, setWxOpen] = useState(false);
 
   const selKey = key(sel.y, sel.m, sel.d);
   const entryDays = new Set(entries.map((e) => dkey(e.at)));
@@ -148,6 +151,7 @@ export default function CalendarTab() {
             todayKey={todayKey}
             entryDays={entryDays}
             eventDays={eventDays}
+            wxForDate={wx.wxForDate}
             onSelect={(d) => setSel({ y: view.y, m: view.m, d })}
           />
         ) : (
@@ -167,9 +171,12 @@ export default function CalendarTab() {
         <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 1.1, textTransform: 'uppercase', color: color.muted }}>
           {selIsToday ? 'Today · ' : ''}{selDateLabel}
         </Text>
-        <Pressable onPress={() => setAddOpen(true)} hitSlop={8} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-          <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.primary }}>+ Event</Text>
-        </Pressable>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <WeatherChip wx={wx} selDate={new Date(sel.y, sel.m, sel.d)} onPress={() => setWxOpen(true)} />
+          <Pressable onPress={() => setAddOpen(true)} hitSlop={8}>
+            <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.primary }}>+ Event</Text>
+          </Pressable>
+        </View>
       </View>
 
       {/* Events */}
@@ -206,7 +213,97 @@ export default function CalendarTab() {
           </Pressable>
         </Pressable>
       </Modal>
+
+      {/* Weather location modal */}
+      <WeatherModal visible={wxOpen} wx={wx} onClose={() => setWxOpen(false)} />
     </ScrollView>
+  );
+}
+
+/* ── weather chip + location modal ──────────────────────────────────────── */
+
+function WeatherChip({ wx, selDate, onPress }: { wx: ReturnType<typeof useWeather>; selDate: Date; onPress: () => void }) {
+  if (!wx.location) {
+    return (
+      <Pressable onPress={onPress} hitSlop={8} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+        <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.muted }}>+ Weather</Text>
+      </Pressable>
+    );
+  }
+  const d: DayWx | null = wx.wxForDate(selDate) ?? wx.today;
+  return (
+    <Pressable onPress={onPress} hitSlop={8} style={[{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#fff', borderRadius: radius.pill, paddingVertical: 5, paddingHorizontal: 10 }, shadow.card]}>
+      {d ? <WeatherGlyph code={d.code} size={16} /> : null}
+      <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.inkSecondary }}>
+        {d ? `${d.tMax}°` : wx.location.name}
+      </Text>
+      <Text style={{ fontFamily: font.body400, fontSize: 11, color: color.muted }} numberOfLines={1}>{wx.location.name}</Text>
+    </Pressable>
+  );
+}
+
+function WeatherModal({ visible, wx, onClose }: { visible: boolean; wx: ReturnType<typeof useWeather>; onClose: () => void }) {
+  const [q, setQ] = useState('');
+  const [results, setResults] = useState<WxLocation[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+
+  async function run() {
+    if (!q.trim()) return;
+    setBusy(true); setErr(''); setResults([]);
+    try { setResults(await searchCity(q)); }
+    catch { setErr('Search failed — check your connection.'); }
+    finally { setBusy(false); }
+  }
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: 'rgba(40,18,50,0.35)', justifyContent: 'center', paddingHorizontal: 28 }}>
+        <Pressable onPress={() => {}} style={[{ backgroundColor: color.canvas, borderRadius: radius.card, padding: 20, gap: 14, maxHeight: '70%' }, shadow.card]}>
+          <Text style={{ fontFamily: font.display700, fontSize: 18, color: color.ink }}>Weather location</Text>
+          <Text style={{ fontFamily: font.body400, fontSize: 12.5, color: color.muted, lineHeight: 18 }}>
+            Pick a city to show the forecast on your calendar. Only the city is sent — never your personal data.
+          </Text>
+
+          {wx.location ? (
+            <View style={[{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#fff', borderRadius: radius.cardSm, padding: 12 }, shadow.card]}>
+              {wx.today ? <WeatherGlyph code={wx.today.code} size={20} /> : null}
+              <Text style={{ flex: 1, fontFamily: font.body700, fontSize: 14, color: color.ink }}>
+                {wx.location.name}{wx.location.admin ? `, ${wx.location.admin}` : ''}
+              </Text>
+              <Pressable onPress={() => { wx.setLocation(null); }} hitSlop={8}><Text style={{ fontFamily: font.body700, fontSize: 12, color: color.rose }}>Remove</Text></Pressable>
+            </View>
+          ) : null}
+
+          <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-end' }}>
+            <View style={{ flex: 1 }}>
+              <Field label="Search city" value={q} onChangeText={setQ} placeholder="e.g. Dublin" autoCapitalize="words" />
+            </View>
+            <Pressable onPress={run} style={{ backgroundColor: color.primary, borderRadius: radius.tile, paddingHorizontal: 14, height: 46, alignItems: 'center', justifyContent: 'center' }}>
+              <Search size={18} color="#fff" />
+            </Pressable>
+          </View>
+
+          {busy ? <ActivityIndicator color={color.primary} /> : null}
+          {err ? <Text style={{ fontFamily: font.body500, fontSize: 12, color: color.rose }}>{err}</Text> : null}
+
+          <ScrollView style={{ maxHeight: 220 }} keyboardShouldPersistTaps="handled">
+            <View style={{ gap: 8 }}>
+              {results.map((r, i) => (
+                <Pressable key={`${r.lat},${r.lon},${i}`} onPress={() => { wx.setLocation(r); onClose(); }} style={[{ backgroundColor: '#fff', borderRadius: radius.cardSm, padding: 13 }, shadow.card]}>
+                  <Text style={{ fontFamily: font.body700, fontSize: 14, color: color.ink }}>{r.name}</Text>
+                  <Text style={{ fontFamily: font.body400, fontSize: 12, color: color.muted, marginTop: 2 }}>
+                    {[r.admin, r.country].filter(Boolean).join(' · ')}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </ScrollView>
+
+          <Button label="Done" variant="secondary" onPress={onClose} />
+        </Pressable>
+      </Pressable>
+    </Modal>
   );
 }
 
@@ -236,6 +333,7 @@ function MonthGrid({
   todayKey,
   entryDays,
   eventDays,
+  wxForDate,
   onSelect,
 }: {
   cells: (number | null)[];
@@ -244,6 +342,7 @@ function MonthGrid({
   todayKey: string;
   entryDays: Set<string>;
   eventDays: Set<string>;
+  wxForDate: (d: Date) => DayWx | null;
   onSelect: (d: number) => void;
 }) {
   return (
@@ -266,8 +365,9 @@ function MonthGrid({
           const isToday = k === todayKey;
           const hasEntry = entryDays.has(k);
           const hasEvent = eventDays.has(k);
+          const dayWx = wxForDate(new Date(view.y, view.m, d));
           return (
-            <Pressable key={k} onPress={() => onSelect(d)} style={{ width: `${100 / 7}%`, height: 46, alignItems: 'center', justifyContent: 'center' }}>
+            <Pressable key={k} onPress={() => onSelect(d)} style={{ width: `${100 / 7}%`, height: 52, alignItems: 'center', justifyContent: 'flex-start', paddingTop: 1 }}>
               <View
                 style={{
                   width: 30,
@@ -290,7 +390,8 @@ function MonthGrid({
                   {d}
                 </Text>
               </View>
-              <View style={{ flexDirection: 'row', gap: 2, marginTop: 2, height: 5 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 1, height: 16 }}>
+                {dayWx ? <WeatherGlyph code={dayWx.code} size={13} /> : null}
                 {hasEvent ? <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: EVENT_COLOR }} /> : null}
                 {hasEntry ? <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: ENTRY_COLOR }} /> : null}
               </View>

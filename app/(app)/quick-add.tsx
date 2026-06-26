@@ -1,21 +1,82 @@
 import React, { useState } from 'react';
-import { ScrollView, View, Text, Pressable } from 'react-native';
-import { useRouter } from 'expo-router';
+import { ScrollView, View, Text, Pressable, Modal, TextInput } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { color, font, radius, shadow } from '../../src/theme/tokens';
-import { Button, Field, Notice } from '../../src/components/forms';
-import { ChevronLeft } from '../../src/components/icons';
-import { useData, entryDetail, ENTRY_META, type EntryKind, type EntryDetails, type FeedSide, type DiaperType } from '../../src/lib/store';
+import { Button, Field } from '../../src/components/forms';
+import { ChevronLeft, Bottle, Clock } from '../../src/components/icons';
+import { Silhouette } from '../../src/components/ui';
+import {
+  useData, entriesOn, entryDetail, ENTRY_META,
+  type Entry, type EntryKind, type EntryDetails, type FeedSide, type DiaperType,
+} from '../../src/lib/store';
 
-const EXAMPLES = ['feed left 12', 'feed bottle 120', 'sleep 45', 'diaper wet', 'pump 90', 'note teething today'];
+/* ── inline glyphs (no new icon imports) ─────────────────────────────────── */
+function Moon({ size = 20, color: c = '#9C9AB2' }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+    </Svg>
+  );
+}
+function Sun({ size = 20, color: c = '#C9A33B' }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M12 2v2M12 20v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2 12h2M20 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4" />
+      <Path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z" />
+    </Svg>
+  );
+}
+function DiaperGlyph({ size = 30, color: c }: { size?: number; color: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M4 8l4-4 4 4 4-4 4 4v8l-4 4-4-4-4 4-4-4V8z" />
+    </Svg>
+  );
+}
+function Drop({ size = 30, color: c }: { size?: number; color: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
+    </Svg>
+  );
+}
+function NoteGlyph({ size = 30, color: c }: { size?: number; color: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <Path d="M14 2v6h6M8 13h8M8 17h6" />
+    </Svg>
+  );
+}
 
-/** Parse a free-text command into a log entry. Returns null if not recognised. */
+type TileDef = { kind: EntryKind; label: string; light: string; tint: string; render: (c: string) => React.ReactNode };
+const TILES: TileDef[] = [
+  { kind: 'feed', label: 'Feed', light: ENTRY_META.feed.fill, tint: '#3FA98A', render: (c) => <Bottle size={30} color={c} /> },
+  { kind: 'sleep', label: 'Sleep', light: ENTRY_META.sleep.fill, tint: '#B8B4F0', render: (c) => <Moon size={30} color={c} /> },
+  { kind: 'diaper', label: 'Diaper', light: ENTRY_META.diaper.fill, tint: '#D9B84A', render: (c) => <DiaperGlyph color={c} /> },
+  { kind: 'pump', label: 'Pump', light: ENTRY_META.pump.fill, tint: '#E98FB3', render: (c) => <Drop color={c} /> },
+  { kind: 'note', label: 'Note', light: ENTRY_META.note.fill, tint: '#8FA4D8', render: (c) => <NoteGlyph color={c} /> },
+];
+
+const clockTime = (iso: string) => new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }).toLowerCase();
+
+function ageLabel(birthDate?: string): string | null {
+  if (!birthDate) return null;
+  const b = new Date(birthDate);
+  if (isNaN(b.getTime())) return null;
+  const months = Math.max(0, Math.floor((Date.now() - b.getTime()) / (1000 * 60 * 60 * 24 * 30.44)));
+  return months < 24 ? `${months} mo` : `${Math.floor(months / 12)} yr`;
+}
+
+/** Free-text command → entry (shared with the typed "log a line" input). */
 function parse(input: string): { kind: EntryKind; details: EntryDetails } | null {
   const text = input.trim().toLowerCase();
   if (!text) return null;
   const [head, ...rest] = text.split(/\s+/);
   const numIn = (arr: string[]) => { for (const w of arr) { const n = parseInt(w, 10); if (!isNaN(n)) return n; } return undefined; };
-
   if (head === 'feed') {
     let side: FeedSide | undefined;
     if (rest.includes('left')) side = 'left'; else if (rest.includes('right')) side = 'right'; else if (rest.includes('bottle')) side = 'bottle';
@@ -30,66 +91,223 @@ function parse(input: string): { kind: EntryKind; details: EntryDetails } | null
     return { kind: 'diaper', details: { diaperType } };
   }
   if (head === 'note') return { kind: 'note', details: { note: rest.join(' ') } };
-  // Fallback: treat the whole thing as a note.
   return { kind: 'note', details: { note: text } };
 }
 
-export default function QuickAdd() {
+const tileSubtitle = (kind: EntryKind, latest: Entry | undefined, sleepMin: number, pumpMl: number): string => {
+  if (kind === 'sleep') return sleepMin > 0 ? `${Math.floor(sleepMin / 60)}h ${sleepMin % 60}m today` : 'Tap to log';
+  if (kind === 'pump') return pumpMl > 0 ? `${pumpMl} ml today` : 'Tap to log';
+  if (!latest) return 'Tap to log';
+  if (kind === 'feed') { const d = entryDetail(latest); return d ? `${clockTime(latest.at)} · ${d}` : clockTime(latest.at); }
+  if (kind === 'diaper') { const t = latest.diaperType === 'both' ? 'Wet + dirty' : latest.diaperType === 'dirty' ? 'Dirty' : 'Wet'; return `${t} · ${clockTime(latest.at)}`; }
+  if (kind === 'note') return latest.note ? clockTime(latest.at) : 'Tap to log';
+  return 'Tap to log';
+};
+
+export default function AddLog() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const params = useLocalSearchParams<{ night?: string }>();
   const { addEntry, entries, activeChild } = useData();
-  const [text, setText] = useState('');
-  const [msg, setMsg] = useState('');
 
-  function run(cmd?: string) {
-    const input = cmd ?? text;
-    const parsed = parse(input);
-    if (!parsed) { setMsg('Try something like "feed left 12" or "sleep 45".'); return; }
-    addEntry(parsed.kind, parsed.details);
-    setMsg(`Logged ${ENTRY_META[parsed.kind].label.toLowerCase()}${activeChild ? ` for ${activeChild.name}` : ''}.`);
-    setText('');
+  const [night, setNight] = useState(params.night === '1');
+  const [kind, setKind] = useState<EntryKind | null>(null);
+  const [side, setSide] = useState<FeedSide>('left');
+  const [diaper, setDiaper] = useState<DiaperType>('wet');
+  const [ml, setMl] = useState('');
+  const [mins, setMins] = useState('');
+  const [note, setNote] = useState('');
+  const [cmd, setCmd] = useState('');
+  const [toast, setToast] = useState('');
+
+  // Scope to the active child.
+  const cid = activeChild?.id;
+  const mine = cid ? entries.filter((e) => e.childId === cid) : entries;
+  const today = entriesOn(mine);
+  const sleepMin = today.filter((e) => e.kind === 'sleep').reduce((s, e) => s + (e.durationMin ?? 0), 0);
+  const pumpMl = today.filter((e) => e.kind === 'pump').reduce((s, e) => s + (e.volumeMl ?? 0), 0);
+  const latestOf = (k: EntryKind) => mine.find((e) => e.kind === k);
+
+  // Wake window (shown in night mode) — derive next nap from last sleep (~2h window).
+  const lastSleep = latestOf('sleep');
+  const wakeMinsLeft = (() => {
+    if (!lastSleep) return null;
+    const since = Math.round((Date.now() - new Date(lastSleep.at).getTime()) / 60000);
+    return 120 - since;
+  })();
+
+  // theme
+  const t = night
+    ? { bg: '#1A1730', card: '#262144', cardText: '#EDEBFA', sub: '#9C97C4', headText: '#EDEBFA', tileFill: '#2E2952' }
+    : { bg: color.canvas, card: '#fff', cardText: color.ink, sub: color.muted, headText: color.ink, tileFill: '' };
+
+  function open(k: EntryKind) { setKind(k); setSide('left'); setDiaper('wet'); setMl(''); setMins(''); setNote(''); }
+  function flash(label: string) { setToast(`Logged ${label.toLowerCase()}${activeChild ? ` for ${activeChild.name}` : ''}.`); setTimeout(() => setToast(''), 2200); }
+
+  function save() {
+    if (!kind) return;
+    const n = (s: string) => { const v = parseInt(s, 10); return isNaN(v) ? undefined : v; };
+    if (kind === 'feed') addEntry('feed', { side, volumeMl: side === 'bottle' ? n(ml) : undefined, durationMin: n(mins), note });
+    else if (kind === 'pump') addEntry('pump', { volumeMl: n(ml), note });
+    else if (kind === 'sleep') addEntry('sleep', { durationMin: n(mins), note });
+    else if (kind === 'diaper') addEntry('diaper', { diaperType: diaper, note });
+    else addEntry('note', { note });
+    flash(ENTRY_META[kind].label);
+    setKind(null);
   }
 
-  const recent = entries.slice(0, 5);
+  function runCmd() {
+    const parsed = parse(cmd);
+    if (!parsed) { setToast('Try "feed left 12" or "sleep 45".'); setTimeout(() => setToast(''), 2200); return; }
+    addEntry(parsed.kind, parsed.details);
+    flash(ENTRY_META[parsed.kind].label);
+    setCmd('');
+  }
+
+  const childAge = ageLabel(activeChild?.birthDate);
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: color.canvas }} contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: insets.bottom + 28, paddingHorizontal: 22, gap: 14 }}>
-      <Pressable onPress={() => router.back()} style={{ width: 40, height: 40, justifyContent: 'center' }}><ChevronLeft size={24} color={color.ink} /></Pressable>
-      <Text style={{ fontFamily: font.display700, fontSize: 28, color: color.ink }}>Quick add</Text>
-      <Text style={{ fontFamily: font.body400, fontSize: 13, color: color.muted, lineHeight: 19 }}>
-        Type a command to log in one line. (On a phone build this is also the voice-capture flow.)
-      </Text>
-
-      <Field label="Command" value={text} onChangeText={setText} placeholder='e.g. feed left 12' autoCapitalize="none" />
-      <Notice text={msg} tone="info" />
-      <Button label="Log it" onPress={() => run()} />
-
-      <View style={{ gap: 8 }}>
-        <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: color.muted }}>Examples — tap to use</Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-          {EXAMPLES.map((ex) => (
-            <Pressable key={ex} onPress={() => run(ex)} style={{ paddingVertical: 8, paddingHorizontal: 12, borderRadius: radius.pill, backgroundColor: '#fff', borderWidth: 1, borderColor: color.hairline }}>
-              <Text style={{ fontFamily: font.body500, fontSize: 12, color: color.inkSecondary }}>{ex}</Text>
-            </Pressable>
-          ))}
+    <ScrollView
+      style={{ flex: 1, backgroundColor: t.bg }}
+      contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: insets.bottom + 28, paddingHorizontal: 20, gap: 16 }}
+      keyboardShouldPersistTaps="handled"
+    >
+      {/* header */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Pressable onPress={() => router.back()} hitSlop={8} style={{ width: 34, height: 34, justifyContent: 'center' }}>
+            <ChevronLeft size={24} color={night ? t.headText : color.ink} />
+          </Pressable>
+          {night ? <Moon size={22} color="#B8B4F0" /> : null}
+          <Text style={{ fontFamily: font.display700, fontSize: 22, color: t.headText }}>{night ? 'Night log' : 'Add'}</Text>
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          {activeChild ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: night ? t.card : '#E7E4FB', borderRadius: 999, paddingVertical: 5, paddingRight: 12, paddingLeft: 5 }}>
+              <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: night ? '#3E386A' : '#6B6FC9', alignItems: 'center', justifyContent: 'center' }}>
+                <Silhouette size={13} fill="#fff" />
+              </View>
+              <Text style={{ fontFamily: font.body700, fontSize: 12, color: night ? t.cardText : '#54579E' }}>{activeChild.name}{childAge ? ` · ${childAge}` : ''}</Text>
+            </View>
+          ) : null}
+          {/* day / night toggle */}
+          <Pressable onPress={() => setNight((v) => !v)} hitSlop={8} style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: night ? t.card : '#fff', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: night ? '#3E386A' : color.hairline }}>
+            {night ? <Sun size={20} color="#E9C46A" /> : <Moon size={20} color="#6B6FC9" />}
+          </Pressable>
         </View>
       </View>
 
-      {recent.length > 0 && (
+      {/* wake-window banner (night) */}
+      {night && (
+        <LinearGradient colors={['#5B57B0', '#7E7AD6']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ borderRadius: radius.card, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}>
+            <Clock size={20} color="#fff" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: font.body700, fontSize: 14, color: '#fff' }}>Wake window</Text>
+            <Text style={{ fontFamily: font.body400, fontSize: 12, color: 'rgba(255,255,255,0.85)', marginTop: 2 }}>
+              {wakeMinsLeft == null ? 'Log a sleep to track nap timing' : wakeMinsLeft > 0 ? `Next nap in ~${wakeMinsLeft} min` : 'Nap window open'}
+            </Text>
+          </View>
+          <View style={{ backgroundColor: 'rgba(255,255,255,0.22)', borderRadius: 999, paddingVertical: 4, paddingHorizontal: 10 }}>
+            <Text style={{ fontFamily: font.body700, fontSize: 11, color: '#fff' }}>Active</Text>
+          </View>
+        </LinearGradient>
+      )}
+
+      {/* big tap tiles */}
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+        {TILES.map((tile) => {
+          const fill = night ? t.tileFill : tile.light;
+          const ic = night ? tile.tint : ENTRY_META[tile.kind].ink;
+          const sub = tileSubtitle(tile.kind, latestOf(tile.kind), sleepMin, pumpMl);
+          return (
+            <Pressable
+              key={tile.kind}
+              onPress={() => open(tile.kind)}
+              style={({ pressed }) => [{ width: '47.5%', flexGrow: 1, backgroundColor: fill, borderRadius: radius.card, paddingVertical: 22, paddingHorizontal: 18, alignItems: 'center', gap: 8, opacity: pressed ? 0.85 : 1 }, night ? null : shadow.card]}
+            >
+              {tile.render(ic)}
+              <Text style={{ fontFamily: font.display700, fontSize: 18, color: night ? t.cardText : color.ink }}>{tile.label}</Text>
+              <Text style={{ fontFamily: font.body400, fontSize: 11.5, color: t.sub, textAlign: 'center' }} numberOfLines={1}>{sub}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      {/* type-to-log (command parser) */}
+      <View style={[{ backgroundColor: t.card, borderRadius: radius.card, padding: 14, gap: 10 }, night ? null : shadow.card]}>
+        <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: t.sub }}>Type to log</Text>
+        <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+          <TextInput
+            value={cmd}
+            onChangeText={setCmd}
+            placeholder='e.g. "feed left 12"'
+            placeholderTextColor={night ? '#6E699A' : color.faint}
+            autoCapitalize="none"
+            onSubmitEditing={runCmd}
+            returnKeyType="done"
+            style={{ flex: 1, fontFamily: font.body500, fontSize: 14, color: t.cardText, backgroundColor: night ? '#1F1B3A' : color.canvas, borderRadius: radius.tile, paddingHorizontal: 14, paddingVertical: 12 }}
+          />
+          <Pressable onPress={runCmd} style={{ backgroundColor: color.primary, borderRadius: radius.tile, paddingHorizontal: 16, paddingVertical: 12 }}>
+            <Text style={{ fontFamily: font.body700, fontSize: 13, color: '#fff' }}>Log</Text>
+          </Pressable>
+        </View>
+        {toast ? <Text style={{ fontFamily: font.body600, fontSize: 12, color: night ? '#9FE6C8' : '#2C8475' }}>{toast}</Text> : null}
+      </View>
+
+      {/* recent (active child, today) */}
+      {today.length > 0 && (
         <View style={{ gap: 8 }}>
-          <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: color.muted }}>Just logged</Text>
-          {recent.map((e) => {
+          <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: t.sub, paddingLeft: 2 }}>
+            Today · {today.length} {today.length === 1 ? 'entry' : 'entries'}
+          </Text>
+          {today.slice(0, 6).map((e) => {
             const m = ENTRY_META[e.kind]; const det = entryDetail(e);
             return (
-              <View key={e.id} style={[{ backgroundColor: '#fff', borderRadius: radius.cardSm, padding: 13, flexDirection: 'row', alignItems: 'center', gap: 10 }, shadow.card]}>
-                <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: m.ink }} />
-                <Text style={{ flex: 1, fontFamily: font.body600, fontSize: 13, color: color.ink }}>{m.label}{det ? ` · ${det}` : ''}</Text>
-                <Text style={{ fontFamily: font.body500, fontSize: 11, color: color.muted }}>{new Date(e.at).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}</Text>
+              <View key={e.id} style={[{ backgroundColor: t.card, borderRadius: radius.cardSm, padding: 13, flexDirection: 'row', alignItems: 'center', gap: 10 }, night ? null : shadow.card]}>
+                <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: night ? (TILES.find((x) => x.kind === e.kind)?.tint ?? m.ink) : m.ink }} />
+                <Text style={{ flex: 1, fontFamily: font.body600, fontSize: 13, color: t.cardText }} numberOfLines={1}>{m.label}{det ? ` · ${det}` : ''}</Text>
+                <Text style={{ fontFamily: font.body500, fontSize: 11, color: t.sub }}>{clockTime(e.at)}</Text>
               </View>
             );
           })}
         </View>
       )}
+
+      {/* detail modal (set side / volume / duration / type / note) */}
+      <Modal visible={kind !== null} transparent animationType="fade" onRequestClose={() => setKind(null)}>
+        <Pressable onPress={() => setKind(null)} style={{ flex: 1, backgroundColor: 'rgba(20,12,40,0.5)', justifyContent: 'center', paddingHorizontal: 28 }}>
+          <Pressable onPress={() => {}} style={[{ backgroundColor: night ? t.card : color.canvas, borderRadius: radius.card, padding: 20, gap: 14 }, shadow.card]}>
+            <Text style={{ fontFamily: font.display700, fontSize: 18, color: t.cardText }}>{kind ? ENTRY_META[kind].label : ''}</Text>
+            {kind === 'feed' && <Chips night={night} options={[['left', 'Left'], ['right', 'Right'], ['bottle', 'Bottle']]} value={side} onChange={(v) => setSide(v as FeedSide)} />}
+            {kind === 'feed' && side === 'bottle' && <Field label="Amount (ml)" value={ml} onChangeText={setMl} placeholder="e.g. 120" />}
+            {(kind === 'feed' || kind === 'sleep') && <Field label="Duration (min)" value={mins} onChangeText={setMins} placeholder="e.g. 20" />}
+            {kind === 'pump' && <Field label="Amount (ml)" value={ml} onChangeText={setMl} placeholder="e.g. 90" />}
+            {kind === 'diaper' && <Chips night={night} options={[['wet', 'Wet'], ['dirty', 'Dirty'], ['both', 'Both']]} value={diaper} onChange={(v) => setDiaper(v as DiaperType)} />}
+            <Field label={kind === 'note' ? 'Note' : 'Note (optional)'} value={note} onChangeText={setNote} placeholder="Anything to add?" autoCapitalize="sentences" />
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <Button label="Cancel" variant="secondary" onPress={() => setKind(null)} style={{ flex: 1 }} />
+              <Button label="Save" onPress={save} style={{ flex: 1 }} />
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </ScrollView>
+  );
+}
+
+function Chips({ options, value, onChange, night }: { options: [string, string][]; value: string; onChange: (v: string) => void; night: boolean }) {
+  return (
+    <View style={{ flexDirection: 'row', gap: 8 }}>
+      {options.map(([v, label]) => {
+        const sel = v === value;
+        return (
+          <Pressable key={v} onPress={() => onChange(v)} style={{ flex: 1, paddingVertical: 11, borderRadius: radius.tile, alignItems: 'center', backgroundColor: sel ? color.primary : (night ? '#1F1B3A' : '#fff'), borderWidth: 1, borderColor: sel ? color.primary : (night ? '#3E386A' : color.hairline) }}>
+            <Text style={{ fontFamily: font.body600, fontSize: 13, color: sel ? '#fff' : (night ? '#CFCBEC' : color.ink) }}>{label}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
   );
 }
