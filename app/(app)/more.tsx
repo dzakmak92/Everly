@@ -3,7 +3,7 @@ import { ScrollView, View, Text, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, font, radius, shadow } from '../../src/theme/tokens';
-import { BabyBean, Heart, Plus, Clock, Activity, CheckCircle, User, Calendar, Star, Settings, Shield, Syringe, Camera } from '../../src/components/icons';
+import { BabyBean, Heart, Clock, Activity, CheckCircle, User, Calendar, Star, Settings, Shield, Syringe, Camera } from '../../src/components/icons';
 
 type Item = { label: string; to: string; icon: React.ReactNode; bg: string };
 const Ic = (C: any, c: string) => <C size={20} color={c} />;
@@ -26,7 +26,6 @@ const SECTIONS: { title: string; items: Item[] }[] = [
   {
     title: 'Log & tools',
     items: [
-      { label: 'Add / log', to: '/(app)/quick-add', icon: Ic(Plus, '#B5662E'), bg: '#FCE6D8' },
       { label: 'Routines & chores', to: '/(app)/routines', icon: Ic(CheckCircle, '#7A5C20'), bg: '#FBF1CE' },
     ],
   },
@@ -42,7 +41,6 @@ const SECTIONS: { title: string; items: Item[] }[] = [
     title: 'Discover',
     items: [
       { label: 'Insights', to: '/(app)/insights', icon: Ic(Activity, '#2C8475'), bg: '#D8F0E6' },
-      { label: 'Design gallery', to: '/gallery', icon: Ic(Star, '#C9A33B'), bg: '#FBF1CE' },
     ],
   },
   {
