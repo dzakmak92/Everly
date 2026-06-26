@@ -12,9 +12,11 @@
     },
     "assetBundlePatterns": ["**/*"],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.everly.mumandme"
     },
     "android": {
+      "package": "com.everly.mumandme",
       "adaptiveIcon": {
         "backgroundColor": "#F4F3FB"
       }
