@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ScrollView, View, Text, Pressable, Modal } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, font, radius, shadow, childToken } from '../../src/theme/tokens';
@@ -55,9 +56,14 @@ export default function Today() {
   const today = entriesOn(forChild(entries));
   const dateLabel = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
 
-  // "What's next" sources (active child)
+  // Today-at-a-glance summary (active child).
+  const feedsToday = today.filter((e) => e.kind === 'feed').length;
+  const sleepMin = today.filter((e) => e.kind === 'sleep').reduce((s, e) => s + (e.durationMin ?? 0), 0);
+  const diapersToday = today.filter((e) => e.kind === 'diaper').length;
+  const sleepLabel = sleepMin >= 60 ? `${Math.floor(sleepMin / 60)}h ${sleepMin % 60}m` : `${sleepMin}m`;
   const lastFeed = forChild(entries).find((e) => e.kind === 'feed');
-  // Active child's events plus family-wide events (no child attached).
+
+  // "Up next" sources — upcoming events (active child + family-wide) and the next due vaccine.
   const nextEvents = upcomingEvents(events).filter((e) => !cid || !e.childId || e.childId === cid).slice(0, 2);
   const dueVax = forChild(vaccines).filter((v) => !v.givenDate)[0];
   const childName = (id?: string) => children.find((c) => c.id === id)?.name;
@@ -74,7 +80,7 @@ export default function Today() {
     setKind(null);
   }
 
-  const hasNext = lastFeed || nextEvents.length > 0 || dueVax;
+  const hasNext = nextEvents.length > 0 || dueVax;
 
   return (
     <ScrollView
@@ -100,16 +106,29 @@ export default function Today() {
         </View>
       )}
 
-      {/* What's next */}
+      {/* Today at a glance */}
+      {today.length > 0 && (
+        <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, paddingVertical: 16, paddingHorizontal: 8 }, shadow.card]}>
+          <View style={{ flexDirection: 'row' }}>
+            <Stat label="Feeds" value={`${feedsToday}`} />
+            <Divider />
+            <Stat label="Sleep" value={sleepMin > 0 ? sleepLabel : '—'} />
+            <Divider />
+            <Stat label="Diapers" value={`${diapersToday}`} />
+          </View>
+          {lastFeed && (
+            <View style={{ borderTopWidth: 1, borderTopColor: color.hairline, marginTop: 14, paddingTop: 12, paddingHorizontal: 8, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Bottle size={16} color={ENTRY_META.feed.ink} />
+              <Text style={{ fontFamily: font.body500, fontSize: 12.5, color: color.muted }}>Last feed {agoLabel(lastFeed.at)} · {timeOf(lastFeed.at)}</Text>
+            </View>
+          )}
+        </View>
+      )}
+
+      {/* Up next */}
       {hasNext && (
         <View style={{ gap: 10 }}>
-          <Label>What's next</Label>
-          {lastFeed && (
-            <FeedRow chipBg={ENTRY_META.feed.fill} icon={<Bottle size={22} color={ENTRY_META.feed.ink} />}
-              title={`Last feed${lastFeed.side ? ` · ${lastFeed.side === 'bottle' ? 'Bottle' : lastFeed.side === 'left' ? 'Left side' : 'Right side'}` : ''}`}
-              sub={`${childName(lastFeed.childId) ? childName(lastFeed.childId) + ' · ' : ''}${timeOf(lastFeed.at)}`}
-              trailing={<Badge text={agoLabel(lastFeed.at)} bg="#E7E4FB" fg={color.primary} />} />
-          )}
+          <Label>Up next</Label>
           {nextEvents.map((ev) => (
             <FeedRow key={ev.id} chipBg="#E7E4FB" icon={<CalendarIcon size={22} color={color.primary} />} title={ev.title} sub={`${ev.location ? ev.location + ' · ' : ''}${dayTimeOf(ev.at)}`}
               trailing={<ChevronRight size={16} color={color.faint} />} />
@@ -136,29 +155,20 @@ export default function Today() {
         </View>
       </View>
 
-      {/* Today's log */}
+      {/* Today's timeline */}
       <View style={{ gap: 10 }}>
-        <Label>Today · {today.length} {today.length === 1 ? 'entry' : 'entries'}</Label>
+        <Label>Today's timeline · {today.length} {today.length === 1 ? 'entry' : 'entries'}</Label>
         {today.length === 0 ? (
           <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 22, alignItems: 'center' }, shadow.card]}>
             <Text style={{ fontFamily: font.body500, fontSize: 14, color: color.muted, textAlign: 'center' }}>Nothing logged yet today.{'\n'}Tap a button above to add your first entry.</Text>
           </View>
-        ) : today.map((e) => {
-          const m = ENTRY_META[e.kind]; const detail = entryDetail(e);
-          return (
-            <View key={e.id} style={[{ backgroundColor: '#fff', borderRadius: radius.cardSm, padding: 13, flexDirection: 'row', alignItems: 'center', gap: 12 }, shadow.card]}>
-              <View style={{ width: 36, height: 36, borderRadius: 11, backgroundColor: m.fill, alignItems: 'center', justifyContent: 'center' }}>
-                <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: m.ink }} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: font.body700, fontSize: 14, color: color.ink }}>{m.label}</Text>
-                {detail ? <Text style={{ fontFamily: font.body400, fontSize: 12.5, color: color.inkSecondary, marginTop: 1 }}>{detail}</Text> : null}
-              </View>
-              <Text style={{ fontFamily: font.body500, fontSize: 12, color: color.muted }}>{timeOf(e.at)}</Text>
-              <Pressable onPress={() => deleteEntry(e.id)} hitSlop={8} style={{ paddingHorizontal: 4 }}><Text style={{ fontFamily: font.body700, fontSize: 18, color: color.faint }}>×</Text></Pressable>
-            </View>
-          );
-        })}
+        ) : (
+          <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, paddingVertical: 6, paddingHorizontal: 14 }, shadow.card]}>
+            {today.map((e, i) => (
+              <EntryRow key={e.id} entry={e} first={i === 0} last={i === today.length - 1} onDelete={() => deleteEntry(e.id)} />
+            ))}
+          </View>
+        )}
       </View>
 
       {/* Detail modal */}
@@ -189,6 +199,53 @@ function Label({ children }: { children: React.ReactNode }) {
 
 function Badge({ text, bg, fg }: { text: string; bg: string; fg: string }) {
   return <View style={{ backgroundColor: bg, borderRadius: radius.pill, paddingVertical: 5, paddingHorizontal: 11 }}><Text style={{ fontFamily: font.body700, fontSize: 11, color: fg }}>{text}</Text></View>;
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={{ flex: 1, alignItems: 'center', gap: 3 }}>
+      <Text style={{ fontFamily: font.display700, fontSize: 22, color: color.ink }}>{value}</Text>
+      <Text style={{ fontFamily: font.body600, fontSize: 11, letterSpacing: 0.4, textTransform: 'uppercase', color: color.muted }}>{label}</Text>
+    </View>
+  );
+}
+function Divider() {
+  return <View style={{ width: 1, alignSelf: 'stretch', backgroundColor: color.hairline, marginVertical: 2 }} />;
+}
+
+/* ── timeline ─────────────────────────────────────────────────────────────── */
+function glyphStroke(c: string) {
+  return { fill: 'none' as const, stroke: c, strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
+}
+function EntryGlyph({ kind, color: c, size = 16 }: { kind: EntryKind; color: string; size?: number }) {
+  if (kind === 'feed') return <Bottle size={size} color={c} />;
+  if (kind === 'sleep') return <Svg width={size} height={size} viewBox="0 0 24 24"><Path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" {...glyphStroke(c)} /></Svg>;
+  if (kind === 'pump') return <Svg width={size} height={size} viewBox="0 0 24 24"><Path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" {...glyphStroke(c)} /></Svg>;
+  if (kind === 'diaper') return <Svg width={size} height={size} viewBox="0 0 24 24"><Path d="M4 8l4-4 4 4 4-4 4 4v8l-4 4-4-4-4 4-4-4V8z" {...glyphStroke(c)} /></Svg>;
+  return <Svg width={size} height={size} viewBox="0 0 24 24"><Path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" {...glyphStroke(c)} /><Path d="M14 2v6h6M8 13h8M8 17h6" {...glyphStroke(c)} /></Svg>;
+}
+function EntryRow({ entry, first, last, onDelete }: { entry: { id: string; kind: EntryKind; at: string }; first: boolean; last: boolean; onDelete: () => void }) {
+  const m = ENTRY_META[entry.kind];
+  const detail = entryDetail(entry as any);
+  return (
+    <View style={{ flexDirection: 'row' }}>
+      <Text style={{ width: 46, textAlign: 'right', paddingTop: 16, fontFamily: font.body600, fontSize: 11, color: color.muted }}>{timeOf(entry.at)}</Text>
+      <View style={{ width: 34, alignItems: 'center' }}>
+        <View style={{ width: 2, height: 14, backgroundColor: first ? 'transparent' : color.hairline }} />
+        <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: m.fill, alignItems: 'center', justifyContent: 'center' }}>
+          <EntryGlyph kind={entry.kind} color={m.ink} size={16} />
+        </View>
+        <View style={{ width: 2, flex: 1, minHeight: 12, backgroundColor: last ? 'transparent' : color.hairline }} />
+      </View>
+      <View style={{ flex: 1, paddingTop: 12, paddingBottom: 14, paddingLeft: 6, flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontFamily: font.body700, fontSize: 14, color: color.ink }}>{m.label}</Text>
+          {detail ? <Text style={{ fontFamily: font.body400, fontSize: 12.5, color: color.inkSecondary, marginTop: 2 }}>{detail}</Text> : null}
+        </View>
+        <Pressable onPress={onDelete} hitSlop={8} style={{ padding: 2 }}><Text style={{ fontFamily: font.body700, fontSize: 18, color: color.faint }}>×</Text></Pressable>
+      </View>
+    </View>
+  );
 }
 
 function FeedRow({ chipBg, icon, title, sub, trailing }: { chipBg: string; icon: React.ReactNode; title: string; sub: string; trailing?: React.ReactNode }) {
