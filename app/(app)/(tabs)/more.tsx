@@ -3,7 +3,8 @@ import { ScrollView, View, Text, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, font, radius, shadow } from '../../../src/theme/tokens';
-import { BabyBean, Heart, Clock, Activity, CheckCircle, User, Calendar, Star, Settings, Shield, Syringe, Camera, ChevronRight } from '../../../src/components/icons';
+import { Heart, Clock, Activity, CheckCircle, User, Calendar, Star, Settings, Shield, Syringe, Camera, ChevronRight } from '../../../src/components/icons';
+import { useData } from '../../../src/lib/store';
 
 type Item = { label: string; sub: string; to: string; icon: React.ReactNode; bg: string };
 const Ic = (C: any, c: string) => <C size={19} color={c} />;
@@ -12,8 +13,7 @@ const SECTIONS: { title: string; items: Item[] }[] = [
   {
     title: 'Your journey',
     items: [
-      { label: 'Pregnancy', sub: 'Week-by-week, appointments, names', to: '/(app)/pregnancy', icon: Ic(BabyBean, '#6B6FC9'), bg: '#E7E4FB' },
-      { label: 'Mum&Me · You', sub: 'Recovery, mood check-ins, planning', to: '/(app)/maternal', icon: Ic(Heart, '#2C8475'), bg: '#D8F0E6' },
+      { label: 'Mum&Me', sub: 'Pregnancy, recovery & your wellbeing', to: 'JOURNEY', icon: Ic(Heart, '#2C8475'), bg: '#D8F0E6' },
     ],
   },
   {
@@ -46,6 +46,9 @@ const SECTIONS: { title: string; items: Item[] }[] = [
 export default function More() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { maternalBirth } = useData();
+  // The Mum&Me journey opens to the current phase.
+  const journeyTo = maternalBirth ? '/(app)/maternal' : '/(app)/pregnancy';
 
   return (
     <ScrollView
@@ -65,7 +68,7 @@ export default function More() {
             {sec.items.map((it, i) => (
               <Pressable
                 key={it.label}
-                onPress={() => router.push(it.to as any)}
+                onPress={() => router.push((it.to === 'JOURNEY' ? journeyTo : it.to) as any)}
                 style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 14, paddingHorizontal: 16, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: color.hairline, backgroundColor: pressed ? '#FAF9FE' : '#fff' })}
               >
                 <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: it.bg, alignItems: 'center', justifyContent: 'center' }}>{it.icon}</View>

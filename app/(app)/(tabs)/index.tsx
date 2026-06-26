@@ -363,7 +363,7 @@ function youStatusLabel(dueDate: string | null, maternalBirth: string | null): s
     return `Week ${Math.floor(days / 7)} pp`;
   }
   const g = gestFromDueDate(dueDate ?? undefined);
-  return g ? `Week ${g.week}` : 'You';
+  return g ? `Week ${g.week}` : 'Your space';
 }
 
 function YouPill({ active, label, onPress }: { active: boolean; label: string; onPress: () => void }) {
@@ -376,7 +376,7 @@ function YouPill({ active, label, onPress }: { active: boolean; label: string; o
           <Silhouette size={18} fill={active ? '#fff' : strokeC} />
         </View>
         <View>
-          <Text style={{ fontFamily: font.body700, fontSize: 13, color: active ? color.tealInk : color.ink }}>You</Text>
+          <Text style={{ fontFamily: font.body700, fontSize: 13, color: active ? color.tealInk : color.ink }}>Mum&Me</Text>
           <Text style={{ fontFamily: font.body400, fontSize: 11, color: active ? color.tealDeep : color.muted, marginTop: 2 }}>{label}</Text>
         </View>
       </View>
