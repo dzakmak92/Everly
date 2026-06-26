@@ -57,6 +57,12 @@ export type Routine = { id: string; childId?: string; name: string; steps: Routi
 export type Chore = { id: string; childId?: string; label: string; points: number; done: boolean };
 export type Milestone = { id: string; childId: string; title: string; date: string; note?: string };
 
+export type Caregiver = { id: string; name: string };
+/** Expense paidBy is 'me' or a caregiver id; splitPct = the other party's share. */
+export type Expense = { id: string; label: string; amount: number; paidBy: string; splitPct: number; settled: boolean; at: string };
+/** Weekly custody pattern: weekday 0(Sun)–6(Sat) → 'me' | caregiverId. */
+export type Custody = Record<number, string>;
+
 export const ENTRY_META: Record<EntryKind, { label: string; verb: string; fill: string; ink: string }> = {
   sleep: { label: 'Sleep', verb: 'Logged sleep', fill: '#E7E4FB', ink: '#54579E' },
   feed: { label: 'Feed', verb: 'Logged a feed', fill: '#FCE6D8', ink: '#B5662E' },
@@ -75,6 +81,9 @@ const GROWTH_KEY = 'everly.growth.v1';
 const ROUTINES_KEY = 'everly.routines.v1';
 const CHORES_KEY = 'everly.chores.v1';
 const MILESTONES_KEY = 'everly.milestones.v1';
+const CAREGIVERS_KEY = 'everly.caregivers.v1';
+const EXPENSES_KEY = 'everly.expenses.v1';
+const CUSTODY_KEY = 'everly.custody.v1';
 
 function newId() {
   return `${Date.now().toString(36)}-${Math.floor(Math.random() * 1e6).toString(36)}`;
@@ -118,6 +127,15 @@ type DataValue = {
   milestones: Milestone[];
   addMilestone: (input: { childId: string; title: string; date: string; note?: string }) => void;
   deleteMilestone: (id: string) => void;
+  caregivers: Caregiver[];
+  addCaregiver: (name: string) => void;
+  deleteCaregiver: (id: string) => void;
+  custody: Custody;
+  setCustodyDay: (weekday: number, who: string) => void;
+  expenses: Expense[];
+  addExpense: (input: { label: string; amount: number; paidBy: string; splitPct: number }) => void;
+  toggleExpenseSettled: (id: string) => void;
+  deleteExpense: (id: string) => void;
   clearAll: () => void;
 };
 
@@ -135,12 +153,15 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [chores, setChores] = useState<Chore[]>([]);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
+  const [caregivers, setCaregivers] = useState<Caregiver[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [custody, setCustody] = useState<Custody>({});
 
   useEffect(() => {
     let active = true;
     (async () => {
       try {
-        const [rawE, rawC, rawA, rawEv, rawV, rawM, rawG, rawR, rawCh, rawMs] = await Promise.all([
+        const [rawE, rawC, rawA, rawEv, rawV, rawM, rawG, rawR, rawCh, rawMs, rawCg, rawEx, rawCu] = await Promise.all([
           AsyncStorage.getItem(ENTRIES_KEY),
           AsyncStorage.getItem(CHILDREN_KEY),
           AsyncStorage.getItem(ACTIVE_KEY),
@@ -151,6 +172,9 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
           AsyncStorage.getItem(ROUTINES_KEY),
           AsyncStorage.getItem(CHORES_KEY),
           AsyncStorage.getItem(MILESTONES_KEY),
+          AsyncStorage.getItem(CAREGIVERS_KEY),
+          AsyncStorage.getItem(EXPENSES_KEY),
+          AsyncStorage.getItem(CUSTODY_KEY),
         ]);
         if (!active) return;
         if (rawE) setEntries(JSON.parse(rawE));
@@ -163,6 +187,9 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
         if (rawR) setRoutines(JSON.parse(rawR));
         if (rawCh) setChores(JSON.parse(rawCh));
         if (rawMs) setMilestones(JSON.parse(rawMs));
+        if (rawCg) setCaregivers(JSON.parse(rawCg));
+        if (rawEx) setExpenses(JSON.parse(rawEx));
+        if (rawCu) setCustody(JSON.parse(rawCu));
       } catch {
         // Corrupt/missing cache → start empty. Never crash on storage.
       } finally {
@@ -182,6 +209,9 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
   useEffect(() => { if (!loading) AsyncStorage.setItem(ROUTINES_KEY, JSON.stringify(routines)).catch(() => {}); }, [routines, loading]);
   useEffect(() => { if (!loading) AsyncStorage.setItem(CHORES_KEY, JSON.stringify(chores)).catch(() => {}); }, [chores, loading]);
   useEffect(() => { if (!loading) AsyncStorage.setItem(MILESTONES_KEY, JSON.stringify(milestones)).catch(() => {}); }, [milestones, loading]);
+  useEffect(() => { if (!loading) AsyncStorage.setItem(CAREGIVERS_KEY, JSON.stringify(caregivers)).catch(() => {}); }, [caregivers, loading]);
+  useEffect(() => { if (!loading) AsyncStorage.setItem(EXPENSES_KEY, JSON.stringify(expenses)).catch(() => {}); }, [expenses, loading]);
+  useEffect(() => { if (!loading) AsyncStorage.setItem(CUSTODY_KEY, JSON.stringify(custody)).catch(() => {}); }, [custody, loading]);
 
   const addChild = useCallback((input: { name: string; color: ChildColor; birthDate?: string }) => {
     const child: Child = { id: newId(), name: input.name.trim(), color: input.color, birthDate: input.birthDate?.trim() || undefined };
@@ -282,6 +312,20 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
   }, []);
   const deleteMilestone = useCallback((id: string) => setMilestones((prev) => prev.filter((m) => m.id !== id)), []);
 
+  const addCaregiver = useCallback((name: string) => setCaregivers((prev) => [...prev, { id: newId(), name: name.trim() }]), []);
+  const deleteCaregiver = useCallback((id: string) => {
+    setCaregivers((prev) => prev.filter((c) => c.id !== id));
+    setCustody((prev) => { const next = { ...prev }; for (const k of Object.keys(next)) if (next[+k] === id) next[+k] = 'me'; return next; });
+    setExpenses((prev) => prev.map((e) => (e.paidBy === id ? { ...e, paidBy: 'me' } : e)));
+  }, []);
+  const setCustodyDay = useCallback((weekday: number, who: string) => setCustody((prev) => ({ ...prev, [weekday]: who })), []);
+
+  const addExpense = useCallback((input: { label: string; amount: number; paidBy: string; splitPct: number }) => {
+    setExpenses((prev) => [{ id: newId(), label: input.label.trim(), amount: input.amount, paidBy: input.paidBy, splitPct: input.splitPct, settled: false, at: new Date().toISOString() }, ...prev]);
+  }, []);
+  const toggleExpenseSettled = useCallback((id: string) => setExpenses((prev) => prev.map((e) => (e.id === id ? { ...e, settled: !e.settled } : e))), []);
+  const deleteExpense = useCallback((id: string) => setExpenses((prev) => prev.filter((e) => e.id !== id)), []);
+
   const clearAll = useCallback(() => { setEntries([]); setEvents([]); }, []);
 
   const activeChild = useMemo(() => children.find((c) => c.id === activeId) ?? null, [children, activeId]);
@@ -296,9 +340,12 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
       routines, addRoutine, addRoutineStep, toggleStep, resetRoutine, deleteRoutine,
       chores, addChore, toggleChore, deleteChore,
       milestones, addMilestone, deleteMilestone,
+      caregivers, addCaregiver, deleteCaregiver,
+      custody, setCustodyDay,
+      expenses, addExpense, toggleExpenseSettled, deleteExpense,
       clearAll,
     }),
-    [loading, children, activeChild, setActiveChild, addChild, updateChild, deleteChild, entries, addEntry, deleteEntry, events, addEvent, deleteEvent, vaccines, addVaccine, updateVaccine, deleteVaccine, medications, addMedication, toggleMedication, deleteMedication, growth, addGrowth, deleteGrowth, routines, addRoutine, addRoutineStep, toggleStep, resetRoutine, deleteRoutine, chores, addChore, toggleChore, deleteChore, milestones, addMilestone, deleteMilestone, clearAll],
+    [loading, children, activeChild, setActiveChild, addChild, updateChild, deleteChild, entries, addEntry, deleteEntry, events, addEvent, deleteEvent, vaccines, addVaccine, updateVaccine, deleteVaccine, medications, addMedication, toggleMedication, deleteMedication, growth, addGrowth, deleteGrowth, routines, addRoutine, addRoutineStep, toggleStep, resetRoutine, deleteRoutine, chores, addChore, toggleChore, deleteChore, milestones, addMilestone, deleteMilestone, caregivers, addCaregiver, deleteCaregiver, custody, setCustodyDay, expenses, addExpense, toggleExpenseSettled, deleteExpense, clearAll],
   );
 
   return <DataContext.Provider value={value}>{node}</DataContext.Provider>;
