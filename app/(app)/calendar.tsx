@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ScrollView, View, Text, Pressable, Modal, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, font, radius, shadow, fill } from '../../src/theme/tokens';
-import { ChevronLeft, ChevronRight, Calendar, Shield, Activity, Heart, X, Search } from '../../src/components/icons';
+import { ChevronLeft, ChevronRight, Calendar, Shield, Activity, Heart, X, Search, BabyBean } from '../../src/components/icons';
 import { Button, Field } from '../../src/components/forms';
 import { useData, ENTRY_META, entryDetail, EntryKind, EventItem, Entry } from '../../src/lib/store';
 import { useWeather, WeatherGlyph, searchCity, wxColor, type WxLocation, type DayWx } from '../../src/lib/weather';
@@ -17,6 +17,9 @@ type ViewMode = (typeof VIEWS)[number];
 
 const EVENT_COLOR = color.primary; // periwinkle/lilac for scheduled events
 const ENTRY_COLOR = '#3FA98A'; // mint for logged entries
+const APPT_COLOR = '#B04070'; // rose for pregnancy / Mum&Me appointments
+
+type Appt = { id: string; title: string; at: string; source: 'Pregnancy' | 'Mum&Me' };
 
 const key = (y: number, m: number, d: number) => `${y}-${m}-${d}`;
 const timeOf = (iso: string) => new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
@@ -43,8 +46,14 @@ function entryTile(kind: EntryKind): { bg: string; stroke: string; Icon: typeof 
 
 export default function CalendarTab() {
   const insets = useSafeAreaInsets();
-  const { entries, events, addEvent, deleteEvent, activeChild } = useData();
+  const { entries, events, addEvent, deleteEvent, activeChild, pregAppts, matAppts } = useData();
   const wx = useWeather();
+
+  // Pregnancy + Mum&Me appointments shown read-only alongside calendar events.
+  const appts: Appt[] = [
+    ...pregAppts.map((a) => ({ id: a.id, title: a.title, at: a.at, source: 'Pregnancy' as const })),
+    ...matAppts.map((a) => ({ id: a.id, title: a.title, at: a.at, source: 'Mum&Me' as const })),
+  ];
 
   const now = new Date();
   const [view, setView] = useState({ y: now.getFullYear(), m: now.getMonth() });
@@ -58,6 +67,7 @@ export default function CalendarTab() {
   const selKey = key(sel.y, sel.m, sel.d);
   const entryDays = new Set(entries.map((e) => dkey(e.at)));
   const eventDays = new Set(events.map((e) => dkey(e.at)));
+  const apptDays = new Set(appts.map((a) => dkey(a.at)));
 
   const firstWeekday = monIndex(new Date(view.y, view.m, 1).getDay());
   const daysInMonth = new Date(view.y, view.m + 1, 0).getDate();
@@ -71,6 +81,7 @@ export default function CalendarTab() {
 
   const selEvents = events.filter((e) => dkey(e.at) === selKey);
   const selEntries = entries.filter((e) => dkey(e.at) === selKey);
+  const selAppts = appts.filter((a) => dkey(a.at) === selKey);
 
   // Agenda mode: upcoming events in the viewed month (and beyond), sorted ascending.
   const agendaEvents = [...events]
@@ -151,6 +162,7 @@ export default function CalendarTab() {
             todayKey={todayKey}
             entryDays={entryDays}
             eventDays={eventDays}
+            apptDays={apptDays}
             wxForDate={wx.wxForDate}
             onSelect={(d) => setSel({ y: view.y, m: view.m, d })}
           />
@@ -184,13 +196,18 @@ export default function CalendarTab() {
         <EventCard key={ev.id} ev={ev} onDelete={() => deleteEvent(ev.id)} />
       ))}
 
+      {/* Pregnancy / Mum&Me appointments (read-only here) */}
+      {selAppts.map((a) => (
+        <ApptCard key={a.id} appt={a} />
+      ))}
+
       {/* Logged entries */}
       {selEntries.map((e) => (
         <EntryCard key={e.id} entry={e} />
       ))}
 
       {/* Empty state */}
-      {selEvents.length === 0 && selEntries.length === 0 && (
+      {selEvents.length === 0 && selEntries.length === 0 && selAppts.length === 0 && (
         <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 20, alignItems: 'center' }, shadow.card]}>
           <Text style={{ fontFamily: font.body500, fontSize: 14, color: color.muted }}>Nothing on this day.</Text>
         </View>
@@ -333,6 +350,7 @@ function MonthGrid({
   todayKey,
   entryDays,
   eventDays,
+  apptDays,
   wxForDate,
   onSelect,
 }: {
@@ -342,6 +360,7 @@ function MonthGrid({
   todayKey: string;
   entryDays: Set<string>;
   eventDays: Set<string>;
+  apptDays: Set<string>;
   wxForDate: (d: Date) => DayWx | null;
   onSelect: (d: number) => void;
 }) {
@@ -365,6 +384,7 @@ function MonthGrid({
           const isToday = k === todayKey;
           const hasEntry = entryDays.has(k);
           const hasEvent = eventDays.has(k);
+          const hasAppt = apptDays.has(k);
           const dayWx = wxForDate(new Date(view.y, view.m, d));
           return (
             <Pressable key={k} onPress={() => onSelect(d)} style={{ width: `${100 / 7}%`, height: 52, alignItems: 'center', justifyContent: 'flex-start', paddingTop: 1 }}>
@@ -393,6 +413,7 @@ function MonthGrid({
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 1, height: 16 }}>
                 {dayWx ? <WeatherGlyph code={dayWx.code} size={13} /> : null}
                 {hasEvent ? <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: EVENT_COLOR }} /> : null}
+                {hasAppt ? <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: APPT_COLOR }} /> : null}
                 {hasEntry ? <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: ENTRY_COLOR }} /> : null}
               </View>
             </Pressable>
@@ -454,6 +475,23 @@ function EventCard({ ev, onDelete }: { ev: EventItem; onDelete: () => void }) {
       <Pressable onPress={onDelete} hitSlop={8} style={{ paddingLeft: 8 }}>
         <X size={16} color={color.faint} />
       </Pressable>
+    </View>
+  );
+}
+
+function ApptCard({ appt }: { appt: Appt }) {
+  const tint = appt.source === 'Pregnancy' ? '#E7E4FB' : '#FBE0EA';
+  const Icon = appt.source === 'Pregnancy' ? BabyBean : Heart;
+  return (
+    <View style={[{ backgroundColor: '#fff', borderRadius: radius.cardSm, paddingVertical: 14, paddingHorizontal: 16, flexDirection: 'row', gap: 12, alignItems: 'center' }, shadow.card]}>
+      <View style={{ width: 40, height: 40, backgroundColor: tint, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}>
+        <Icon size={18} color={APPT_COLOR} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontFamily: font.body700, fontSize: 14, color: color.ink, marginBottom: 3 }}>{appt.title}</Text>
+        <Text style={{ fontFamily: font.body400, fontSize: 12, color: color.muted }}>{appt.source} · {timeOf(appt.at)}</Text>
+      </View>
+      <View style={{ width: 8, height: 8, backgroundColor: APPT_COLOR, borderRadius: 4 }} />
     </View>
   );
 }
