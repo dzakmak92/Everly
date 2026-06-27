@@ -193,11 +193,6 @@ export default function Today() {
           <Logo width={22} height={26} />
           <Text style={{ fontFamily: font.display700, fontSize: 19, color: color.ink }}>Everly</Text>
         </View>
-        {/* Greeting */}
-        <Pressable onPress={() => activeChild && router.push(`/(app)/child/${activeChild.id}` as any)} disabled={!activeChild} style={{ paddingHorizontal: 2 }}>
-          <Text style={{ fontFamily: font.display700, fontSize: 24, color: color.ink }}>{greeting()}, {name}</Text>
-          <Text style={{ fontFamily: font.body400, fontSize: 13, color: color.muted, marginTop: 4 }}>{dateLabel}</Text>
-        </Pressable>
         {/* Active-module label (the rail switches between modules) */}
         {showDock && (
           <Text style={{ fontFamily: font.body600, fontSize: 13, color: color.muted, paddingHorizontal: 2 }}>
@@ -450,6 +445,17 @@ const RAIL_CATS: { key: string; label: string; to: string; icon: (c: string) => 
   { key: 'coparent', label: 'Co-parent', to: '/(app)/coparent', icon: (c) => <User size={18} color={c} /> },
 ];
 
+/** One rail category shortcut (shared by the promoted Insights and the rest). */
+function renderCat(cat: { key: string; label: string; icon: (c: string) => React.ReactNode }, on: boolean, onNavigate: (key: string) => void) {
+  return (
+    <Pressable key={cat.key} onPress={() => onNavigate(cat.key)} accessibilityLabel={cat.label}>
+      <View style={{ width: 36, height: 36, borderRadius: 13, backgroundColor: on ? '#E0F4EF' : color.canvas, alignItems: 'center', justifyContent: 'center', borderWidth: on ? 2 : 0, borderColor: color.maternalTeal }}>
+        {cat.icon(on ? color.maternalTeal : RAIL_ICON)}
+      </View>
+    </Pressable>
+  );
+}
+
 function RailDock({
   children, activeId, isYou, hasJourney, activeCat, youLabel, side, onSelectChild, onSelectYou, onAdd, onNavigate, onMirror,
 }: {
@@ -475,6 +481,17 @@ function RailDock({
           contentContainerStyle={{ alignItems: 'center', gap: 9, paddingBottom: 8 }}
           showsVerticalScrollIndicator={false}
         >
+          {/* Mum&Me sits above the children */}
+          {hasJourney && (() => {
+            const youOn = !activeCat && isYou;
+            return (
+              <Pressable onPress={onSelectYou} accessibilityLabel={`Mum and Me, ${youLabel}`}>
+                <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: youOn ? color.maternalTeal : '#E0F4EF', alignItems: 'center', justifyContent: 'center', borderWidth: youOn ? 3 : 0, borderColor: '#fff' }}>
+                  <Heart size={17} color={youOn ? '#fff' : color.maternalTeal} filled />
+                </View>
+              </Pressable>
+            );
+          })()}
           {children.map((ch) => {
             const t = childToken[ch.color];
             const on = !activeCat && !isYou && ch.id === activeId;
@@ -486,34 +503,18 @@ function RailDock({
               </Pressable>
             );
           })}
-          {hasJourney && (() => {
-            const youOn = !activeCat && isYou;
-            return (
-              <Pressable onPress={onSelectYou} accessibilityLabel={`Mum and Me, ${youLabel}`}>
-                <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: youOn ? color.maternalTeal : '#E0F4EF', alignItems: 'center', justifyContent: 'center', borderWidth: youOn ? 3 : 0, borderColor: '#fff' }}>
-                  <Heart size={17} color={youOn ? '#fff' : color.maternalTeal} filled />
-                </View>
-              </Pressable>
-            );
-          })()}
           <Pressable onPress={onAdd} accessibilityLabel="Add a family member">
             <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: color.canvas, alignItems: 'center', justifyContent: 'center' }}>
               <Plus size={17} color={color.muted} />
             </View>
           </Pressable>
 
+          {/* Insights promoted to sit with the avatars, above the divider */}
+          {RAIL_CATS.filter((cat) => cat.key === 'insights').map((cat) => renderCat(cat, cat.key === activeCat, onNavigate))}
+
           <View style={{ width: 24, height: 1, backgroundColor: color.hairline, marginVertical: 2 }} />
 
-          {RAIL_CATS.map((cat) => {
-            const on = cat.key === activeCat;
-            return (
-              <Pressable key={cat.key} onPress={() => onNavigate(cat.key)} accessibilityLabel={cat.label}>
-                <View style={{ width: 36, height: 36, borderRadius: 13, backgroundColor: on ? '#E0F4EF' : color.canvas, alignItems: 'center', justifyContent: 'center', borderWidth: on ? 2 : 0, borderColor: color.maternalTeal }}>
-                  {cat.icon(on ? color.maternalTeal : RAIL_ICON)}
-                </View>
-              </Pressable>
-            );
-          })}
+          {RAIL_CATS.filter((cat) => cat.key !== 'insights').map((cat) => renderCat(cat, cat.key === activeCat, onNavigate))}
         </ScrollView>
 
         <View style={{ width: 24, height: 1, backgroundColor: color.hairline, marginVertical: 8 }} />
