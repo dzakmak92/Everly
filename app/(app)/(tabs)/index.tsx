@@ -667,6 +667,10 @@ function MaternityView({
         ];
 
   const openTile = tiles.find((t) => t.key === openCard) ?? null;
+  // The grid is two columns; the inline panel slots in right after the row that
+  // holds the open card (its row's last index), so it expands in place.
+  const openIndex = openTile ? tiles.findIndex((t) => t.key === openCard) : -1;
+  const panelRowEnd = openIndex >= 0 ? Math.min(openIndex - (openIndex % 2) + 1, tiles.length - 1) : -1;
 
   // Up next — soonest first, max 2, future only.
   const source = phase === 'pregnancy' ? pregAppts : matAppts;
@@ -745,41 +749,42 @@ function MaternityView({
         </View>
       )}
 
-      {/* Feature grid — tapping a card expands it inline (panel below the grid) */}
+      {/* Feature grid — tapping a card expands it inline, directly under its row */}
       {showGrid && (
       <View style={{ gap: 10 }}>
         <Label>{phase === 'pregnancy' ? 'This week' : 'Looking after you'}</Label>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-          {tiles.map((t) => {
+          {tiles.map((t, i) => {
             const active = t.key === openCard;
             return (
-              <Pressable
-                key={t.key}
-                onPress={() => setOpenCard((cur) => (cur === t.key ? null : t.key))}
-                style={({ pressed }) => [{ width: '47.5%', flexGrow: 1, opacity: pressed ? 0.82 : 1 }]}
-              >
-                <View style={[{ backgroundColor: active ? '#E0F4EF' : '#fff', borderRadius: radius.card, padding: 14, gap: 9, borderWidth: 2, borderColor: active ? color.maternalTeal : 'transparent' }, shadow.card]}>
-                  <View style={{ width: 42, height: 42, borderRadius: 13, backgroundColor: t.bg, alignItems: 'center', justifyContent: 'center' }}>{t.icon}</View>
-                  <Text style={{ fontFamily: font.body700, fontSize: 13.5, color: active ? color.tealInk : color.ink }}>{t.label}</Text>
-                </View>
-              </Pressable>
+              <React.Fragment key={t.key}>
+                <Pressable
+                  onPress={() => setOpenCard((cur) => (cur === t.key ? null : t.key))}
+                  style={({ pressed }) => [{ width: '47.5%', flexGrow: 1, opacity: pressed ? 0.82 : 1 }]}
+                >
+                  <View style={[{ backgroundColor: active ? '#E0F4EF' : '#fff', borderRadius: radius.card, padding: 14, gap: 9, borderWidth: 2, borderColor: active ? color.maternalTeal : 'transparent' }, shadow.card]}>
+                    <View style={{ width: 42, height: 42, borderRadius: 13, backgroundColor: t.bg, alignItems: 'center', justifyContent: 'center' }}>{t.icon}</View>
+                    <Text style={{ fontFamily: font.body700, fontSize: 13.5, color: active ? color.tealInk : color.ink }}>{t.label}</Text>
+                  </View>
+                </Pressable>
+
+                {/* Inline expanded panel — full width, slotted right under the open card's row */}
+                {openTile && i === panelRowEnd && (
+                  <View style={[{ width: '100%', flexBasis: '100%', backgroundColor: '#fff', borderRadius: radius.card, padding: 16, gap: 14, borderWidth: 2, borderColor: color.maternalTeal }, shadow.card]}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                      <View style={{ width: 36, height: 36, borderRadius: 11, backgroundColor: openTile.bg, alignItems: 'center', justifyContent: 'center' }}>{openTile.icon}</View>
+                      <Text style={{ flex: 1, fontFamily: font.display700, fontSize: 17, color: color.ink }}>{openTile.label}</Text>
+                      <Pressable onPress={() => setOpenCard(null)} hitSlop={10} style={{ padding: 2 }}>
+                        <X size={20} color={color.muted} />
+                      </Pressable>
+                    </View>
+                    <CardPanel cardKey={openTile.key} dueDate={dueDate} maternalBirth={maternalBirth} ppWeeks={ppWeeks} onClose={() => setOpenCard(null)} />
+                  </View>
+                )}
+              </React.Fragment>
             );
           })}
         </View>
-
-        {/* Inline expanded panel — full width, directly below the grid */}
-        {openTile && (
-          <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 16, gap: 14, borderWidth: 2, borderColor: color.maternalTeal }, shadow.card]}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <View style={{ width: 36, height: 36, borderRadius: 11, backgroundColor: openTile.bg, alignItems: 'center', justifyContent: 'center' }}>{openTile.icon}</View>
-              <Text style={{ flex: 1, fontFamily: font.display700, fontSize: 17, color: color.ink }}>{openTile.label}</Text>
-              <Pressable onPress={() => setOpenCard(null)} hitSlop={10} style={{ padding: 2 }}>
-                <X size={20} color={color.muted} />
-              </Pressable>
-            </View>
-            <CardPanel cardKey={openTile.key} dueDate={dueDate} maternalBirth={maternalBirth} ppWeeks={ppWeeks} onClose={() => setOpenCard(null)} />
-          </View>
-        )}
       </View>
       )}
 
