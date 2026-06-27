@@ -32,11 +32,12 @@ export default function SettingsTab() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { session, profile } = useSupabase();
-  const { children, activeChild, setActiveChild, addChild, clearAll } = useData();
+  const { children, activeChild, setActiveChild, addChild, clearAll, loadSampleData, demoPremium, setDemoPremium } = useData();
   const [busy, setBusy] = useState(false);
 
   const [addOpen, setAddOpen] = useState(false);
   const [confirmWipe, setConfirmWipe] = useState(false);
+  const [confirmSample, setConfirmSample] = useState(false);
   const [name, setName] = useState('');
   const [colorKey, setColorKey] = useState<ChildColor>(CHILD_COLORS[0]);
   const [error, setError] = useState('');
@@ -173,6 +174,36 @@ export default function SettingsTab() {
         </Pressable>
       </View>
 
+      {/* Demo & preview */}
+      <SectionHeader>Demo & preview</SectionHeader>
+      <View style={[{ backgroundColor: '#fff', borderRadius: 18, overflow: 'hidden' }, shadow.card]}>
+        <Pressable
+          onPress={() => setConfirmSample(true)}
+          style={({ pressed }) => ({ paddingVertical: 14, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 12, opacity: pressed ? 0.7 : 1 })}
+        >
+          <IconBox bg="#D8F0E6"><Star size={16} color="#2C8475" /></IconBox>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: font.body700, fontSize: 13, color: color.ink }}>Load sample data</Text>
+            <Text style={{ fontFamily: font.body400, fontSize: 11, color: color.muted, marginTop: 3 }}>Two children + an active pregnancy, with every screen filled in.</Text>
+          </View>
+          <ChevronRight size={16} color="#9C9AB2" />
+        </Pressable>
+        <View style={{ height: 1, backgroundColor: 'rgba(51,50,74,0.05)' }} />
+        <Pressable
+          onPress={() => setDemoPremium(!demoPremium)}
+          style={({ pressed }) => ({ paddingVertical: 14, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 12, opacity: pressed ? 0.7 : 1 })}
+        >
+          <IconBox bg="#FBF1CE"><Shield size={16} color="#C9A33B" /></IconBox>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: font.body700, fontSize: 13, color: color.ink }}>Preview premium features</Text>
+            <Text style={{ fontFamily: font.body400, fontSize: 11, color: color.muted, marginTop: 3 }}>Unlock premium-gated screens on this device.</Text>
+          </View>
+          <View style={{ width: 46, height: 28, borderRadius: 14, backgroundColor: demoPremium ? color.maternalTeal : '#E4E2EF', padding: 3, justifyContent: 'center' }}>
+            <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: '#fff', alignSelf: demoPremium ? 'flex-end' : 'flex-start' }} />
+          </View>
+        </Pressable>
+      </View>
+
       {/* Data & Privacy */}
       <SectionHeader>Data & Privacy</SectionHeader>
       <View style={{ backgroundColor: '#E7E4FB', borderRadius: 18, paddingVertical: 14, paddingHorizontal: 16, flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
@@ -223,6 +254,20 @@ export default function SettingsTab() {
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <Button label="Cancel" variant="secondary" onPress={() => setAddOpen(false)} style={{ flex: 1 }} />
               <Button label="Add" onPress={saveChild} style={{ flex: 1 }} />
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Confirm load sample data */}
+      <Modal visible={confirmSample} transparent animationType="fade" onRequestClose={() => setConfirmSample(false)}>
+        <Pressable onPress={() => setConfirmSample(false)} style={{ flex: 1, backgroundColor: 'rgba(40,18,50,0.35)', justifyContent: 'center', paddingHorizontal: 28 }}>
+          <Pressable onPress={() => {}} style={[{ backgroundColor: color.canvas, borderRadius: radius.card, padding: 20, gap: 12 }, shadow.card]}>
+            <Text style={{ fontFamily: font.display700, fontSize: 18, color: color.ink }}>Load sample data?</Text>
+            <Text style={{ fontFamily: font.body400, fontSize: 13.5, color: color.inkSecondary }}>This replaces what's on this device with a demo family — two children (4 months & 6 years) and an active pregnancy — and turns on premium previews. Great for exploring; you can clear it anytime.</Text>
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <Button label="Cancel" variant="secondary" onPress={() => setConfirmSample(false)} style={{ flex: 1 }} />
+              <Button label="Load" onPress={() => { loadSampleData(); setConfirmSample(false); setMsg('Sample data loaded.'); }} style={{ flex: 1 }} />
             </View>
           </Pressable>
         </Pressable>

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useMemo, useState, useCall
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { childToken } from '../../theme/tokens';
 import type { Stage } from '../age';
+import { buildSampleData } from './sampleData';
 
 /**
  * On-device data layer (PRD privacy model: child/maternal/health data NEVER
@@ -142,6 +143,7 @@ const MOMCARE_KEY = 'everly.momCare.v1';
 const MATAPPT_KEY = 'everly.matAppts.v1';
 const KICKSESSIONS_KEY = 'everly.kickSessions.v1';
 const CONTRACTIONS_KEY = 'everly.contractions.v1';
+const DEMO_PREMIUM_KEY = 'everly.demoPremium.v1';
 
 function newId() {
   return `${Date.now().toString(36)}-${Math.floor(Math.random() * 1e6).toString(36)}`;
@@ -257,6 +259,10 @@ type DataValue = {
   deleteContraction: (id: string) => void;
   clearContractions: () => void;
   clearAll: () => void;
+  /** Demo helpers: load a rich sample dataset and preview premium features. */
+  demoPremium: boolean;
+  setDemoPremium: (b: boolean) => void;
+  loadSampleData: () => void;
 };
 
 const DataContext = createContext<DataValue | undefined>(undefined);
@@ -298,6 +304,14 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
   const [matAppts, setMatAppts] = useState<MatAppt[]>([]);
   const [kickSessions, setKickSessions] = useState<KickSession[]>([]);
   const [contractionSessions, setContractionSessions] = useState<ContractionSession[]>([]);
+  const [demoPremium, setDemoPremiumState] = useState(false);
+
+  // Demo-premium flag is loaded/saved independently of the main hydration chain.
+  useEffect(() => { AsyncStorage.getItem(DEMO_PREMIUM_KEY).then((v) => { if (v) setDemoPremiumState(JSON.parse(v)); }).catch(() => {}); }, []);
+  const setDemoPremium = useCallback((b: boolean) => {
+    setDemoPremiumState(b);
+    AsyncStorage.setItem(DEMO_PREMIUM_KEY, JSON.stringify(b)).catch(() => {});
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -613,6 +627,21 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
 
   const clearAll = useCallback(() => { setEntries([]); setEvents([]); }, []);
 
+  // Populate the whole on-device store with a rich demo dataset (2 kids + an
+  // active pregnancy) and turn on premium previews. Save effects persist it.
+  const loadSampleData = useCallback(() => {
+    const d = buildSampleData();
+    setChildren(d.children); setActiveId(d.activeId); setEntries(d.entries); setEvents(d.events);
+    setVaccines(d.vaccines); setMedications(d.medications); setGrowth(d.growth); setMilestones(d.milestones);
+    setRoutines(d.routines); setChores(d.chores); setCaregivers(d.caregivers); setCustody(d.custody);
+    setExpenses(d.expenses); setDueDateState(d.dueDate); setCheckins(d.checkins); setPregStatusState(d.pregStatus);
+    setPregAppts(d.pregAppts); setPregVitals(d.pregVitals); setKickSessions(d.kickSessions);
+    setContractionSessions(d.contractionSessions); setBirthPrep(d.birthPrep); setSavedNames(d.savedNames);
+    setTzContacts(d.tzContacts); setSavedTips(d.savedTips);
+    setMaternalBirthState(null); setPregArchive([]);
+    setDemoPremium(true);
+  }, [setDemoPremium]);
+
   const activeChild = useMemo(() => children.find((c) => c.id === activeId) ?? null, [children, activeId]);
 
   const value = useMemo<DataValue>(
@@ -644,8 +673,9 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
       kickSessions, addKickSession, deleteKickSession, clearKickSessions,
       contractionSessions, addContraction, deleteContraction, clearContractions,
       clearAll,
+      demoPremium, setDemoPremium, loadSampleData,
     }),
-    [loading, children, activeChild, setActiveChild, addChild, updateChild, deleteChild, entries, addEntry, deleteEntry, events, addEvent, deleteEvent, vaccines, addVaccine, updateVaccine, deleteVaccine, medications, addMedication, toggleMedication, deleteMedication, growth, addGrowth, deleteGrowth, routines, addRoutine, addRoutineStep, toggleStep, resetRoutine, deleteRoutine, chores, addChore, toggleChore, deleteChore, milestones, addMilestone, deleteMilestone, caregivers, addCaregiver, deleteCaregiver, custody, setCustodyDay, expenses, addExpense, toggleExpenseSettled, deleteExpense, dueDate, setDueDate, checkins, addCheckin, deleteCheckin, pregArchive, closePregnancy, dockSide, setDockSide, maternalBirth, setMaternalBirth, epdsResults, addEpdsResult, deleteEpdsResult, recoveryLogs, addRecoveryLog, deleteRecoveryLog, tzContacts, addTzContact, deleteTzContact, savedTips, saveTip, deleteTip, birthPrep, addBirthPrep, toggleBirthPrep, deleteBirthPrep, savedNames, saveName, deleteName, pregStatus, setPregStatus, pregAppts, addPregAppt, deletePregAppt, pregVitals, addPregVital, deletePregVital, lastPeriod, setLastPeriod, cycleLength, setCycleLength, ttcItems, addTtc, toggleTtc, deleteTtc, momCare, addMomCare, deleteMomCare, pelvicLog, addPelvic, matAppts, addMatAppt, deleteMatAppt, kickSessions, addKickSession, deleteKickSession, clearKickSessions, contractionSessions, addContraction, deleteContraction, clearContractions, clearAll],
+    [loading, children, activeChild, setActiveChild, addChild, updateChild, deleteChild, entries, addEntry, deleteEntry, events, addEvent, deleteEvent, vaccines, addVaccine, updateVaccine, deleteVaccine, medications, addMedication, toggleMedication, deleteMedication, growth, addGrowth, deleteGrowth, routines, addRoutine, addRoutineStep, toggleStep, resetRoutine, deleteRoutine, chores, addChore, toggleChore, deleteChore, milestones, addMilestone, deleteMilestone, caregivers, addCaregiver, deleteCaregiver, custody, setCustodyDay, expenses, addExpense, toggleExpenseSettled, deleteExpense, dueDate, setDueDate, checkins, addCheckin, deleteCheckin, pregArchive, closePregnancy, dockSide, setDockSide, maternalBirth, setMaternalBirth, epdsResults, addEpdsResult, deleteEpdsResult, recoveryLogs, addRecoveryLog, deleteRecoveryLog, tzContacts, addTzContact, deleteTzContact, savedTips, saveTip, deleteTip, birthPrep, addBirthPrep, toggleBirthPrep, deleteBirthPrep, savedNames, saveName, deleteName, pregStatus, setPregStatus, pregAppts, addPregAppt, deletePregAppt, pregVitals, addPregVital, deletePregVital, lastPeriod, setLastPeriod, cycleLength, setCycleLength, ttcItems, addTtc, toggleTtc, deleteTtc, momCare, addMomCare, deleteMomCare, pelvicLog, addPelvic, matAppts, addMatAppt, deleteMatAppt, kickSessions, addKickSession, deleteKickSession, clearKickSessions, contractionSessions, addContraction, deleteContraction, clearContractions, clearAll, demoPremium, setDemoPremium, loadSampleData],
   );
 
   return <DataContext.Provider value={value}>{node}</DataContext.Provider>;
