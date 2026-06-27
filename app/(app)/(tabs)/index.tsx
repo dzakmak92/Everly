@@ -25,6 +25,11 @@ import {
   useData, entriesOn, upcomingEvents, entryDetail, ENTRY_META, quickLogKinds, MOOD_LABELS, CHILD_COLORS,
   type EntryKind, type FeedSide, type DiaperType, type Child, type Lochia, type ChildColor, type PregArchive, type PregStatus,
 } from '../../../src/lib/store';
+import HealthTab from '../health';
+import TimelineTab from '../timeline';
+import InsightsScreen from '../insights';
+import RoutinesScreen from '../routines';
+import CoParentScreen from '../coparent';
 
 const todayISO = () => {
   const d = new Date();
@@ -66,6 +71,8 @@ export default function Today() {
     return hasJourney ? 'you' : (activeChild?.id ?? '');
   });
   const isYou = person === 'you';
+  // A "More" category can take over the content column (rendered inline, same page).
+  const [activeCat, setActiveCat] = useState<string | null>(null);
 
   // Mum&Me phase tab — default to where she is: pregnancy while expecting,
   // postpartum once the baby has arrived.
@@ -169,13 +176,15 @@ export default function Today() {
   const padStart = dockSide === 'right' ? 20 : 10;
   const padEnd = dockSide === 'right' ? 10 : 20;
   const railProps = {
-    children, activeId: activeChild?.id, isYou, hasJourney,
+    children, activeId: activeChild?.id, isYou, hasJourney, activeCat,
     youLabel: youStatusLabel(dueDate, maternalBirth),
-    onSelectChild: (id: string) => { setPerson(id); setActiveChild(id); },
-    onSelectYou: () => setPerson('you'),
+    onSelectChild: (id: string) => { setActiveCat(null); setPerson(id); setActiveChild(id); },
+    onSelectYou: () => { setActiveCat(null); setPerson('you'); },
     onAdd: () => router.push('/(app)/(tabs)/family' as any),
-    onNavigate: (to: string) => router.push(to as any),
+    // Categories load inline on this page (left of the rail) — not a new route.
+    onNavigate: (key: string) => setActiveCat(key),
   };
+  const catLabel = activeCat ? RAIL_CATS.find((c) => c.key === activeCat)?.label ?? '' : '';
   return (
     <View style={{ flex: 1, backgroundColor: color.canvas }}>
       {/* Fixed header — the rail runs from just beneath this down to the bottom */}
@@ -192,7 +201,7 @@ export default function Today() {
         {/* Active-module label (the rail switches between modules) */}
         {showDock && (
           <Text style={{ fontFamily: font.body600, fontSize: 13, color: color.muted, paddingHorizontal: 2 }}>
-            {isYou ? `Mum&Me · ${youStatusLabel(dueDate, maternalBirth)}` : (activeChild ? `${activeChild.name}${activeChild.birthDate ? ` · ${ageLabel(activeChild.birthDate)}` : ''}` : '')}
+            {activeCat ? catLabel : isYou ? `Mum&Me · ${youStatusLabel(dueDate, maternalBirth)}` : (activeChild ? `${activeChild.name}${activeChild.birthDate ? ` · ${ageLabel(activeChild.birthDate)}` : ''}` : '')}
           </Text>
         )}
       </View>
@@ -200,6 +209,9 @@ export default function Today() {
       {/* Content + reserved rail */}
       <View style={{ flex: 1, flexDirection: 'row' }}>
         {showDock && dockSide === 'left' && <RailDock {...railProps} side="left" onMirror={() => setDockSide('right')} />}
+    {activeCat ? (
+      <View style={{ flex: 1 }}><CategoryView cat={activeCat} /></View>
+    ) : (
     <ScrollView
       style={{ flex: 1, backgroundColor: color.canvas }}
       contentContainerStyle={{ paddingTop: 10, paddingBottom: 28, paddingLeft: padStart, paddingRight: padEnd, gap: 16 }}
@@ -408,10 +420,23 @@ export default function Today() {
         </Pressable>
       </Modal>
     </ScrollView>
+    )}
         {showDock && dockSide === 'right' && <RailDock {...railProps} side="right" onMirror={() => setDockSide('left')} />}
       </View>
     </View>
   );
+}
+
+/* Renders a "More" category inline as the content column (it brings its own scroll). */
+function CategoryView({ cat }: { cat: string }) {
+  switch (cat) {
+    case 'health': return <HealthTab embedded />;
+    case 'timeline': return <TimelineTab embedded />;
+    case 'insights': return <InsightsScreen embedded />;
+    case 'routines': return <RoutinesScreen embedded />;
+    case 'coparent': return <CoParentScreen embedded />;
+    default: return null;
+  }
 }
 
 /* Reserved side rail — module avatars on top, a divider, then shortcuts to the
@@ -426,18 +451,19 @@ const RAIL_CATS: { key: string; label: string; to: string; icon: (c: string) => 
 ];
 
 function RailDock({
-  children, activeId, isYou, hasJourney, youLabel, side, onSelectChild, onSelectYou, onAdd, onNavigate, onMirror,
+  children, activeId, isYou, hasJourney, activeCat, youLabel, side, onSelectChild, onSelectYou, onAdd, onNavigate, onMirror,
 }: {
   children: Child[];
   activeId?: string;
   isYou: boolean;
   hasJourney: boolean;
+  activeCat: string | null;
   youLabel: string;
   side: 'left' | 'right';
   onSelectChild: (id: string) => void;
   onSelectYou: () => void;
   onAdd: () => void;
-  onNavigate: (to: string) => void;
+  onNavigate: (key: string) => void;
   onMirror: () => void;
 }) {
   const insets = useSafeAreaInsets();
@@ -451,22 +477,25 @@ function RailDock({
         >
           {children.map((ch) => {
             const t = childToken[ch.color];
-            const on = !isYou && ch.id === activeId;
+            const on = !activeCat && !isYou && ch.id === activeId;
             return (
-              <Pressable key={ch.id} onPress={() => onSelectChild(ch.id)}>
+              <Pressable key={ch.id} onPress={() => onSelectChild(ch.id)} accessibilityLabel={ch.name}>
                 <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: on ? t.stroke : t.fill, alignItems: 'center', justifyContent: 'center', borderWidth: on ? 3 : 0, borderColor: '#fff' }}>
                   <Text style={{ fontFamily: font.display700, fontSize: 15, color: on ? '#fff' : t.stroke }}>{ch.name.charAt(0).toUpperCase()}</Text>
                 </View>
               </Pressable>
             );
           })}
-          {hasJourney && (
-            <Pressable onPress={onSelectYou} accessibilityLabel={`Mum and Me, ${youLabel}`}>
-              <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: isYou ? color.maternalTeal : '#E0F4EF', alignItems: 'center', justifyContent: 'center', borderWidth: isYou ? 3 : 0, borderColor: '#fff' }}>
-                <Heart size={17} color={isYou ? '#fff' : color.maternalTeal} filled />
-              </View>
-            </Pressable>
-          )}
+          {hasJourney && (() => {
+            const youOn = !activeCat && isYou;
+            return (
+              <Pressable onPress={onSelectYou} accessibilityLabel={`Mum and Me, ${youLabel}`}>
+                <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: youOn ? color.maternalTeal : '#E0F4EF', alignItems: 'center', justifyContent: 'center', borderWidth: youOn ? 3 : 0, borderColor: '#fff' }}>
+                  <Heart size={17} color={youOn ? '#fff' : color.maternalTeal} filled />
+                </View>
+              </Pressable>
+            );
+          })()}
           <Pressable onPress={onAdd} accessibilityLabel="Add a family member">
             <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: color.canvas, alignItems: 'center', justifyContent: 'center' }}>
               <Plus size={17} color={color.muted} />
@@ -475,13 +504,16 @@ function RailDock({
 
           <View style={{ width: 24, height: 1, backgroundColor: color.hairline, marginVertical: 2 }} />
 
-          {RAIL_CATS.map((cat) => (
-            <Pressable key={cat.key} onPress={() => onNavigate(cat.to)} accessibilityLabel={cat.label}>
-              <View style={{ width: 36, height: 36, borderRadius: 13, backgroundColor: color.canvas, alignItems: 'center', justifyContent: 'center' }}>
-                {cat.icon(RAIL_ICON)}
-              </View>
-            </Pressable>
-          ))}
+          {RAIL_CATS.map((cat) => {
+            const on = cat.key === activeCat;
+            return (
+              <Pressable key={cat.key} onPress={() => onNavigate(cat.key)} accessibilityLabel={cat.label}>
+                <View style={{ width: 36, height: 36, borderRadius: 13, backgroundColor: on ? '#E0F4EF' : color.canvas, alignItems: 'center', justifyContent: 'center', borderWidth: on ? 2 : 0, borderColor: color.maternalTeal }}>
+                  {cat.icon(on ? color.maternalTeal : RAIL_ICON)}
+                </View>
+              </Pressable>
+            );
+          })}
         </ScrollView>
 
         <View style={{ width: 24, height: 1, backgroundColor: color.hairline, marginVertical: 8 }} />

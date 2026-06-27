@@ -23,7 +23,7 @@ const TILE_TOKENS = [
   childToken.sage,
 ];
 
-export default function Routines() {
+export default function Routines({ embedded }: { embedded?: boolean }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const d = useData();
@@ -87,16 +87,18 @@ export default function Routines() {
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: color.canvas }}
-      contentContainerStyle={{ paddingTop: insets.top + 6, paddingBottom: insets.bottom + 28 }}
+      contentContainerStyle={{ paddingTop: embedded ? 4 : insets.top + 6, paddingBottom: insets.bottom + 28 }}
     >
       {/* back chevron (preserved) */}
-      <Pressable
-        onPress={() => router.back()}
-        hitSlop={8}
-        style={{ width: 40, height: 40, justifyContent: 'center', marginLeft: 18 }}
-      >
-        <ChevronLeft size={24} color={color.ink} />
-      </Pressable>
+      {!embedded && (
+        <Pressable
+          onPress={() => router.back()}
+          hitSlop={8}
+          style={{ width: 40, height: 40, justifyContent: 'center', marginLeft: 18 }}
+        >
+          <ChevronLeft size={24} color={color.ink} />
+        </Pressable>
+      )}
 
       {/* title row + child pill */}
       <View

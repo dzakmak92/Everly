@@ -19,7 +19,7 @@ const MINT_INK = '#3FA98A';
 const PEACH = '#FCE6D8';
 const PEACH_INK = '#D9824F';
 
-export default function CoParent() {
+export default function CoParent({ embedded }: { embedded?: boolean }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const d = useData();
@@ -101,12 +101,14 @@ export default function CoParent() {
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: color.canvas }}
-      contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: insets.bottom + 28, paddingHorizontal: 20, gap: 16 }}
+      contentContainerStyle={{ paddingTop: embedded ? 4 : insets.top + 8, paddingBottom: insets.bottom + 28, paddingHorizontal: 20, gap: 16 }}
       showsVerticalScrollIndicator={false}
     >
-      <Pressable onPress={() => router.back()} style={{ width: 40, height: 40, justifyContent: 'center', marginLeft: -6 }}>
-        <ChevronLeft size={24} color={color.ink} />
-      </Pressable>
+      {!embedded && (
+        <Pressable onPress={() => router.back()} style={{ width: 40, height: 40, justifyContent: 'center', marginLeft: -6 }}>
+          <ChevronLeft size={24} color={color.ink} />
+        </Pressable>
+      )}
 
       {/* Title + child-context pill */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
