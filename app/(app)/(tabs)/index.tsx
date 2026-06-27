@@ -637,26 +637,10 @@ function MaternityView({
         )}
       </View>
 
-      {/* Archived (read-only) pregnancy — shown after birth until a new one begins */}
+      {/* Archived pregnancy state — after birth, before a new one begins */}
       {phase === 'pregnancy' && !showGrid && (
         <View style={{ gap: 10 }}>
-          {pregArchived && (
-            <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 16, gap: 10 }, shadow.card]}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <View style={{ width: 30, height: 30, borderRadius: 9, backgroundColor: '#E0F4EF', alignItems: 'center', justifyContent: 'center' }}><CheckCircle size={17} color={color.maternalTeal} /></View>
-                <Text style={{ flex: 1, fontFamily: font.body700, fontSize: 14.5, color: color.ink }}>Pregnancy archive</Text>
-                <Badge text="read-only" bg="#EFEDF8" fg={color.muted} />
-              </View>
-              <View style={{ flexDirection: 'row' }}>
-                <Stat label="Reached" value={`Wk ${archWeekOf(lastArchive!)}`} />
-                <Divider />
-                <Stat label="Born" value={dateOnlyLabel(lastArchive!.bornDate).replace(/,.*/, '')} />
-                <Divider />
-                <Stat label="Check-ins" value={`${lastArchive!.checkins.length}`} />
-              </View>
-              <Text style={{ fontFamily: font.body400, fontSize: 12.5, color: color.muted }}>This pregnancy is saved as history. Start a new one whenever you're expecting again.</Text>
-            </View>
-          )}
+          {pregArchived && pregArchive.map((a) => <ArchiveCard key={a.id} a={a} />)}
           <Pressable onPress={onStartPregnancy} style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1 }]}>
             <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1.5, borderColor: color.maternalTeal }, shadow.card]}>
               <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: '#E0F4EF', alignItems: 'center', justifyContent: 'center' }}><Plus size={20} color={color.maternalTeal} /></View>
@@ -725,6 +709,34 @@ function MaternityView({
         </View>
       )}
 
+      {/* Past pregnancies — always kept, even while a new pregnancy is live */}
+      {phase === 'pregnancy' && pregLive && pregArchive.length > 0 && (
+        <View style={{ gap: 10 }}>
+          <Label>Past pregnancies</Label>
+          {pregArchive.map((a) => <ArchiveCard key={a.id} a={a} />)}
+        </View>
+      )}
+
+    </View>
+  );
+}
+
+/** Read-only summary of one completed (archived) pregnancy. */
+function ArchiveCard({ a }: { a: PregArchive }) {
+  return (
+    <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 16, gap: 10 }, shadow.card]}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <View style={{ width: 30, height: 30, borderRadius: 9, backgroundColor: '#E0F4EF', alignItems: 'center', justifyContent: 'center' }}><CheckCircle size={17} color={color.maternalTeal} /></View>
+        <Text style={{ flex: 1, fontFamily: font.body700, fontSize: 14.5, color: color.ink }}>Pregnancy · {dateOnlyLabel(a.bornDate)}</Text>
+        <Badge text="read-only" bg="#EFEDF8" fg={color.muted} />
+      </View>
+      <View style={{ flexDirection: 'row' }}>
+        <Stat label="Reached" value={`Wk ${archWeekOf(a)}`} />
+        <Divider />
+        <Stat label="Born" value={dateOnlyLabel(a.bornDate).replace(/,.*/, '')} />
+        <Divider />
+        <Stat label="Check-ins" value={`${a.checkins.length}`} />
+      </View>
     </View>
   );
 }

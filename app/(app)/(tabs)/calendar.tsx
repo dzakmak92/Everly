@@ -116,6 +116,11 @@ export default function CalendarTab() {
       contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: 28, paddingHorizontal: 22, gap: 16 }}
       showsVerticalScrollIndicator={false}
     >
+      {/* Weather forecast strip — above the calendar */}
+      {wx.location ? (
+        <WeatherStrip wx={wx} selKey={selKey} onSelect={(d) => { setView({ y: d.getFullYear(), m: d.getMonth() }); setSel({ y: d.getFullYear(), m: d.getMonth(), d: d.getDate() }); }} onConfigure={() => setWxOpen(true)} />
+      ) : null}
+
       {/* Calendar card */}
       <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, paddingTop: 20, paddingHorizontal: 18, paddingBottom: 16 }, shadow.card]}>
         {/* Month nav */}
@@ -177,11 +182,6 @@ export default function CalendarTab() {
           />
         )}
       </View>
-
-      {/* Weather forecast strip (bigger icons + temps) */}
-      {wx.location ? (
-        <WeatherStrip wx={wx} selKey={selKey} onSelect={(d) => { setView({ y: d.getFullYear(), m: d.getMonth() }); setSel({ y: d.getFullYear(), m: d.getMonth(), d: d.getDate() }); }} onConfigure={() => setWxOpen(true)} />
-      ) : null}
 
       {/* Selected-day header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4 }}>
