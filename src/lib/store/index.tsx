@@ -123,6 +123,7 @@ const CUSTODY_KEY = 'everly.custody.v1';
 const PREG_DUE_KEY = 'everly.pregDue.v1';
 const CHECKINS_KEY = 'everly.checkins.v1';
 const PREG_ARCHIVE_KEY = 'everly.pregArchive.v1';
+const DOCK_SIDE_KEY = 'everly.dockSide.v1';
 const MAT_BIRTH_KEY = 'everly.maternalBirth.v1';
 const EPDS_KEY = 'everly.epds.v1';
 const RECOVERY_KEY = 'everly.recovery.v1';
@@ -200,6 +201,8 @@ type DataValue = {
   deleteCheckin: (id: string) => void;
   pregArchive: PregArchive[];
   closePregnancy: (bornDate: string) => void;
+  dockSide: 'left' | 'right';
+  setDockSide: (s: 'left' | 'right') => void;
   maternalBirth: string | null;
   setMaternalBirth: (d: string | null) => void;
   epdsResults: EpdsResult[];
@@ -276,6 +279,7 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
   const [dueDate, setDueDateState] = useState<string | null>(null);
   const [checkins, setCheckins] = useState<PregCheckin[]>([]);
   const [pregArchive, setPregArchive] = useState<PregArchive[]>([]);
+  const [dockSide, setDockSideState] = useState<'left' | 'right'>('right');
   const [maternalBirth, setMaternalBirthState] = useState<string | null>(null);
   const [epdsResults, setEpdsResults] = useState<EpdsResult[]>([]);
   const [recoveryLogs, setRecoveryLogs] = useState<RecoveryLog[]>([]);
@@ -394,6 +398,8 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
   useEffect(() => { if (!loading) AsyncStorage.setItem(CHECKINS_KEY, JSON.stringify(checkins)).catch(() => {}); }, [checkins, loading]);
   useEffect(() => { if (!loading) AsyncStorage.setItem(PREG_ARCHIVE_KEY, JSON.stringify(pregArchive)).catch(() => {}); }, [pregArchive, loading]);
   useEffect(() => { AsyncStorage.getItem(PREG_ARCHIVE_KEY).then((r) => { if (r) setPregArchive(JSON.parse(r)); }).catch(() => {}); }, []);
+  useEffect(() => { AsyncStorage.getItem(DOCK_SIDE_KEY).then((r) => { if (r === 'left' || r === 'right') setDockSideState(r); }).catch(() => {}); }, []);
+  useEffect(() => { if (!loading) AsyncStorage.setItem(DOCK_SIDE_KEY, dockSide).catch(() => {}); }, [dockSide, loading]);
   useEffect(() => { if (!loading) AsyncStorage.setItem(MAT_BIRTH_KEY, JSON.stringify(maternalBirth)).catch(() => {}); }, [maternalBirth, loading]);
   useEffect(() => { if (!loading) AsyncStorage.setItem(EPDS_KEY, JSON.stringify(epdsResults)).catch(() => {}); }, [epdsResults, loading]);
   useEffect(() => { if (!loading) AsyncStorage.setItem(RECOVERY_KEY, JSON.stringify(recoveryLogs)).catch(() => {}); }, [recoveryLogs, loading]);
@@ -542,6 +548,7 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
     });
     setCheckins([]);
   }, [checkins]);
+  const setDockSide = useCallback((s: 'left' | 'right') => setDockSideState(s), []);
 
   const setMaternalBirth = useCallback((db: string | null) => setMaternalBirthState(db?.trim() || null), []);
   const addEpdsResult = useCallback((input: { total: number; band: string; selfHarmFlag: boolean }) => {
@@ -621,7 +628,7 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
       caregivers, addCaregiver, deleteCaregiver,
       custody, setCustodyDay,
       expenses, addExpense, toggleExpenseSettled, deleteExpense,
-      dueDate, setDueDate, checkins, addCheckin, deleteCheckin, pregArchive, closePregnancy,
+      dueDate, setDueDate, checkins, addCheckin, deleteCheckin, pregArchive, closePregnancy, dockSide, setDockSide,
       maternalBirth, setMaternalBirth, epdsResults, addEpdsResult, deleteEpdsResult, recoveryLogs, addRecoveryLog, deleteRecoveryLog,
       tzContacts, addTzContact, deleteTzContact, savedTips, saveTip, deleteTip,
       birthPrep, addBirthPrep, toggleBirthPrep, deleteBirthPrep,
@@ -638,7 +645,7 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
       contractionSessions, addContraction, deleteContraction, clearContractions,
       clearAll,
     }),
-    [loading, children, activeChild, setActiveChild, addChild, updateChild, deleteChild, entries, addEntry, deleteEntry, events, addEvent, deleteEvent, vaccines, addVaccine, updateVaccine, deleteVaccine, medications, addMedication, toggleMedication, deleteMedication, growth, addGrowth, deleteGrowth, routines, addRoutine, addRoutineStep, toggleStep, resetRoutine, deleteRoutine, chores, addChore, toggleChore, deleteChore, milestones, addMilestone, deleteMilestone, caregivers, addCaregiver, deleteCaregiver, custody, setCustodyDay, expenses, addExpense, toggleExpenseSettled, deleteExpense, dueDate, setDueDate, checkins, addCheckin, deleteCheckin, pregArchive, closePregnancy, maternalBirth, setMaternalBirth, epdsResults, addEpdsResult, deleteEpdsResult, recoveryLogs, addRecoveryLog, deleteRecoveryLog, tzContacts, addTzContact, deleteTzContact, savedTips, saveTip, deleteTip, birthPrep, addBirthPrep, toggleBirthPrep, deleteBirthPrep, savedNames, saveName, deleteName, pregStatus, setPregStatus, pregAppts, addPregAppt, deletePregAppt, pregVitals, addPregVital, deletePregVital, lastPeriod, setLastPeriod, cycleLength, setCycleLength, ttcItems, addTtc, toggleTtc, deleteTtc, momCare, addMomCare, deleteMomCare, pelvicLog, addPelvic, matAppts, addMatAppt, deleteMatAppt, kickSessions, addKickSession, deleteKickSession, clearKickSessions, contractionSessions, addContraction, deleteContraction, clearContractions, clearAll],
+    [loading, children, activeChild, setActiveChild, addChild, updateChild, deleteChild, entries, addEntry, deleteEntry, events, addEvent, deleteEvent, vaccines, addVaccine, updateVaccine, deleteVaccine, medications, addMedication, toggleMedication, deleteMedication, growth, addGrowth, deleteGrowth, routines, addRoutine, addRoutineStep, toggleStep, resetRoutine, deleteRoutine, chores, addChore, toggleChore, deleteChore, milestones, addMilestone, deleteMilestone, caregivers, addCaregiver, deleteCaregiver, custody, setCustodyDay, expenses, addExpense, toggleExpenseSettled, deleteExpense, dueDate, setDueDate, checkins, addCheckin, deleteCheckin, pregArchive, closePregnancy, dockSide, setDockSide, maternalBirth, setMaternalBirth, epdsResults, addEpdsResult, deleteEpdsResult, recoveryLogs, addRecoveryLog, deleteRecoveryLog, tzContacts, addTzContact, deleteTzContact, savedTips, saveTip, deleteTip, birthPrep, addBirthPrep, toggleBirthPrep, deleteBirthPrep, savedNames, saveName, deleteName, pregStatus, setPregStatus, pregAppts, addPregAppt, deletePregAppt, pregVitals, addPregVital, deletePregVital, lastPeriod, setLastPeriod, cycleLength, setCycleLength, ttcItems, addTtc, toggleTtc, deleteTtc, momCare, addMomCare, deleteMomCare, pelvicLog, addPelvic, matAppts, addMatAppt, deleteMatAppt, kickSessions, addKickSession, deleteKickSession, clearKickSessions, contractionSessions, addContraction, deleteContraction, clearContractions, clearAll],
   );
 
   return <DataContext.Provider value={value}>{node}</DataContext.Provider>;
