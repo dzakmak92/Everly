@@ -158,6 +158,30 @@ export const Activity = ({ size = 16, color = '#6B6FC9' }: IconProps) => (
   </Svg>
 );
 
+/** Heart with an inner heartbeat line — used for the Health shortcut. */
+export const HeartPulse = ({ size = 18, color = '#6F6E86' }: IconProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Path d="M20.8 5.6a5.5 5.5 0 0 0-7.8 0L12 6.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l8.8 8.8 8.8-8.8a5.5 5.5 0 0 0 0-7.8z" {...stroke(color)} />
+    <Path d="M3.5 12.5h4l1.5-2.5 2 4 1.5-3 1 1.5h4" {...stroke(color, 1.6)} />
+  </Svg>
+);
+
+/** Outline star — used for the Timeline shortcut. */
+export const StarOutline = ({ size = 18, color = '#6F6E86' }: IconProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Path d="M12 2.5l2.9 6 6.6 .6-5 4.4 1.5 6.5L12 16.6 6 20l1.5-6.5-5-4.4 6.6-.6z" {...stroke(color)} />
+  </Svg>
+);
+
+/** Vertical bar chart — used for the Insights shortcut. */
+export const BarChart = ({ size = 18, color = '#6F6E86' }: IconProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Line x1="6" y1="20" x2="6" y2="12" {...stroke(color)} />
+    <Line x1="12" y1="20" x2="12" y2="4" {...stroke(color)} />
+    <Line x1="18" y1="20" x2="18" y2="9" {...stroke(color)} />
+  </Svg>
+);
+
 export const MessageSquare = ({ size = 15, color = '#6B6FC9' }: IconProps) => (
   <Svg width={size} height={size} viewBox="0 0 24 24">
     <Path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" {...stroke(color)} />
