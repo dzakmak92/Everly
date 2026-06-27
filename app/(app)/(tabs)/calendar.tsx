@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ScrollView, View, Text, Pressable, Modal, ActivityIndicator } from 'react-native';
+import Svg, { Circle, Line, Text as SvgText } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, font, radius, shadow, fill } from '../../../src/theme/tokens';
 import { ChevronLeft, ChevronRight, Calendar, Shield, Activity, Heart, X, Search, BabyBean } from '../../../src/components/icons';
@@ -63,6 +64,7 @@ export default function CalendarTab() {
   const [title, setTitle] = useState('');
   const [time, setTime] = useState('09:00');
   const [wxOpen, setWxOpen] = useState(false);
+  const [tlLayout, setTlLayout] = useState<'ribbon' | 'clock'>('ribbon');
 
   const selKey = key(sel.y, sel.m, sel.d);
   const entryDays = new Set(entries.map((e) => dkey(e.at)));
@@ -82,6 +84,12 @@ export default function CalendarTab() {
   const selEvents = events.filter((e) => dkey(e.at) === selKey);
   const selEntries = entries.filter((e) => dkey(e.at) === selKey);
   const selAppts = appts.filter((a) => dkey(a.at) === selKey);
+
+  // Timed items (events + appointments) for the day-timeline overview.
+  const dayItems: TlItem[] = [
+    ...selEvents.map((e) => ({ id: e.id, title: e.title, at: e.at, color: color.primary })),
+    ...selAppts.map((a) => ({ id: a.id, title: a.title, at: a.at, color: color.maternalTeal })),
+  ].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
 
   // Agenda mode: upcoming events in the viewed month (and beyond), sorted ascending.
   const agendaEvents = [...events]
@@ -196,6 +204,26 @@ export default function CalendarTab() {
         </View>
       </View>
 
+      {/* Day timeline overview (ribbon / clock) */}
+      {dayItems.length > 0 && (
+        <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 16, gap: 12 }, shadow.card]}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Text style={{ fontFamily: font.body700, fontSize: 13, color: color.ink }}>Day overview</Text>
+            <View style={{ flexDirection: 'row', backgroundColor: color.canvas, borderRadius: radius.pill, padding: 3 }}>
+              {(['ribbon', 'clock'] as const).map((l) => {
+                const on = tlLayout === l;
+                return (
+                  <Pressable key={l} onPress={() => setTlLayout(l)} style={{ paddingVertical: 5, paddingHorizontal: 12, borderRadius: radius.pill, backgroundColor: on ? color.primary : 'transparent' }}>
+                    <Text style={{ fontFamily: on ? font.body700 : font.body600, fontSize: 11.5, color: on ? '#fff' : color.muted }}>{l === 'ribbon' ? 'Line' : 'Clock'}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+          <DayTimeline items={dayItems} layout={tlLayout} />
+        </View>
+      )}
+
       {/* Events */}
       {selEvents.map((ev) => (
         <EventCard key={ev.id} ev={ev} onDelete={() => deleteEvent(ev.id)} />
@@ -239,6 +267,77 @@ export default function CalendarTab() {
       {/* Weather location modal */}
       <WeatherModal visible={wxOpen} wx={wx} onClose={() => setWxOpen(false)} />
     </ScrollView>
+  );
+}
+
+/* ── day timeline overview (ribbon / clock) ─────────────────────────────── */
+
+type TlItem = { id: string; title: string; at: string; color: string };
+const tlTime = (iso: string) => new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+
+function DayTimeline({ items, layout }: { items: TlItem[]; layout: 'ribbon' | 'clock' }) {
+  return layout === 'clock' ? <ClockTimeline items={items} /> : <RibbonTimeline items={items} />;
+}
+
+function RibbonTimeline({ items }: { items: TlItem[] }) {
+  const hrs = items.map((i) => { const d = new Date(i.at); return d.getHours() + d.getMinutes() / 60; });
+  const lo = Math.max(0, Math.min(7, Math.floor(Math.min(...hrs))));
+  const hi = Math.min(24, Math.max(20, Math.ceil(Math.max(...hrs))));
+  const span = hi - lo || 1;
+  const pct = (h: number): `${number}%` => `${((h - lo) / span) * 100}%`;
+  const now = new Date(); const nowH = now.getHours() + now.getMinutes() / 60;
+  const ticks: number[] = []; for (let h = Math.ceil(lo / 4) * 4; h <= hi; h += 4) ticks.push(h);
+  return (
+    <View style={{ height: 62, position: 'relative', marginHorizontal: 14 }}>
+      <View style={{ position: 'absolute', top: 34, left: 0, right: 0, height: 4, borderRadius: 2, backgroundColor: color.hairline }} />
+      {ticks.map((h) => (
+        <Text key={h} style={{ position: 'absolute', top: 44, left: pct(h), marginLeft: -16, width: 32, textAlign: 'center', fontFamily: font.body600, fontSize: 9.5, color: color.faint }}>{h === 24 ? '24:00' : `${h}:00`}</Text>
+      ))}
+      {nowH >= lo && nowH <= hi && (
+        <View style={{ position: 'absolute', top: 27, left: pct(nowH), width: 2, height: 18, marginLeft: -1, backgroundColor: color.rose }} />
+      )}
+      {items.map((it, i) => (
+        <React.Fragment key={it.id}>
+          <Text style={{ position: 'absolute', top: 4, left: pct(hrs[i]), marginLeft: -20, width: 40, textAlign: 'center', fontFamily: font.body700, fontSize: 9.5, color: it.color }} numberOfLines={1}>{tlTime(it.at)}</Text>
+          <View style={{ position: 'absolute', top: 26, left: pct(hrs[i]), marginLeft: -9, width: 18, height: 18, borderRadius: 9, backgroundColor: it.color, borderWidth: 3, borderColor: '#fff' }} />
+        </React.Fragment>
+      ))}
+    </View>
+  );
+}
+
+function ClockTimeline({ items }: { items: TlItem[] }) {
+  const cx = 100, cy = 100, R = 78;
+  const angle = (h: number) => (h / 24) * 2 * Math.PI - Math.PI / 2;
+  return (
+    <View style={{ alignItems: 'center', gap: 12 }}>
+      <Svg width={196} height={196} viewBox="0 0 200 200">
+        <Circle cx={cx} cy={cy} r={R} fill="none" stroke={color.hairline} strokeWidth={9} />
+        {[0, 3, 6, 9, 12, 15, 18, 21].map((h) => {
+          const a = angle(h);
+          return <Line key={h} x1={cx + (R - 8) * Math.cos(a)} y1={cy + (R - 8) * Math.sin(a)} x2={cx + (R + 8) * Math.cos(a)} y2={cy + (R + 8) * Math.sin(a)} stroke={color.faint} strokeWidth={2} />;
+        })}
+        {[0, 6, 12, 18].map((h) => {
+          const a = angle(h);
+          return <SvgText key={h} x={cx + (R - 22) * Math.cos(a)} y={cy + (R - 22) * Math.sin(a) + 4} fontSize={10} fill={color.muted} textAnchor="middle">{h === 0 ? '24' : String(h)}</SvgText>;
+        })}
+        <SvgText x={cx} y={cy - 1} fontSize={26} fontWeight="700" fill={color.ink} textAnchor="middle">{String(items.length)}</SvgText>
+        <SvgText x={cx} y={cy + 16} fontSize={11} fill={color.muted} textAnchor="middle">{items.length === 1 ? 'event' : 'events'}</SvgText>
+        {items.map((it) => {
+          const d = new Date(it.at); const h = d.getHours() + d.getMinutes() / 60; const a = angle(h);
+          return <Circle key={it.id} cx={cx + R * Math.cos(a)} cy={cy + R * Math.sin(a)} r={8} fill={it.color} stroke="#fff" strokeWidth={3} />;
+        })}
+      </Svg>
+      <View style={{ alignSelf: 'stretch', gap: 7 }}>
+        {items.map((it) => (
+          <View key={it.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: it.color }} />
+            <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.muted, width: 64 }}>{tlTime(it.at)}</Text>
+            <Text style={{ flex: 1, fontFamily: font.body600, fontSize: 13, color: color.ink }} numberOfLines={1}>{it.title}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
   );
 }
 
