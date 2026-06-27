@@ -21,9 +21,11 @@ import {
 } from '../../../src/lib/pregnancy';
 import { EPDS_QUESTIONS, scoreEpds, BAND_LABEL, CRISIS_RESOURCES } from '../../../src/lib/epds';
 import { youStoryEvents } from '../../../src/lib/story';
+import { childRhythm, nextFeed, napWindow, childNudges, pregnancyNudges, fmtDur, type Nudge, type Prediction, type ChildRhythm } from '../../../src/lib/intelligence';
 import {
   useData, entriesOn, upcomingEvents, entryDetail, ENTRY_META, quickLogKinds, MOOD_LABELS, CHILD_COLORS,
   type EntryKind, type FeedSide, type DiaperType, type Child, type Lochia, type ChildColor, type PregArchive, type PregStatus,
+  type Entry, type EventItem, type Vaccine, type Medication, type KickSession, type PregVital, type PregCheckin, type PregAppt,
 } from '../../../src/lib/store';
 import HealthTab from '../health';
 import TimelineTab from '../timeline';
@@ -62,6 +64,7 @@ export default function Today() {
     entries, addEntry, deleteEntry, children, activeChild, setActiveChild, events, vaccines,
     dueDate, setDueDate, maternalBirth, setMaternalBirth, pregAppts, matAppts,
     addChild, savedNames, pregArchive, closePregnancy, dockSide, setDockSide,
+    medications, kickSessions, pregVitals, checkins,
   } = useData();
 
   // Maternity ("You") journey availability + person switching.
@@ -73,6 +76,10 @@ export default function Today() {
   const isYou = person === 'you';
   // A "More" category can take over the content column (rendered inline, same page).
   const [activeCat, setActiveCat] = useState<string | null>(null);
+  // Family overview is the home when there's more than one module (kids + Mum&Me).
+  const multiModule = children.length + (hasJourney ? 1 : 0) >= 2;
+  const [showOverview, setShowOverview] = useState(true);
+  const onOverview = multiModule && showOverview && !activeCat;
 
   // Mum&Me phase tab — default to where she is: pregnancy while expecting,
   // postpartum once the baby has arrived.
@@ -171,6 +178,16 @@ export default function Today() {
 
   const hasNext = nextEvents.length > 0 || dueVax;
 
+  // On-device intelligence for the focused child / pregnancy.
+  const now = Date.now();
+  const rhythm = cid ? childRhythm(cid, entries, now) : null;
+  const feedPred = rhythm ? nextFeed(rhythm, now) : null;
+  const napPred = rhythm ? napWindow(rhythm, now) : null;
+  const childNudgeList = cid && rhythm ? childNudges(cid, { entries, medications, vaccines }, rhythm, now) : [];
+  const pregNudgeList = hasJourney && !maternalBirth
+    ? pregnancyNudges({ kickSessions, pregVitals, checkins, pregAppts }, gestFromDueDate(dueDate ?? undefined)?.week ?? null, now)
+    : [];
+
   const showDock = children.length > 0 || hasJourney;
   // The reserved rail keeps content inset; padding hugs the rail edge, breathes on the other.
   const padStart = dockSide === 'right' ? 20 : 10;
@@ -178,13 +195,14 @@ export default function Today() {
   const railProps = {
     children, activeId: activeChild?.id, isYou, hasJourney, activeCat,
     youLabel: youStatusLabel(dueDate, maternalBirth),
-    onSelectChild: (id: string) => { setActiveCat(null); setPerson(id); setActiveChild(id); },
-    onSelectYou: () => { setActiveCat(null); setPerson('you'); },
+    onSelectChild: (id: string) => { setActiveCat(null); setShowOverview(false); setPerson(id); setActiveChild(id); },
+    onSelectYou: () => { setActiveCat(null); setShowOverview(false); setPerson('you'); },
     onAdd: () => router.push('/(app)/(tabs)/family' as any),
     // Categories load inline on this page (left of the rail) — not a new route.
     onNavigate: (key: string) => setActiveCat(key),
   };
   const catLabel = activeCat ? RAIL_CATS.find((c) => c.key === activeCat)?.label ?? '' : '';
+  const goOverview = () => { setActiveCat(null); setShowOverview(true); };
   return (
     <View style={{ flex: 1, backgroundColor: color.canvas }}>
       {/* Fixed header — the rail runs from just beneath this down to the bottom */}
@@ -193,11 +211,23 @@ export default function Today() {
           <Logo width={22} height={26} />
           <Text style={{ fontFamily: font.display700, fontSize: 19, color: color.ink }}>Everly</Text>
         </View>
-        {/* Active-module label (the rail switches between modules) */}
-        {showDock && (
-          <Text style={{ fontFamily: font.body600, fontSize: 13, color: color.muted, paddingHorizontal: 2 }}>
-            {activeCat ? catLabel : isYou ? `Mum&Me · ${youStatusLabel(dueDate, maternalBirth)}` : (activeChild ? `${activeChild.name}${activeChild.birthDate ? ` · ${ageLabel(activeChild.birthDate)}` : ''}` : '')}
-          </Text>
+        {onOverview ? (
+          // Family overview is the home — a light greeting reads as the page title.
+          <Text style={{ fontFamily: font.display700, fontSize: 20, color: color.ink, paddingHorizontal: 2, marginTop: 2 }}>{greeting()}, {name}</Text>
+        ) : (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 2 }}>
+            {multiModule && (
+              <Pressable onPress={goOverview} hitSlop={8} accessibilityLabel="Back to family overview" style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 2, opacity: pressed ? 0.6 : 1 })}>
+                <ChevronLeft size={16} color={color.primary} />
+                <Text style={{ fontFamily: font.body700, fontSize: 12.5, color: color.primary }}>Family</Text>
+              </Pressable>
+            )}
+            {showDock && (
+              <Text style={{ fontFamily: font.body600, fontSize: 13, color: color.muted }}>
+                {multiModule ? '· ' : ''}{activeCat ? catLabel : isYou ? `Mum&Me · ${youStatusLabel(dueDate, maternalBirth)}` : (activeChild ? `${activeChild.name}${activeChild.birthDate ? ` · ${ageLabel(activeChild.birthDate)}` : ''}` : '')}
+              </Text>
+            )}
+          </View>
         )}
       </View>
 
@@ -213,8 +243,24 @@ export default function Today() {
       showsVerticalScrollIndicator={false}
     >
 
+      {/* ── Family overview (home) ────────────────────────────────────────── */}
+      {onOverview && (
+        <FamilyOverview
+          children={children}
+          hasJourney={hasJourney}
+          dueDate={dueDate}
+          maternalBirth={maternalBirth}
+          data={{ entries, events, vaccines, medications, kickSessions, pregVitals, checkins, pregAppts }}
+          now={now}
+          onSelectChild={(id) => { setShowOverview(false); setPerson(id); setActiveChild(id); }}
+          onSelectYou={() => { setShowOverview(false); setPerson('you'); }}
+          onQuickLog={open}
+          activeChildName={activeChild?.name}
+        />
+      )}
+
       {/* ── You (maternity) view ──────────────────────────────────────────── */}
-      {isYou && (
+      {!onOverview && isYou && (
         <MaternityView
           phase={phase}
           setPhase={setPhase}
@@ -223,13 +269,18 @@ export default function Today() {
           pregAppts={pregAppts}
           matAppts={matAppts}
           pregArchive={pregArchive}
+          nudges={pregNudgeList}
           onArrived={openHandoff}
           onStartPregnancy={openDuePicker}
         />
       )}
 
       {/* ── Child view (existing Today content) ───────────────────────────── */}
-      {!isYou && <>
+      {!onOverview && !isYou && <>
+
+      {/* Predicted next action + smart nudges (on-device) */}
+      <PredictionHero nap={napPred} feed={feedPred} rhythm={rhythm} />
+      <NudgeList items={childNudgeList} />
 
       {/* Today at a glance */}
       {today.length > 0 && (
@@ -432,6 +483,167 @@ function CategoryView({ cat }: { cat: string }) {
     case 'coparent': return <CoParentScreen embedded />;
     default: return null;
   }
+}
+
+/* ── On-device intelligence UI ──────────────────────────────────────────────
+   Prediction hero + smart-nudge list + the family-overview home. */
+
+function HeroChip({ v, l }: { v: string; l: string }) {
+  return (
+    <View style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.16)', borderRadius: 10, paddingVertical: 7, alignItems: 'center' }}>
+      <Text style={{ fontFamily: font.body700, fontSize: 12.5, color: '#fff' }}>{v}</Text>
+      <Text style={{ fontFamily: font.body500, fontSize: 8.5, color: 'rgba(255,255,255,0.85)', marginTop: 1 }}>{l}</Text>
+    </View>
+  );
+}
+
+/** Predicted next nap window (or next feed) for the focused child. Hidden on cold-start. */
+function PredictionHero({ nap, feed, rhythm }: { nap: Prediction | null; feed: Prediction | null; rhythm: ChildRhythm | null }) {
+  const p = nap ?? feed;
+  if (!p || !rhythm) return null;
+  return (
+    <View style={[{ backgroundColor: color.primary, borderRadius: radius.card, padding: 18, gap: 4 }, shadow.card]}>
+      <Text style={{ fontFamily: font.body700, fontSize: 10, letterSpacing: 0.7, textTransform: 'uppercase', color: 'rgba(255,255,255,0.85)' }}>{p.label} · est.</Text>
+      <Text style={{ fontFamily: font.display700, fontSize: 23, color: '#fff' }}>{p.window}</Text>
+      <Text style={{ fontFamily: font.body500, fontSize: 12, color: 'rgba(255,255,255,0.9)' }}>{p.sub}</Text>
+      <View style={{ flexDirection: 'row', gap: 7, marginTop: 8 }}>
+        {rhythm.avgFeedMin ? <HeroChip v={`~${fmtDur(rhythm.avgFeedMin)}`} l="between feeds" /> : null}
+        <HeroChip v={`${rhythm.napsToday}`} l="naps today" />
+        <HeroChip v={rhythm.sleepTodayMin ? fmtDur(rhythm.sleepTodayMin) : '—'} l="sleep today" />
+      </View>
+    </View>
+  );
+}
+
+/** "Needs a look" — the top few smart nudges. */
+function NudgeList({ items }: { items: Nudge[] }) {
+  if (!items.length) return null;
+  return (
+    <View style={{ gap: 10 }}>
+      <Label>Needs a look</Label>
+      {items.slice(0, 3).map((n) => (
+        <View key={n.id} style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 11 }, shadow.card]}>
+          <View style={{ width: 34, height: 34, borderRadius: 11, backgroundColor: color.canvas, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ fontSize: 16 }}>{n.icon}</Text>
+          </View>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={{ fontFamily: font.body700, fontSize: 13, color: color.ink }}>{n.title}</Text>
+            {n.sub ? <Text style={{ fontFamily: font.body400, fontSize: 11.5, color: color.muted, marginTop: 1 }}>{n.sub}</Text> : null}
+          </View>
+          {n.cta ? <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.primary }}>{n.cta}</Text> : null}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+type Pill = { t: string; bg: string; fg: string };
+function MemberCard({ title, line, pills, avatarBg, avatarFg, initial, heart, onPress }: {
+  title: string; line: string; pills: Pill[]; avatarBg: string; avatarFg: string; initial?: string; heart?: boolean; onPress: () => void;
+}) {
+  return (
+    <Pressable onPress={onPress} style={({ pressed }) => [{ opacity: pressed ? 0.92 : 1 }]}>
+      <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 13, flexDirection: 'row', gap: 12, alignItems: 'flex-start' }, shadow.card]}>
+        <View style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: avatarBg, alignItems: 'center', justifyContent: 'center' }}>
+          {heart ? <Heart size={20} color={avatarFg} filled /> : <Text style={{ fontFamily: font.display700, fontSize: 17, color: avatarFg }}>{initial}</Text>}
+        </View>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text style={{ fontFamily: font.display700, fontSize: 15.5, color: color.ink }}>{title}</Text>
+          <Text style={{ fontFamily: font.body400, fontSize: 11.5, color: color.muted, marginTop: 2 }}>{line}</Text>
+          {pills.length > 0 && (
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+              {pills.map((p, i) => (
+                <View key={i} style={{ backgroundColor: p.bg, borderRadius: radius.pill, paddingVertical: 4, paddingHorizontal: 9 }}>
+                  <Text style={{ fontFamily: font.body700, fontSize: 10.5, color: p.fg }}>{p.t}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+        <View style={{ alignSelf: 'center' }}><ChevronRight size={16} color={color.faint} /></View>
+      </View>
+    </Pressable>
+  );
+}
+
+/** Family overview — the home view; everyone at a glance, headlines from the engine. */
+function FamilyOverview({
+  children, hasJourney, dueDate, maternalBirth, data, now, onSelectChild, onSelectYou, onQuickLog, activeChildName,
+}: {
+  children: Child[];
+  hasJourney: boolean;
+  dueDate: string | null;
+  maternalBirth: string | null;
+  data: { entries: Entry[]; events: EventItem[]; vaccines: Vaccine[]; medications: Medication[]; kickSessions: KickSession[]; pregVitals: PregVital[]; checkins: PregCheckin[]; pregAppts: PregAppt[] };
+  now: number;
+  onSelectChild: (id: string) => void;
+  onSelectYou: () => void;
+  onQuickLog: (k: EntryKind) => void;
+  activeChildName?: string;
+}) {
+  const childCards = children.map((ch) => {
+    const r = childRhythm(ch.id, data.entries, now);
+    const feedP = nextFeed(r, now);
+    const napP = napWindow(r, now);
+    const nds = childNudges(ch.id, { entries: data.entries, medications: data.medications, vaccines: data.vaccines }, r, now);
+    const bits: string[] = [];
+    if (r.lastSleepEndAt && r.lastSleepEndAt < now) bits.push(`Awake ${fmtDur(Math.round((now - r.lastSleepEndAt) / 60000))}`);
+    if (r.lastFeedAt) bits.push(`last feed ${agoLabel(new Date(r.lastFeedAt).toISOString())}`);
+    const pills: Pill[] = [];
+    if (feedP) pills.push({ t: `🍼 Feed ${feedP.minutesAway <= 0 ? 'due' : feedP.window}`, bg: '#FCE6D8', fg: '#B5662E' });
+    if (napP) pills.push({ t: `🌙 Nap ${napP.minutesAway <= 0 ? 'now' : napP.window.split(' – ')[0]}`, bg: '#E7E4FB', fg: '#6B6FC9' });
+    if (!pills.length && nds[0]) pills.push({ t: `${nds[0].icon} ${nds[0].title}`, bg: '#FBF1CE', fg: '#7A5C20' });
+    const t = childToken[ch.color];
+    return {
+      ch, t,
+      line: bits.length ? bits.join(' · ') : 'No entries yet today',
+      title: `${ch.name}${ch.birthDate ? ` · ${ageLabel(ch.birthDate)}` : ''}`,
+      pills, nudgeCount: nds.length,
+    };
+  });
+
+  const gest = gestFromDueDate(dueDate ?? undefined);
+  const pregNudges = hasJourney && !maternalBirth
+    ? pregnancyNudges({ kickSessions: data.kickSessions, pregVitals: data.pregVitals, checkins: data.checkins, pregAppts: data.pregAppts }, gest?.week ?? null, now)
+    : [];
+  const youTitle = `Mum&Me · ${youStatusLabel(dueDate, maternalBirth)}`;
+  const youLine = maternalBirth ? 'Postpartum recovery & wellbeing' : (gest ? `${gest.daysToGo} days to go · Trimester ${gest.trimester}` : 'Your space');
+  const youPills: Pill[] = pregNudges.slice(0, 2).map((n) => ({ t: `${n.icon} ${n.title}`, bg: '#FBE0EA', fg: '#B04070' }));
+
+  const needCount = childCards.reduce((s, c) => s + c.nudgeCount, 0) + pregNudges.length;
+  const qlKinds: EntryKind[] = ['feed', 'sleep', 'diaper'];
+
+  return (
+    <View style={{ gap: 12 }}>
+      {needCount > 0 && (
+        <View style={{ backgroundColor: '#FFF1DC', borderColor: '#F2DBB0', borderWidth: 1, borderRadius: 14, padding: 11, flexDirection: 'row', alignItems: 'center', gap: 9 }}>
+          <Text style={{ fontSize: 14 }}>🔔</Text>
+          <Text style={{ flex: 1, fontFamily: font.body700, fontSize: 12.5, color: '#8a6418' }}>{needCount} {needCount === 1 ? 'thing needs' : 'things need'} you today</Text>
+        </View>
+      )}
+      <Label>Your family today</Label>
+      {childCards.map((c) => (
+        <MemberCard key={c.ch.id} title={c.title} line={c.line} pills={c.pills} avatarBg={c.t.fill} avatarFg={c.t.stroke} initial={c.ch.name.charAt(0).toUpperCase()} onPress={() => onSelectChild(c.ch.id)} />
+      ))}
+      {hasJourney && (
+        <MemberCard title={youTitle} line={youLine} pills={youPills} avatarBg="#E0F4EF" avatarFg={color.maternalTeal} heart onPress={onSelectYou} />
+      )}
+      <Label>Quick log{activeChildName ? ` · ${activeChildName}` : ''}</Label>
+      <View style={{ flexDirection: 'row', gap: 10 }}>
+        {qlKinds.map((k) => {
+          const m = ENTRY_META[k];
+          return (
+            <Pressable key={k} onPress={() => onQuickLog(k)} style={({ pressed }) => [{ flex: 1, opacity: pressed ? 0.82 : 1 }]}>
+              <View style={{ backgroundColor: m.fill, borderRadius: radius.card, paddingVertical: 16, alignItems: 'center', gap: 7 }}>
+                <EntryIcon kind={k} color={m.ink} size={22} />
+                <Text style={{ fontFamily: font.body700, fontSize: 12.5, color: m.ink }}>{m.label}</Text>
+              </View>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
 }
 
 /* Reserved side rail — module avatars on top, a divider, then shortcuts to the
@@ -648,7 +860,7 @@ const archWeekOf = (a: { dueDate: string; bornDate: string }) =>
   Math.max(0, Math.floor((280 - Math.round((ppTime(a.dueDate) - ppTime(a.bornDate)) / PP_MS)) / 7));
 
 function MaternityView({
-  phase, setPhase, dueDate, maternalBirth, pregAppts, matAppts, pregArchive, onArrived, onStartPregnancy,
+  phase, setPhase, dueDate, maternalBirth, pregAppts, matAppts, pregArchive, nudges, onArrived, onStartPregnancy,
 }: {
   phase: 'pregnancy' | 'postpartum';
   setPhase: (p: 'pregnancy' | 'postpartum') => void;
@@ -657,6 +869,7 @@ function MaternityView({
   pregAppts: ApptLike[];
   matAppts: ApptLike[];
   pregArchive: PregArchive[];
+  nudges?: Nudge[];
   onArrived: () => void;
   onStartPregnancy: () => void;
 }) {
@@ -764,6 +977,9 @@ function MaternityView({
           </Pressable>
         )}
       </View>
+
+      {/* Smart nudges (on-device) — pregnancy phase only */}
+      {phase === 'pregnancy' && showGrid && nudges && nudges.length > 0 && <NudgeList items={nudges} />}
 
       {/* Archived pregnancy state — after birth, before a new one begins */}
       {phase === 'pregnancy' && !showGrid && (
