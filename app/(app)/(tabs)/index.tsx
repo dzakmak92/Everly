@@ -22,6 +22,7 @@ import {
 import { EPDS_QUESTIONS, scoreEpds, BAND_LABEL, CRISIS_RESOURCES } from '../../../src/lib/epds';
 import { youStoryEvents } from '../../../src/lib/story';
 import { childRhythm, nextFeed, napWindow, childNudges, pregnancyNudges, fmtDur, type Nudge, type Prediction, type ChildRhythm } from '../../../src/lib/intelligence';
+import { DayTimeline } from '../../../src/components/DayTimeline';
 import {
   useData, entriesOn, upcomingEvents, entryDetail, ENTRY_META, quickLogKinds, MOOD_LABELS, CHILD_COLORS,
   type EntryKind, type FeedSide, type DiaperType, type Child, type Lochia, type ChildColor, type PregArchive, type PregStatus,
@@ -80,6 +81,8 @@ export default function Today() {
   const multiModule = children.length + (hasJourney ? 1 : 0) >= 2;
   const [showOverview, setShowOverview] = useState(true);
   const onOverview = multiModule && showOverview && !activeCat;
+  // Today timeline layout (horizontal ribbon ↔ 24h dial).
+  const [tlLayout, setTlLayout] = useState<'ribbon' | 'clock'>('ribbon');
 
   // Mum&Me phase tab — default to where she is: pregnancy while expecting,
   // postpartum once the baby has arrived.
@@ -187,6 +190,7 @@ export default function Today() {
   const pregNudgeList = hasJourney && !maternalBirth
     ? pregnancyNudges({ kickSessions, pregVitals, checkins, pregAppts }, gestFromDueDate(dueDate ?? undefined)?.week ?? null, now)
     : [];
+  const tlItems = today.map((e) => ({ id: e.id, title: ENTRY_META[e.kind].label, at: e.at, color: ENTRY_META[e.kind].ink }));
 
   const showDock = children.length > 0 || hasJourney;
   // The reserved rail keeps content inset; padding hugs the rail edge, breathes on the other.
@@ -254,8 +258,6 @@ export default function Today() {
           now={now}
           onSelectChild={(id) => { setShowOverview(false); setPerson(id); setActiveChild(id); }}
           onSelectYou={() => { setShowOverview(false); setPerson('you'); }}
-          onQuickLog={open}
-          activeChildName={activeChild?.name}
         />
       )}
 
@@ -278,11 +280,8 @@ export default function Today() {
       {/* ── Child view (existing Today content) ───────────────────────────── */}
       {!onOverview && !isYou && <>
 
-      {/* Predicted next action + smart nudges (on-device) */}
+      {/* Predicted (top) + today's actuals stacked directly beneath */}
       <PredictionHero nap={napPred} feed={feedPred} rhythm={rhythm} />
-      <NudgeList items={childNudgeList} />
-
-      {/* Today at a glance */}
       {today.length > 0 && (
         <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, paddingVertical: 16, paddingHorizontal: 8 }, shadow.card]}>
           <View style={{ flexDirection: 'row' }}>
@@ -301,7 +300,10 @@ export default function Today() {
         </View>
       )}
 
-      {/* Up next */}
+      {/* Smart nudges — below predicted/actual, above up next */}
+      <NudgeList items={childNudgeList} />
+
+      {/* Up next — above the timeline */}
       {hasNext && (
         <View style={{ gap: 10 }}>
           <Label>Up next</Label>
@@ -316,7 +318,33 @@ export default function Today() {
         </View>
       )}
 
-      {/* Quick log */}
+      {/* Today's timeline — horizontal ribbon or 24h dial (switchable) */}
+      <View style={{ gap: 10 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Label>Today · {today.length} {today.length === 1 ? 'entry' : 'entries'}</Label>
+          <View style={{ flexDirection: 'row', backgroundColor: '#EFEDF8', borderRadius: radius.pill, padding: 3 }}>
+            {(['ribbon', 'clock'] as const).map((l) => {
+              const on = tlLayout === l;
+              return (
+                <Pressable key={l} onPress={() => setTlLayout(l)} style={{ paddingVertical: 5, paddingHorizontal: 12, borderRadius: radius.pill, backgroundColor: on ? color.primary : 'transparent' }}>
+                  <Text style={{ fontFamily: font.body700, fontSize: 11, color: on ? '#fff' : color.muted }}>{l === 'ribbon' ? 'Line' : 'Dial'}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+        {today.length === 0 ? (
+          <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 22, alignItems: 'center' }, shadow.card]}>
+            <Text style={{ fontFamily: font.body500, fontSize: 14, color: color.muted, textAlign: 'center' }}>Nothing logged yet today.{'\n'}Use Quick log below to add your first entry.</Text>
+          </View>
+        ) : (
+          <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, paddingVertical: 16, paddingHorizontal: 8 }, shadow.card]}>
+            <DayTimeline items={tlItems} layout={tlLayout} />
+          </View>
+        )}
+      </View>
+
+      {/* Quick log — moved to the bottom */}
       <View style={{ gap: 10 }}>
         <Label>Quick log</Label>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
@@ -330,22 +358,6 @@ export default function Today() {
             );
           })}
         </View>
-      </View>
-
-      {/* Today's timeline */}
-      <View style={{ gap: 10 }}>
-        <Label>Today's timeline · {today.length} {today.length === 1 ? 'entry' : 'entries'}</Label>
-        {today.length === 0 ? (
-          <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 22, alignItems: 'center' }, shadow.card]}>
-            <Text style={{ fontFamily: font.body500, fontSize: 14, color: color.muted, textAlign: 'center' }}>Nothing logged yet today.{'\n'}Tap a button above to add your first entry.</Text>
-          </View>
-        ) : (
-          <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, paddingVertical: 6, paddingHorizontal: 14 }, shadow.card]}>
-            {today.map((e, i) => (
-              <EntryRow key={e.id} entry={e} first={i === 0} last={i === today.length - 1} onDelete={() => deleteEntry(e.id)} />
-            ))}
-          </View>
-        )}
       </View>
 
       </>}
@@ -568,7 +580,7 @@ function MemberCard({ title, line, pills, avatarBg, avatarFg, initial, heart, on
 
 /** Family overview — the home view; everyone at a glance, headlines from the engine. */
 function FamilyOverview({
-  children, hasJourney, dueDate, maternalBirth, data, now, onSelectChild, onSelectYou, onQuickLog, activeChildName,
+  children, hasJourney, dueDate, maternalBirth, data, now, onSelectChild, onSelectYou,
 }: {
   children: Child[];
   hasJourney: boolean;
@@ -578,8 +590,6 @@ function FamilyOverview({
   now: number;
   onSelectChild: (id: string) => void;
   onSelectYou: () => void;
-  onQuickLog: (k: EntryKind) => void;
-  activeChildName?: string;
 }) {
   const childCards = children.map((ch) => {
     const r = childRhythm(ch.id, data.entries, now);
@@ -611,7 +621,6 @@ function FamilyOverview({
   const youPills: Pill[] = pregNudges.slice(0, 2).map((n) => ({ t: `${n.icon} ${n.title}`, bg: '#FBE0EA', fg: '#B04070' }));
 
   const needCount = childCards.reduce((s, c) => s + c.nudgeCount, 0) + pregNudges.length;
-  const qlKinds: EntryKind[] = ['feed', 'sleep', 'diaper'];
 
   return (
     <View style={{ gap: 12 }}>
@@ -626,22 +635,8 @@ function FamilyOverview({
         <MemberCard key={c.ch.id} title={c.title} line={c.line} pills={c.pills} avatarBg={c.t.fill} avatarFg={c.t.stroke} initial={c.ch.name.charAt(0).toUpperCase()} onPress={() => onSelectChild(c.ch.id)} />
       ))}
       {hasJourney && (
-        <MemberCard title={youTitle} line={youLine} pills={youPills} avatarBg="#E0F4EF" avatarFg={color.maternalTeal} heart onPress={onSelectYou} />
+        <MemberCard title={youTitle} line={youLine} pills={youPills} avatarBg="#FBE0EA" avatarFg={color.rose} heart onPress={onSelectYou} />
       )}
-      <Label>Quick log{activeChildName ? ` · ${activeChildName}` : ''}</Label>
-      <View style={{ flexDirection: 'row', gap: 10 }}>
-        {qlKinds.map((k) => {
-          const m = ENTRY_META[k];
-          return (
-            <Pressable key={k} onPress={() => onQuickLog(k)} style={({ pressed }) => [{ flex: 1, opacity: pressed ? 0.82 : 1 }]}>
-              <View style={{ backgroundColor: m.fill, borderRadius: radius.card, paddingVertical: 16, alignItems: 'center', gap: 7 }}>
-                <EntryIcon kind={k} color={m.ink} size={22} />
-                <Text style={{ fontFamily: font.body700, fontSize: 12.5, color: m.ink }}>{m.label}</Text>
-              </View>
-            </Pressable>
-          );
-        })}
-      </View>
     </View>
   );
 }
@@ -698,8 +693,8 @@ function RailDock({
             const youOn = !activeCat && isYou;
             return (
               <Pressable onPress={onSelectYou} accessibilityLabel={`Mum and Me, ${youLabel}`}>
-                <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: youOn ? color.maternalTeal : '#E0F4EF', alignItems: 'center', justifyContent: 'center', borderWidth: youOn ? 3 : 0, borderColor: '#fff' }}>
-                  <Heart size={17} color={youOn ? '#fff' : color.maternalTeal} filled />
+                <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: youOn ? color.rose : '#FBE0EA', alignItems: 'center', justifyContent: 'center', borderWidth: youOn ? 3 : 0, borderColor: '#fff' }}>
+                  <Heart size={17} color={youOn ? '#fff' : color.rose} filled />
                 </View>
               </Pressable>
             );
@@ -940,7 +935,7 @@ function MaternityView({
       </View>
 
       {/* Teal status hero */}
-      <View style={[{ backgroundColor: color.maternalTeal, borderRadius: radius.card, padding: 20, gap: 14 }, shadow.card]}>
+      <View style={[{ backgroundColor: color.rose, borderRadius: radius.card, padding: 20, gap: 14 }, shadow.card]}>
         {phase === 'pregnancy' ? (
           <>
             <Text style={{ fontFamily: font.display700, fontSize: 24, color: '#fff' }}>{gest ? `Week ${gest.week}` : pregArchived ? 'Pregnancy complete 🎉' : 'Pregnancy'}</Text>
