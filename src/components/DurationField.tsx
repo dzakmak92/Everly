@@ -1,8 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, Pressable, Modal, PanResponder, GestureResponderEvent } from 'react-native';
+import React, { useRef } from 'react';
+import { View, Text, Pressable, PanResponder, GestureResponderEvent } from 'react-native';
 import Svg, { Circle, Path, Line } from 'react-native-svg';
-import { color, font, radius, shadow } from '../theme/tokens';
-import { Button } from './forms';
+import { color, font, radius } from '../theme/tokens';
 
 /** "1h 20m" / "20m" — empty string for zero. */
 export function fmtDuration(total: number): string {
@@ -12,48 +11,9 @@ export function fmtDuration(total: number): string {
   return [h ? `${h}h` : '', m ? `${m}m` : '', !h && !m ? '0m' : ''].filter(Boolean).join(' ');
 }
 
-const SIZE = 232;
+const SIZE = 168;
 const C = SIZE / 2;
-const R = 90;
-
-/**
- * Tap-to-open duration field backed by a radial dial: drag the knob around the
- * ring to set minutes, tap −/+ for hours. `value`/`onChange` are minute strings
- * (matching the existing entry forms).
- */
-export function DurationField({
-  label,
-  value,
-  onChange,
-  placeholder = 'Set duration',
-}: {
-  label?: string;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-}) {
-  const [open, setOpen] = useState(false);
-  const total = parseInt(value, 10) || 0;
-  const display = fmtDuration(total);
-  return (
-    <View style={{ gap: 6 }}>
-      {label ? <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.inkSecondary }}>{label}</Text> : null}
-      <Pressable
-        onPress={() => setOpen(true)}
-        style={{ backgroundColor: '#fff', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 13, borderWidth: 1, borderColor: color.hairline, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
-      >
-        <Text style={{ fontFamily: font.body500, fontSize: 14, color: display ? color.ink : color.faint }}>{display || placeholder}</Text>
-        <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.primary }}>{display ? 'Edit' : 'Set'}</Text>
-      </Pressable>
-      <DurationDialModal
-        visible={open}
-        initial={total}
-        onCancel={() => setOpen(false)}
-        onSet={(m) => { onChange(m ? String(m) : ''); setOpen(false); }}
-      />
-    </View>
-  );
-}
+const R = SIZE / 2 - 16;
 
 function arcPath(frac: number): string {
   const a0 = -Math.PI / 2;
@@ -64,23 +24,29 @@ function arcPath(frac: number): string {
   return `M ${sx} ${sy} A ${R} ${R} 0 ${large} 1 ${ex} ${ey}`;
 }
 
-function DurationDialModal({
-  visible,
-  initial,
-  onCancel,
-  onSet,
+/**
+ * Inline duration picker: a radial dial (drag the knob for minutes) plus a
+ * hours stepper, shown directly in the card. `value`/`onChange` are minute
+ * strings (matching the entry forms). Stage: stacked & compact (design A).
+ */
+export function DurationField({
+  label = 'Duration',
+  value,
+  onChange,
 }: {
-  visible: boolean;
-  initial: number;
-  onCancel: () => void;
-  onSet: (min: number) => void;
+  label?: string;
+  value: string;
+  onChange: (v: string) => void;
 }) {
-  const [hours, setHours] = useState(Math.floor(initial / 60));
-  const [mins, setMins] = useState(initial % 60);
+  const total = parseInt(value, 10) || 0;
+  const hours = Math.floor(total / 60);
+  const mins = total % 60;
 
-  useEffect(() => {
-    if (visible) { setHours(Math.floor(initial / 60)); setMins(initial % 60); }
-  }, [visible, initial]);
+  // Keep current hours available to the (once-created) pan responder.
+  const hoursRef = useRef(hours);
+  hoursRef.current = hours;
+
+  const emit = (h: number, m: number) => { const t = h * 60 + m; onChange(t > 0 ? String(t) : ''); };
 
   const update = (e: GestureResponderEvent) => {
     const { locationX, locationY } = e.nativeEvent;
@@ -88,7 +54,7 @@ function DurationDialModal({
     let ang = Math.atan2(dy, dx) + Math.PI / 2; // 0 at the top
     if (ang < 0) ang += Math.PI * 2;
     const m = Math.round((ang / (Math.PI * 2)) * 60) % 60;
-    setMins(m);
+    emit(hoursRef.current, m);
   };
 
   const pan = useRef(
@@ -105,59 +71,38 @@ function DurationDialModal({
   const knob = { x: C + R * Math.cos(a1), y: C + R * Math.sin(a1) };
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
-      <Pressable onPress={onCancel} style={{ flex: 1, backgroundColor: 'rgba(40,18,50,0.35)', justifyContent: 'center', paddingHorizontal: 28 }}>
-        <Pressable onPress={() => {}} style={[{ backgroundColor: color.canvas, borderRadius: radius.card, padding: 20, gap: 14, alignItems: 'center' }, shadow.card]}>
-          <Text style={{ alignSelf: 'flex-start', fontFamily: font.display700, fontSize: 18, color: color.ink }}>Duration</Text>
-
-          <View {...pan.panHandlers} style={{ width: SIZE, height: SIZE }}>
-            <Svg width={SIZE} height={SIZE}>
-              <Circle cx={C} cy={C} r={R} fill="none" stroke="#EAE8F4" strokeWidth={12} />
-              {Array.from({ length: 12 }).map((_, i) => {
-                const a = -Math.PI / 2 + (i / 12) * 2 * Math.PI;
-                return <Line key={i} x1={C + (R - 12) * Math.cos(a)} y1={C + (R - 12) * Math.sin(a)} x2={C + (R - 18) * Math.cos(a)} y2={C + (R - 18) * Math.sin(a)} stroke="#cfcde0" strokeWidth={2} />;
-              })}
-              {mins > 0 && <Path d={arcPath(frac)} fill="none" stroke={color.primary} strokeWidth={12} strokeLinecap="round" />}
-              <Circle cx={knob.x} cy={knob.y} r={12} fill="#fff" stroke={color.primary} strokeWidth={4} />
-            </Svg>
-            {/* Centre readout (plain text overlays the SVG) */}
-            <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ fontFamily: font.display700, fontSize: 34, color: color.ink }}>{hours}:{String(mins).padStart(2, '0')}</Text>
-              <Text style={{ fontFamily: font.body500, fontSize: 11, color: color.muted, marginTop: 2 }}>hours : minutes</Text>
-            </View>
-          </View>
-
-          {/* Hours stepper */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-            <Pressable onPress={() => setHours((h) => Math.max(0, h - 1))} style={stepBtn}><Text style={stepTxt}>−</Text></Pressable>
-            <View style={{ alignItems: 'center', minWidth: 56 }}>
-              <Text style={{ fontFamily: font.display700, fontSize: 20, color: color.ink }}>{hours}</Text>
-              <Text style={{ fontFamily: font.body700, fontSize: 10, letterSpacing: 0.6, textTransform: 'uppercase', color: color.muted }}>hours</Text>
-            </View>
-            <Pressable onPress={() => setHours((h) => Math.min(12, h + 1))} style={stepBtn}><Text style={stepTxt}>+</Text></Pressable>
-          </View>
-
-          {/* Quick minute taps for precision without dragging */}
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            {[0, 15, 30, 45].map((m) => {
-              const on = mins === m;
-              return (
-                <Pressable key={m} onPress={() => setMins(m)} style={{ paddingVertical: 7, paddingHorizontal: 12, borderRadius: radius.pill, backgroundColor: on ? color.primary : '#fff', borderWidth: 1, borderColor: on ? color.primary : color.hairline }}>
-                  <Text style={{ fontFamily: font.body600, fontSize: 12.5, color: on ? '#fff' : color.ink }}>:{String(m).padStart(2, '0')}</Text>
-                </Pressable>
-              );
+    <View style={{ gap: 8 }}>
+      <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 0.8, textTransform: 'uppercase', color: color.muted }}>{label}</Text>
+      <View style={{ backgroundColor: '#fff', borderRadius: radius.tile, paddingVertical: 16, alignItems: 'center', gap: 12, borderWidth: 1, borderColor: color.hairline }}>
+        <View {...pan.panHandlers} style={{ width: SIZE, height: SIZE }}>
+          <Svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`}>
+            <Circle cx={C} cy={C} r={R} fill="none" stroke="#EAE8F4" strokeWidth={11} />
+            {Array.from({ length: 12 }).map((_, i) => {
+              const a = -Math.PI / 2 + (i / 12) * 2 * Math.PI;
+              return <Line key={i} x1={C + (R - 10) * Math.cos(a)} y1={C + (R - 10) * Math.sin(a)} x2={C + (R - 15) * Math.cos(a)} y2={C + (R - 15) * Math.sin(a)} stroke="#cfcde0" strokeWidth={2} />;
             })}
+            {mins > 0 && <Path d={arcPath(frac)} fill="none" stroke={color.primary} strokeWidth={11} strokeLinecap="round" />}
+            <Circle cx={knob.x} cy={knob.y} r={11} fill="#fff" stroke={color.primary} strokeWidth={4} />
+          </Svg>
+          <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ fontFamily: font.display700, fontSize: 30, color: color.ink }}>{hours}:{String(mins).padStart(2, '0')}</Text>
+            <Text style={{ fontFamily: font.body500, fontSize: 10.5, color: color.muted, marginTop: 1 }}>hours : minutes</Text>
           </View>
+        </View>
 
-          <View style={{ flexDirection: 'row', gap: 10, alignSelf: 'stretch' }}>
-            <Button label="Cancel" variant="secondary" onPress={onCancel} style={{ flex: 1 }} />
-            <Button label="Set" onPress={() => onSet(hours * 60 + mins)} style={{ flex: 1 }} />
+        {/* Hours stepper */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+          <Pressable onPress={() => emit(Math.max(0, hours - 1), mins)} style={stepBtn}><Text style={stepTxt}>−</Text></Pressable>
+          <View style={{ alignItems: 'center', minWidth: 44 }}>
+            <Text style={{ fontFamily: font.display700, fontSize: 19, color: color.ink }}>{hours}</Text>
+            <Text style={{ fontFamily: font.body700, fontSize: 9.5, letterSpacing: 0.6, textTransform: 'uppercase', color: color.muted }}>hours</Text>
           </View>
-        </Pressable>
-      </Pressable>
-    </Modal>
+          <Pressable onPress={() => emit(Math.min(12, hours + 1), mins)} style={stepBtn}><Text style={stepTxt}>+</Text></Pressable>
+        </View>
+      </View>
+    </View>
   );
 }
 
-const stepBtn = { width: 42, height: 42, borderRadius: 21, backgroundColor: '#fff', borderWidth: 1.5, borderColor: color.hairline, alignItems: 'center' as const, justifyContent: 'center' as const };
-const stepTxt = { fontFamily: font.display700, fontSize: 22, color: color.primary };
+const stepBtn = { width: 38, height: 38, borderRadius: 19, backgroundColor: color.canvas, borderWidth: 1.5, borderColor: color.hairline, alignItems: 'center' as const, justifyContent: 'center' as const };
+const stepTxt = { fontFamily: font.display700, fontSize: 20, color: color.primary };
