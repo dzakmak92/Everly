@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { ScrollView, View, Text, Pressable, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -22,7 +22,7 @@ import { EPDS_QUESTIONS, scoreEpds, BAND_LABEL, CRISIS_RESOURCES } from '../../.
 import { youStoryEvents } from '../../../src/lib/story';
 import {
   useData, entriesOn, upcomingEvents, entryDetail, ENTRY_META, quickLogKinds, MOOD_LABELS, CHILD_COLORS,
-  type EntryKind, type FeedSide, type DiaperType, type Child, type Lochia, type ChildColor, type PregArchive,
+  type EntryKind, type FeedSide, type DiaperType, type Child, type Lochia, type ChildColor, type PregArchive, type PregStatus,
 } from '../../../src/lib/store';
 
 const todayISO = () => {
@@ -562,10 +562,12 @@ function MaternityView({
       ? [
           { key: 'checkin', label: 'Daily check-in', bg: '#D8F0E6', icon: <Smile size={20} color="#2C8475" /> },
           { key: 'week', label: 'Week-by-week', bg: '#E7E4FB', icon: <Activity size={20} color={color.primary} /> },
+          { key: 'monitor', label: 'Monitoring & calls', bg: '#FBE0EA', icon: <Shield size={20} color="#B04070" /> },
           { key: 'appts', label: 'Appointments', bg: '#DCEBFA', icon: <CalIcon size={20} color="#2C5F90" /> },
-          { key: 'triage', label: 'When to call', bg: '#FBE0EA', icon: <Shield size={20} color="#B04070" /> },
           { key: 'prep', label: 'Birth prep', bg: '#FBF1CE', icon: <CheckCircle size={20} color="#7A5C20" /> },
           { key: 'names', label: 'Baby names', bg: '#E7E4FB', icon: <Star size={20} color={color.primary} /> },
+          { key: 'labour', label: 'Labour & movement', bg: '#D8F0E6', icon: <Activity size={20} color="#2C8475" /> },
+          { key: 'care', label: 'Care & support', bg: '#FBE0EA', icon: <Heart size={20} color="#B04070" /> },
         ]
       : [
           { key: 'epds', label: 'Wellbeing', bg: '#E7E4FB', icon: <Smile size={20} color={color.primary} /> },
@@ -822,9 +824,11 @@ function CardPanel({ cardKey, dueDate, maternalBirth, ppWeeks, onClose }: { card
     case 'checkin': return <CheckinPanel onClose={onClose} />;
     case 'week': return <WeekPanel dueDate={dueDate} />;
     case 'appts': return <PregApptsPanel />;
-    case 'triage': return <TriagePanel />;
+    case 'monitor': return <MonitorPanel />;
     case 'prep': return <BirthPrepPanel />;
     case 'names': return <NamesPanel />;
+    case 'labour': return <LabourPanel />;
+    case 'care': return <CarePanel />;
     case 'epds': return <WellbeingPanel />;
     case 'recovery': return <RecoveryPanel />;
     case 'matappts': return <MatApptsPanel maternalBirth={maternalBirth} />;
@@ -1009,6 +1013,180 @@ function TriagePanel() {
           <View key={i} style={{ flexDirection: 'row', gap: 8 }}>
             <Text style={{ color: color.goldInk, fontFamily: font.body700 }}>•</Text>
             <Text style={{ flex: 1, fontFamily: font.body500, fontSize: 13, color: color.ink }}>{f}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+/** Monitoring (glucose + BP) and the when-to-call triage, matching preg-vitals. */
+function MonitorPanel() {
+  const { pregVitals, addPregVital, deletePregVital } = useData();
+  const [tab, setTab] = useState<'monitoring' | 'triage'>('monitoring');
+  const [g, setG] = useState(''); const [tag, setTag] = useState('fasting');
+  const [sys, setSys] = useState(''); const [dia, setDia] = useState('');
+  const glucose = pregVitals.filter((v) => v.kind === 'glucose').slice(0, 4);
+  const bp = pregVitals.filter((v) => v.kind === 'bp').slice(0, 4);
+  const addG = () => { const v = numOrUndef(g); if (v == null) return; addPregVital({ kind: 'glucose', glucose: v, tag }); setG(''); };
+  const addBp = () => { const s = numOrUndef(sys), d = numOrUndef(dia); if (s == null && d == null) return; addPregVital({ kind: 'bp', systolic: s, diastolic: d }); setSys(''); setDia(''); };
+  return (
+    <View style={{ gap: 14 }}>
+      <View style={{ flexDirection: 'row', backgroundColor: color.canvas, borderRadius: radius.pill, padding: 3 }}>
+        {([['monitoring', 'Monitoring'], ['triage', 'When to call']] as [typeof tab, string][]).map(([k, l]) => {
+          const on = tab === k;
+          return <Pressable key={k} onPress={() => setTab(k)} style={{ flex: 1, paddingVertical: 8, borderRadius: radius.pill, alignItems: 'center', backgroundColor: on ? color.maternalTeal : 'transparent' }}><Text style={{ fontFamily: font.body700, fontSize: 12.5, color: on ? '#fff' : color.muted }}>{l}</Text></Pressable>;
+        })}
+      </View>
+      {tab === 'monitoring' ? (
+        <>
+          <View style={{ gap: 8 }}>
+            <PanelLabel>Blood glucose</PanelLabel>
+            {glucose.map((v) => {
+              const r = v.glucose ?? 0; const fasting = (v.tag ?? '').includes('fasting'); const high = fasting ? r >= 5.3 : r > 7.8;
+              return <PanelRow key={v.id} title={`${v.glucose} mmol/L${high ? ' ⚠' : ''}`} sub={`${v.tag || ''} · ${dayTimeOf(v.at)}`} onDelete={() => deletePregVital(v.id)} />;
+            })}
+            <SelectChips options={['fasting', 'post-meal']} value={tag} onChange={setTag} />
+            <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-end' }}>
+              <View style={{ flex: 1 }}><Field label="Glucose (mmol/L)" value={g} onChangeText={setG} placeholder="e.g. 5.2" /></View>
+              <Button label="Log" onPress={addG} style={{ paddingHorizontal: 16 }} />
+            </View>
+          </View>
+          <View style={{ gap: 8 }}>
+            <PanelLabel>Blood pressure</PanelLabel>
+            {bp.map((v) => {
+              const high = (v.systolic ?? 0) >= 140 || (v.diastolic ?? 0) >= 90;
+              return <PanelRow key={v.id} title={`${v.systolic}/${v.diastolic} mmHg${high ? ' ⚠' : ''}`} sub={dayTimeOf(v.at)} onDelete={() => deletePregVital(v.id)} />;
+            })}
+            <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-end' }}>
+              <View style={{ flex: 1 }}><Field label="Systolic" value={sys} onChangeText={setSys} placeholder="118" /></View>
+              <View style={{ flex: 1 }}><Field label="Diastolic" value={dia} onChangeText={setDia} placeholder="74" /></View>
+              <Button label="Log" onPress={addBp} style={{ paddingHorizontal: 16 }} />
+            </View>
+          </View>
+        </>
+      ) : (
+        <TriagePanel />
+      )}
+    </View>
+  );
+}
+
+const labFmt = (ms: number) => { const s = Math.floor(ms / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+const labDurSec = (secs: number) => { const m = Math.floor(secs / 60); return m > 0 ? `${m}m ${secs % 60}s` : `${secs}s`; };
+const KICK_TARGET = 10;
+
+/** Labour & movement — kick counter + contraction timer, matching kick-counter. */
+function LabourPanel() {
+  const { kickSessions, addKickSession, deleteKickSession, contractionSessions, addContraction, deleteContraction } = useData();
+  const [mode, setMode] = useState<'kicks' | 'contractions'>('kicks');
+  const [kicks, setKicks] = useState(0);
+  const [startedAt, setStartedAt] = useState<number | null>(null);
+  const [kickNow, setKickNow] = useState(Date.now());
+  const kickTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  React.useEffect(() => {
+    if (startedAt && kicks < KICK_TARGET) {
+      kickTimer.current = setInterval(() => setKickNow(Date.now()), 1000);
+      return () => { if (kickTimer.current) clearInterval(kickTimer.current); };
+    }
+  }, [startedAt, kicks]);
+  const recordKick = () => { if (kicks >= KICK_TARGET) return; if (!startedAt) setStartedAt(Date.now()); setKicks((k) => k + 1); };
+  const resetKicks = () => { if (kicks > 0 && startedAt) addKickSession({ count: kicks, durationMin: Math.max(1, Math.round((kickNow - startedAt) / 60000)) }); setKicks(0); setStartedAt(null); setKickNow(Date.now()); };
+  const elapsed = startedAt ? kickNow - startedAt : 0;
+  const done = kicks >= KICK_TARGET;
+
+  const [activeStart, setActiveStart] = useState<number | null>(null);
+  const [conNow, setConNow] = useState(Date.now());
+  const conTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  React.useEffect(() => {
+    if (activeStart) { conTimer.current = setInterval(() => setConNow(Date.now()), 250); return () => { if (conTimer.current) clearInterval(conTimer.current); }; }
+  }, [activeStart]);
+  const toggleCon = () => {
+    if (activeStart) {
+      const durationSec = Math.max(1, Math.round((Date.now() - activeStart) / 1000));
+      const prev = contractionSessions[0];
+      const prevStart = prev ? new Date(prev.at).getTime() - prev.durationSec * 1000 : null;
+      const intervalSec = prevStart != null ? Math.max(0, Math.round((activeStart - prevStart) / 1000)) : undefined;
+      addContraction({ durationSec, intervalSec }); setActiveStart(null);
+    } else { setActiveStart(Date.now()); setConNow(Date.now()); }
+  };
+
+  return (
+    <View style={{ gap: 14 }}>
+      <View style={{ flexDirection: 'row', backgroundColor: color.canvas, borderRadius: radius.pill, padding: 3 }}>
+        {([['kicks', 'Kicks'], ['contractions', 'Contractions']] as [typeof mode, string][]).map(([k, l]) => {
+          const on = mode === k;
+          return <Pressable key={k} onPress={() => setMode(k)} style={{ flex: 1, paddingVertical: 8, borderRadius: radius.pill, alignItems: 'center', backgroundColor: on ? color.maternalTeal : 'transparent' }}><Text style={{ fontFamily: font.body700, fontSize: 12.5, color: on ? '#fff' : color.muted }}>{l}</Text></Pressable>;
+        })}
+      </View>
+      {mode === 'kicks' ? (
+        <>
+          <View style={{ backgroundColor: color.canvas, borderRadius: radius.tile, padding: 16, alignItems: 'center', gap: 2 }}>
+            <Text style={{ fontFamily: font.display700, fontSize: 44, color: color.primary }}>{kicks}</Text>
+            <Text style={{ fontFamily: font.body600, fontSize: 12.5, color: color.muted }}>of {KICK_TARGET} movements · {startedAt ? labFmt(elapsed) : 'not started'}</Text>
+          </View>
+          {done ? (
+            <View style={{ backgroundColor: '#D8F0E6', borderRadius: radius.tile, padding: 14, alignItems: 'center' }}><Text style={{ fontFamily: font.body700, fontSize: 13.5, color: color.tealInk }}>{KICK_TARGET} movements in {labFmt(elapsed)} 🎉</Text></View>
+          ) : (
+            <Button label="Record a kick" onPress={recordKick} />
+          )}
+          <Button label={kicks > 0 ? 'Save & reset' : 'Reset'} variant="secondary" onPress={resetKicks} />
+          {kickSessions.length > 0 && (
+            <View style={{ gap: 8 }}>
+              <PanelLabel>Recent sessions</PanelLabel>
+              {kickSessions.slice(0, 4).map((s) => <PanelRow key={s.id} title={`${s.count} ${s.count === 1 ? 'movement' : 'movements'}${s.durationMin != null ? ` · ${s.durationMin}m` : ''}`} sub={dayTimeOf(s.at)} onDelete={() => deleteKickSession(s.id)} />)}
+            </View>
+          )}
+        </>
+      ) : (
+        <>
+          <View style={{ backgroundColor: color.canvas, borderRadius: radius.tile, padding: 16, alignItems: 'center', gap: 2 }}>
+            <Text style={{ fontFamily: font.display700, fontSize: 36, color: activeStart ? color.rose : color.muted }}>{activeStart ? labDurSec(Math.round((conNow - activeStart) / 1000)) : '—'}</Text>
+            <Text style={{ fontFamily: font.body600, fontSize: 12, color: color.muted }}>{activeStart ? 'in progress' : 'tap start when one begins'}</Text>
+          </View>
+          <Button label={activeStart ? 'Stop' : 'Start'} onPress={toggleCon} />
+          {contractionSessions.length > 0 && (
+            <View style={{ gap: 8 }}>
+              <PanelLabel>{contractionSessions.length} recorded</PanelLabel>
+              {contractionSessions.slice(0, 4).map((c) => <PanelRow key={c.id} title={labDurSec(c.durationSec)} sub={c.intervalSec != null ? `${labDurSec(c.intervalSec)} apart` : 'first'} onDelete={() => deleteContraction(c.id)} />)}
+            </View>
+          )}
+        </>
+      )}
+    </View>
+  );
+}
+
+const PREG_STATUS: { key: PregStatus; label: string; desc: string }[] = [
+  { key: 'active', label: 'Active', desc: 'Tracking as normal.' },
+  { key: 'paused', label: 'Paused', desc: 'Pause reminders and trackers, keep your data.' },
+  { key: 'archived', label: 'Archived', desc: 'Move this pregnancy to a quiet, retrievable archive.' },
+];
+
+/** Care & support — pregnancy status + crisis resources, matching preg-care. */
+function CarePanel() {
+  const { pregStatus, setPregStatus } = useData();
+  return (
+    <View style={{ gap: 14 }}>
+      <Text style={{ fontFamily: font.body400, fontSize: 12.5, color: color.muted }}>However your journey unfolds, Everly adapts around you — these options are free and private.</Text>
+      <View style={{ gap: 8 }}>
+        <PanelLabel>This pregnancy</PanelLabel>
+        {PREG_STATUS.map((s) => {
+          const sel = s.key === pregStatus;
+          return (
+            <Pressable key={s.key} onPress={() => setPregStatus(s.key)} style={{ backgroundColor: sel ? color.maternalTeal : color.canvas, borderRadius: radius.tile, padding: 13 }}>
+              <Text style={{ fontFamily: font.body700, fontSize: 13.5, color: sel ? '#fff' : color.ink }}>{s.label}{sel ? ' · current' : ''}</Text>
+              <Text style={{ fontFamily: font.body400, fontSize: 12, color: sel ? 'rgba(255,255,255,0.9)' : color.muted, marginTop: 2 }}>{s.desc}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+      <View style={{ backgroundColor: '#FBE0EA', borderRadius: radius.tile, padding: 14, gap: 8 }}>
+        <Text style={{ fontFamily: font.body700, fontSize: 13, color: color.roseInk }}>Support, any time</Text>
+        {CRISIS_RESOURCES.map((r, i) => (
+          <View key={i}>
+            <Text style={{ fontFamily: font.body700, fontSize: 12.5, color: color.ink }}>{r.name}</Text>
+            <Text style={{ fontFamily: font.body400, fontSize: 12, color: color.inkSecondary }}>{r.detail}</Text>
           </View>
         ))}
       </View>
