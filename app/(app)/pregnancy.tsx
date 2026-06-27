@@ -266,6 +266,23 @@ export default function Pregnancy() {
         </>
       )}
 
+      {/* Past pregnancies — kept as history even once a new pregnancy is live */}
+      {gest && pregArchive.length > 0 && (
+        <View style={{ gap: 8 }}>
+          <SectionLabel>Past pregnancies</SectionLabel>
+          {pregArchive.map((a) => (
+            <View key={a.id} style={[{ backgroundColor: '#fff', borderRadius: radius.cardSm, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12 }, shadow.card]}>
+              <View style={{ width: 36, height: 36, borderRadius: 11, backgroundColor: '#E0F4EF', alignItems: 'center', justifyContent: 'center' }}><CheckCircle size={18} color={color.maternalTeal} /></View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: font.body700, fontSize: 14, color: color.ink }}>Born {fmtArch(a.bornDate)}</Text>
+                <Text style={{ fontFamily: font.body400, fontSize: 12, color: color.muted, marginTop: 2 }}>Reached week {archWeek(a)} · {a.checkins.length} check-in{a.checkins.length === 1 ? '' : 's'}</Text>
+              </View>
+              <View style={{ backgroundColor: '#EFEDF8', borderRadius: radius.pill, paddingVertical: 3, paddingHorizontal: 9 }}><Text style={{ fontFamily: font.body700, fontSize: 10, color: color.muted }}>read-only</Text></View>
+            </View>
+          ))}
+        </View>
+      )}
+
       {/* Baby-arrived modal */}
       <Modal visible={arrivedOpen} transparent animationType="fade" onRequestClose={() => setArrivedOpen(false)}>
         <Pressable onPress={() => setArrivedOpen(false)} style={{ flex: 1, backgroundColor: 'rgba(40,18,50,0.35)', justifyContent: 'center', paddingHorizontal: 28 }}>
