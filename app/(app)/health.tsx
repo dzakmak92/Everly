@@ -46,7 +46,7 @@ type Reminder = {
 };
 
 /* ── screen ──────────────────────────────────────────────────────────────── */
-export default function HealthTab() {
+export default function HealthTab({ embedded }: { embedded?: boolean }) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { children, vaccines, medications, growth } = useData();
@@ -81,13 +81,15 @@ export default function HealthTab() {
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: c.canvas }}
-      contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: 28, paddingHorizontal: 20, gap: 14 }}
+      contentContainerStyle={{ paddingTop: embedded ? 4 : insets.top + 8, paddingBottom: 28, paddingHorizontal: 20, gap: 14 }}
       showsVerticalScrollIndicator={false}
     >
       {/* header */}
-      <Pressable onPress={() => router.back()} hitSlop={8} style={{ width: 40, height: 40, justifyContent: 'center' }}>
-        <ChevronLeft size={24} color={c.ink} />
-      </Pressable>
+      {!embedded && (
+        <Pressable onPress={() => router.back()} hitSlop={8} style={{ width: 40, height: 40, justifyContent: 'center' }}>
+          <ChevronLeft size={24} color={c.ink} />
+        </Pressable>
+      )}
       <View style={{ paddingHorizontal: 2 }}>
         <Text style={{ fontFamily: f.display700, fontSize: 26, color: c.ink }}>Health</Text>
         <Text style={{ fontFamily: f.body400, fontSize: 13, color: c.muted, marginTop: 4 }}>

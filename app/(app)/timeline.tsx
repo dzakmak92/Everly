@@ -65,7 +65,7 @@ function fmtMonthYear(iso: string) {
   return d.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
 }
 
-export default function TimelineTab() {
+export default function TimelineTab({ embedded }: { embedded?: boolean }) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const params = useLocalSearchParams<{ subject?: string; child?: string }>();
@@ -110,18 +110,20 @@ export default function TimelineTab() {
     <View style={{ flex: 1, backgroundColor: color.canvas }}>
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: insets.bottom + 36, paddingHorizontal: 22 }}
+        contentContainerStyle={{ paddingTop: embedded ? 4 : insets.top + 8, paddingBottom: insets.bottom + 36, paddingHorizontal: 22 }}
         showsVerticalScrollIndicator={false}
       >
         {/* back chevron */}
-        <Pressable
-          onPress={() => router.back()}
-          hitSlop={8}
-          accessibilityLabel="Back"
-          style={{ width: 40, height: 40, justifyContent: 'center', marginLeft: -8 }}
-        >
-          <ChevronLeft size={24} color={color.ink} />
-        </Pressable>
+        {!embedded && (
+          <Pressable
+            onPress={() => router.back()}
+            hitSlop={8}
+            accessibilityLabel="Back"
+            style={{ width: 40, height: 40, justifyContent: 'center', marginLeft: -8 }}
+          >
+            <ChevronLeft size={24} color={color.ink} />
+          </Pressable>
+        )}
 
         {/* subject switcher */}
         <SubjectSwitcher

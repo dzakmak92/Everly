@@ -18,7 +18,7 @@ const TABS: { key: Tab; label: string }[] = [
   { key: 'week', label: 'Week' },
 ];
 
-export default function Insights() {
+export default function Insights({ embedded }: { embedded?: boolean }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ tab?: string }>();
@@ -31,16 +31,18 @@ export default function Insights() {
     <ScrollView
       style={{ flex: 1, backgroundColor: color.canvas }}
       contentContainerStyle={{
-        paddingTop: insets.top + 8,
+        paddingTop: embedded ? 4 : insets.top + 8,
         paddingBottom: insets.bottom + 28,
         paddingHorizontal: 20,
         gap: 14,
       }}
     >
       {/* back chevron */}
-      <Pressable onPress={() => router.back()} style={{ width: 40, height: 40, justifyContent: 'center' }} hitSlop={8}>
-        <ChevronLeft size={24} color={color.ink} />
-      </Pressable>
+      {!embedded && (
+        <Pressable onPress={() => router.back()} style={{ width: 40, height: 40, justifyContent: 'center' }} hitSlop={8}>
+          <ChevronLeft size={24} color={color.ink} />
+        </Pressable>
+      )}
 
       <Text style={{ fontFamily: font.display700, fontSize: 28, color: color.ink }}>Insights</Text>
 
