@@ -1474,9 +1474,9 @@ function LabourPanel() {
       return () => { if (kickTimer.current) clearInterval(kickTimer.current); };
     }
   }, [startedAt, kicks]);
-  const recordKick = () => { if (kicks >= KICK_TARGET) return; if (!startedAt) setStartedAt(Date.now()); setKicks((k) => k + 1); };
+  const recordKick = () => { if (kicks >= KICK_TARGET) return; if (!startedAt) { setStartedAt(Date.now()); setKickNow(Date.now()); } setKicks((k) => k + 1); };
   const resetKicks = () => { if (kicks > 0 && startedAt) addKickSession({ count: kicks, durationMin: Math.max(1, Math.round((kickNow - startedAt) / 60000)) }); setKicks(0); setStartedAt(null); setKickNow(Date.now()); };
-  const elapsed = startedAt ? kickNow - startedAt : 0;
+  const elapsed = startedAt ? Math.max(0, kickNow - startedAt) : 0;
   const done = kicks >= KICK_TARGET;
 
   const [activeStart, setActiveStart] = useState<number | null>(null);
@@ -1505,15 +1505,25 @@ function LabourPanel() {
       </View>
       {mode === 'kicks' ? (
         <>
-          <View style={{ backgroundColor: color.canvas, borderRadius: radius.tile, padding: 16, alignItems: 'center', gap: 2 }}>
-            <Text style={{ fontFamily: font.display700, fontSize: 44, color: color.rose }}>{kicks}</Text>
-            <Text style={{ fontFamily: font.body600, fontSize: 12.5, color: color.muted }}>of {KICK_TARGET} movements · {startedAt ? labFmt(elapsed) : 'not started'}</Text>
+          {/* D3 — pulse circle you tap to count, with a 10-dot progress row */}
+          <View style={{ alignItems: 'center', gap: 14 }}>
+            <Pressable onPress={recordKick} disabled={done} accessibilityLabel="Record a movement" style={({ pressed }) => [{ opacity: pressed ? 0.9 : 1 }]}>
+              <View style={{ width: 208, height: 208, borderRadius: 104, backgroundColor: '#FBEAF1', alignItems: 'center', justifyContent: 'center' }}>
+                <View style={{ width: 170, height: 170, borderRadius: 85, backgroundColor: '#F6D3E1', alignItems: 'center', justifyContent: 'center' }}>
+                  <View style={[{ width: 138, height: 138, borderRadius: 69, backgroundColor: done ? color.roseInk : color.rose, alignItems: 'center', justifyContent: 'center' }, shadow.card]}>
+                    <Text style={{ fontFamily: font.display700, fontSize: 50, color: '#fff' }}>{kicks}</Text>
+                    <Text style={{ fontFamily: font.body600, fontSize: 11.5, color: 'rgba(255,255,255,0.92)', marginTop: 1 }}>{done ? 'done 🎉' : 'tap'}</Text>
+                  </View>
+                </View>
+              </View>
+            </Pressable>
+            <View style={{ flexDirection: 'row', gap: 7 }}>
+              {Array.from({ length: KICK_TARGET }).map((_, i) => (
+                <View key={i} style={{ width: 13, height: 13, borderRadius: 7, backgroundColor: i < kicks ? color.rose : '#EEE3EA' }} />
+              ))}
+            </View>
+            <Text style={{ fontFamily: font.body600, fontSize: 12.5, color: color.muted }}>{kicks} of {KICK_TARGET} · {startedAt ? labFmt(elapsed) : 'not started'}</Text>
           </View>
-          {done ? (
-            <View style={{ backgroundColor: '#FBE0EA', borderRadius: radius.tile, padding: 14, alignItems: 'center' }}><Text style={{ fontFamily: font.body700, fontSize: 13.5, color: color.roseInk }}>{KICK_TARGET} movements in {labFmt(elapsed)} 🎉</Text></View>
-          ) : (
-            <Button label="Record a kick" onPress={recordKick} />
-          )}
           <Button label={kicks > 0 ? 'Save & reset' : 'Reset'} variant="secondary" onPress={resetKicks} />
           {kickSessions.length > 0 && (
             <View style={{ gap: 8 }}>
