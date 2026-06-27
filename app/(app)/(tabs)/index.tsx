@@ -8,6 +8,7 @@ import { Logo } from '../../../src/components/Logo';
 import {
   ChevronRight, Bottle, Calendar as CalendarIcon, Syringe,
   Heart, Calendar as CalIcon, Activity, Smile, Shield, CheckCircle, Star, Leaf, X, Plus, ChevronLeft, Check,
+  HeartPulse, StarOutline, BarChart, User,
 } from '../../../src/components/icons';
 import { EntryIcon } from '../../../src/components/EntryIcon';
 import { Silhouette, ProgressBar } from '../../../src/components/ui';
@@ -163,30 +164,47 @@ export default function Today() {
 
   const hasNext = nextEvents.length > 0 || dueVax;
 
+  const showDock = children.length > 0 || hasJourney;
+  // The reserved rail keeps content inset; padding hugs the rail edge, breathes on the other.
+  const padStart = dockSide === 'right' ? 20 : 10;
+  const padEnd = dockSide === 'right' ? 10 : 20;
+  const railProps = {
+    children, activeId: activeChild?.id, isYou, hasJourney,
+    youLabel: youStatusLabel(dueDate, maternalBirth),
+    onSelectChild: (id: string) => { setPerson(id); setActiveChild(id); },
+    onSelectYou: () => setPerson('you'),
+    onAdd: () => router.push('/(app)/(tabs)/family' as any),
+    onNavigate: (to: string) => router.push(to as any),
+  };
   return (
     <View style={{ flex: 1, backgroundColor: color.canvas }}>
-    <ScrollView
-      style={{ flex: 1, backgroundColor: color.canvas }}
-      contentContainerStyle={{ paddingTop: insets.top + 14, paddingBottom: 28, paddingHorizontal: 20, gap: 16 }}
-      showsVerticalScrollIndicator={false}
-    >
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: 2 }}>
-        <Logo width={22} height={26} />
-        <Text style={{ fontFamily: font.display700, fontSize: 19, color: color.ink }}>Everly</Text>
+      {/* Fixed header — the rail runs from just beneath this down to the bottom */}
+      <View style={{ paddingTop: insets.top + 14, paddingHorizontal: 20, gap: 8 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: 2 }}>
+          <Logo width={22} height={26} />
+          <Text style={{ fontFamily: font.display700, fontSize: 19, color: color.ink }}>Everly</Text>
+        </View>
+        {/* Greeting */}
+        <Pressable onPress={() => activeChild && router.push(`/(app)/child/${activeChild.id}` as any)} disabled={!activeChild} style={{ paddingHorizontal: 2 }}>
+          <Text style={{ fontFamily: font.display700, fontSize: 24, color: color.ink }}>{greeting()}, {name}</Text>
+          <Text style={{ fontFamily: font.body400, fontSize: 13, color: color.muted, marginTop: 4 }}>{dateLabel}</Text>
+        </Pressable>
+        {/* Active-module label (the rail switches between modules) */}
+        {showDock && (
+          <Text style={{ fontFamily: font.body600, fontSize: 13, color: color.muted, paddingHorizontal: 2 }}>
+            {isYou ? `Mum&Me · ${youStatusLabel(dueDate, maternalBirth)}` : (activeChild ? `${activeChild.name}${activeChild.birthDate ? ` · ${ageLabel(activeChild.birthDate)}` : ''}` : '')}
+          </Text>
+        )}
       </View>
 
-      {/* Greeting */}
-      <Pressable onPress={() => activeChild && router.push(`/(app)/child/${activeChild.id}` as any)} disabled={!activeChild} style={{ paddingHorizontal: 2 }}>
-        <Text style={{ fontFamily: font.display700, fontSize: 24, color: color.ink }}>{greeting()}, {name}</Text>
-        <Text style={{ fontFamily: font.body400, fontSize: 13, color: color.muted, marginTop: 4 }}>{dateLabel}</Text>
-      </Pressable>
-
-      {/* Active-module label (the floating dock switches between modules) */}
-      {(children.length > 0 || hasJourney) && (
-        <Text style={{ fontFamily: font.body600, fontSize: 13, color: color.muted, paddingHorizontal: 2, marginTop: -6 }}>
-          {isYou ? `Mum&Me · ${youStatusLabel(dueDate, maternalBirth)}` : (activeChild ? `${activeChild.name}${activeChild.birthDate ? ` · ${ageLabel(activeChild.birthDate)}` : ''}` : '')}
-        </Text>
-      )}
+      {/* Content + reserved rail */}
+      <View style={{ flex: 1, flexDirection: 'row' }}>
+        {showDock && dockSide === 'left' && <RailDock {...railProps} side="left" onMirror={() => setDockSide('right')} />}
+    <ScrollView
+      style={{ flex: 1, backgroundColor: color.canvas }}
+      contentContainerStyle={{ paddingTop: 10, paddingBottom: 28, paddingLeft: padStart, paddingRight: padEnd, gap: 16 }}
+      showsVerticalScrollIndicator={false}
+    >
 
       {/* ── You (maternity) view ──────────────────────────────────────────── */}
       {isYou && (
@@ -390,28 +408,25 @@ export default function Today() {
         </Pressable>
       </Modal>
     </ScrollView>
-
-      {/* Floating module dock — switch child / Mum&Me; mirror button flips the side */}
-      {(children.length > 0 || hasJourney) && (
-        <ModuleDock
-          children={children}
-          activeId={activeChild?.id}
-          isYou={isYou}
-          hasJourney={hasJourney}
-          youLabel={youStatusLabel(dueDate, maternalBirth)}
-          side={dockSide}
-          onSelectChild={(id) => { setPerson(id); setActiveChild(id); }}
-          onSelectYou={() => setPerson('you')}
-          onAdd={() => router.push('/(app)/(tabs)/family' as any)}
-          onMirror={() => setDockSide(dockSide === 'right' ? 'left' : 'right')}
-        />
-      )}
+        {showDock && dockSide === 'right' && <RailDock {...railProps} side="right" onMirror={() => setDockSide('left')} />}
+      </View>
     </View>
   );
 }
 
-function ModuleDock({
-  children, activeId, isYou, hasJourney, youLabel, side, onSelectChild, onSelectYou, onAdd, onMirror,
+/* Reserved side rail — module avatars on top, a divider, then shortcuts to the
+   main "More" categories, with the mirror (handedness flip) pinned at the bottom. */
+const RAIL_ICON = '#6F6E86';
+const RAIL_CATS: { key: string; label: string; to: string; icon: (c: string) => React.ReactNode }[] = [
+  { key: 'health', label: 'Health records', to: '/(app)/health', icon: (c) => <HeartPulse size={19} color={c} /> },
+  { key: 'timeline', label: 'Timeline', to: '/(app)/timeline', icon: (c) => <StarOutline size={19} color={c} /> },
+  { key: 'insights', label: 'Insights', to: '/(app)/insights', icon: (c) => <BarChart size={19} color={c} /> },
+  { key: 'routines', label: 'Routines & chores', to: '/(app)/routines', icon: (c) => <CheckCircle size={18} color={c} /> },
+  { key: 'coparent', label: 'Co-parent', to: '/(app)/coparent', icon: (c) => <User size={18} color={c} /> },
+];
+
+function RailDock({
+  children, activeId, isYou, hasJourney, youLabel, side, onSelectChild, onSelectYou, onAdd, onNavigate, onMirror,
 }: {
   children: Child[];
   activeId?: string;
@@ -422,37 +437,55 @@ function ModuleDock({
   onSelectChild: (id: string) => void;
   onSelectYou: () => void;
   onAdd: () => void;
+  onNavigate: (to: string) => void;
   onMirror: () => void;
 }) {
   const insets = useSafeAreaInsets();
   return (
-    <View style={[{ position: 'absolute', bottom: insets.bottom + 14 }, side === 'right' ? { right: 12 } : { left: 12 }]}>
-      <View style={[{ backgroundColor: '#fff', borderRadius: 30, paddingVertical: 9, paddingHorizontal: 7, alignItems: 'center', gap: 11 }, shadow.card]}>
-        {children.map((ch) => {
-          const t = childToken[ch.color];
-          const on = !isYou && ch.id === activeId;
-          return (
-            <Pressable key={ch.id} onPress={() => onSelectChild(ch.id)}>
-              <View style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: on ? t.stroke : t.fill, alignItems: 'center', justifyContent: 'center', borderWidth: on ? 3 : 0, borderColor: '#fff', ...(on ? { shadowColor: t.stroke, shadowOpacity: 0.5, shadowRadius: 0, shadowOffset: { width: 0, height: 0 } } : null) }}>
-                <Text style={{ fontFamily: font.display700, fontSize: 16, color: on ? '#fff' : t.stroke }}>{ch.name.charAt(0).toUpperCase()}</Text>
+    <View style={[{ width: 60, paddingTop: 4, paddingBottom: insets.bottom + 6 }, side === 'right' ? { paddingRight: 10 } : { paddingLeft: 10 }]}>
+      <View style={[{ flex: 1, backgroundColor: '#fff', borderRadius: 26, paddingVertical: 12, paddingHorizontal: 5, alignItems: 'center' }, shadow.card]}>
+        <ScrollView
+          style={{ flex: 1, alignSelf: 'stretch' }}
+          contentContainerStyle={{ alignItems: 'center', gap: 9, paddingBottom: 8 }}
+          showsVerticalScrollIndicator={false}
+        >
+          {children.map((ch) => {
+            const t = childToken[ch.color];
+            const on = !isYou && ch.id === activeId;
+            return (
+              <Pressable key={ch.id} onPress={() => onSelectChild(ch.id)}>
+                <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: on ? t.stroke : t.fill, alignItems: 'center', justifyContent: 'center', borderWidth: on ? 3 : 0, borderColor: '#fff' }}>
+                  <Text style={{ fontFamily: font.display700, fontSize: 15, color: on ? '#fff' : t.stroke }}>{ch.name.charAt(0).toUpperCase()}</Text>
+                </View>
+              </Pressable>
+            );
+          })}
+          {hasJourney && (
+            <Pressable onPress={onSelectYou} accessibilityLabel={`Mum and Me, ${youLabel}`}>
+              <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: isYou ? color.maternalTeal : '#E0F4EF', alignItems: 'center', justifyContent: 'center', borderWidth: isYou ? 3 : 0, borderColor: '#fff' }}>
+                <Heart size={17} color={isYou ? '#fff' : color.maternalTeal} filled />
               </View>
             </Pressable>
-          );
-        })}
-        {hasJourney && (
-          <Pressable onPress={onSelectYou} accessibilityLabel={`Mum and Me, ${youLabel}`}>
-            <View style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: isYou ? color.maternalTeal : '#E0F4EF', alignItems: 'center', justifyContent: 'center', borderWidth: isYou ? 3 : 0, borderColor: '#fff' }}>
-              <Heart size={18} color={isYou ? '#fff' : color.maternalTeal} filled />
+          )}
+          <Pressable onPress={onAdd} accessibilityLabel="Add a family member">
+            <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: color.canvas, alignItems: 'center', justifyContent: 'center' }}>
+              <Plus size={17} color={color.muted} />
             </View>
           </Pressable>
-        )}
-        <Pressable onPress={onAdd} accessibilityLabel="Add a family member">
-          <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: color.canvas, alignItems: 'center', justifyContent: 'center' }}>
-            <Plus size={18} color={color.muted} />
-          </View>
-        </Pressable>
-        <View style={{ width: 22, height: 1, backgroundColor: color.hairline }} />
-        <Pressable onPress={onMirror} accessibilityLabel="Switch dock side">
+
+          <View style={{ width: 24, height: 1, backgroundColor: color.hairline, marginVertical: 2 }} />
+
+          {RAIL_CATS.map((cat) => (
+            <Pressable key={cat.key} onPress={() => onNavigate(cat.to)} accessibilityLabel={cat.label}>
+              <View style={{ width: 36, height: 36, borderRadius: 13, backgroundColor: color.canvas, alignItems: 'center', justifyContent: 'center' }}>
+                {cat.icon(RAIL_ICON)}
+              </View>
+            </Pressable>
+          ))}
+        </ScrollView>
+
+        <View style={{ width: 24, height: 1, backgroundColor: color.hairline, marginVertical: 8 }} />
+        <Pressable onPress={onMirror} accessibilityLabel="Switch rail side">
           <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: '#EFEDF8', alignItems: 'center', justifyContent: 'center' }}>
             <Text style={{ fontFamily: font.body700, fontSize: 15, color: color.primary }}>⇄</Text>
           </View>
