@@ -55,7 +55,7 @@ export default function Today() {
   const {
     entries, addEntry, deleteEntry, children, activeChild, setActiveChild, events, vaccines,
     dueDate, setDueDate, maternalBirth, setMaternalBirth, pregAppts, matAppts,
-    addChild, savedNames, pregArchive, closePregnancy,
+    addChild, savedNames, pregArchive, closePregnancy, dockSide, setDockSide,
   } = useData();
 
   // Maternity ("You") journey availability + person switching.
@@ -164,6 +164,7 @@ export default function Today() {
   const hasNext = nextEvents.length > 0 || dueVax;
 
   return (
+    <View style={{ flex: 1, backgroundColor: color.canvas }}>
     <ScrollView
       style={{ flex: 1, backgroundColor: color.canvas }}
       contentContainerStyle={{ paddingTop: insets.top + 14, paddingBottom: 28, paddingHorizontal: 20, gap: 16 }}
@@ -180,26 +181,11 @@ export default function Today() {
         <Text style={{ fontFamily: font.body400, fontSize: 13, color: color.muted, marginTop: 4 }}>{dateLabel}</Text>
       </Pressable>
 
-      {/* People pills (children + optional You journey) */}
+      {/* Active-module label (the floating dock switches between modules) */}
       {(children.length > 0 || hasJourney) && (
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-          {children.map((ch) => (
-            <ChildPill
-              key={ch.id}
-              child={ch}
-              active={!isYou && ch.id === person}
-              onPress={() => { setPerson(ch.id); setActiveChild(ch.id); }}
-              onLong={() => router.push(`/(app)/child/${ch.id}` as any)}
-            />
-          ))}
-          {hasJourney && (
-            <YouPill
-              active={isYou}
-              label={youStatusLabel(dueDate, maternalBirth)}
-              onPress={() => setPerson('you')}
-            />
-          )}
-        </View>
+        <Text style={{ fontFamily: font.body600, fontSize: 13, color: color.muted, paddingHorizontal: 2, marginTop: -6 }}>
+          {isYou ? `Mum&Me · ${youStatusLabel(dueDate, maternalBirth)}` : (activeChild ? `${activeChild.name}${activeChild.birthDate ? ` · ${ageLabel(activeChild.birthDate)}` : ''}` : '')}
+        </Text>
       )}
 
       {/* ── You (maternity) view ──────────────────────────────────────────── */}
@@ -404,6 +390,75 @@ export default function Today() {
         </Pressable>
       </Modal>
     </ScrollView>
+
+      {/* Floating module dock — switch child / Mum&Me; mirror button flips the side */}
+      {(children.length > 0 || hasJourney) && (
+        <ModuleDock
+          children={children}
+          activeId={activeChild?.id}
+          isYou={isYou}
+          hasJourney={hasJourney}
+          youLabel={youStatusLabel(dueDate, maternalBirth)}
+          side={dockSide}
+          onSelectChild={(id) => { setPerson(id); setActiveChild(id); }}
+          onSelectYou={() => setPerson('you')}
+          onAdd={() => router.push('/(app)/(tabs)/family' as any)}
+          onMirror={() => setDockSide(dockSide === 'right' ? 'left' : 'right')}
+        />
+      )}
+    </View>
+  );
+}
+
+function ModuleDock({
+  children, activeId, isYou, hasJourney, youLabel, side, onSelectChild, onSelectYou, onAdd, onMirror,
+}: {
+  children: Child[];
+  activeId?: string;
+  isYou: boolean;
+  hasJourney: boolean;
+  youLabel: string;
+  side: 'left' | 'right';
+  onSelectChild: (id: string) => void;
+  onSelectYou: () => void;
+  onAdd: () => void;
+  onMirror: () => void;
+}) {
+  const insets = useSafeAreaInsets();
+  return (
+    <View style={[{ position: 'absolute', bottom: insets.bottom + 14 }, side === 'right' ? { right: 12 } : { left: 12 }]}>
+      <View style={[{ backgroundColor: '#fff', borderRadius: 30, paddingVertical: 9, paddingHorizontal: 7, alignItems: 'center', gap: 11 }, shadow.card]}>
+        {children.map((ch) => {
+          const t = childToken[ch.color];
+          const on = !isYou && ch.id === activeId;
+          return (
+            <Pressable key={ch.id} onPress={() => onSelectChild(ch.id)}>
+              <View style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: on ? t.stroke : t.fill, alignItems: 'center', justifyContent: 'center', borderWidth: on ? 3 : 0, borderColor: '#fff', ...(on ? { shadowColor: t.stroke, shadowOpacity: 0.5, shadowRadius: 0, shadowOffset: { width: 0, height: 0 } } : null) }}>
+                <Text style={{ fontFamily: font.display700, fontSize: 16, color: on ? '#fff' : t.stroke }}>{ch.name.charAt(0).toUpperCase()}</Text>
+              </View>
+            </Pressable>
+          );
+        })}
+        {hasJourney && (
+          <Pressable onPress={onSelectYou} accessibilityLabel={`Mum and Me, ${youLabel}`}>
+            <View style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: isYou ? color.maternalTeal : '#E0F4EF', alignItems: 'center', justifyContent: 'center', borderWidth: isYou ? 3 : 0, borderColor: '#fff' }}>
+              <Heart size={18} color={isYou ? '#fff' : color.maternalTeal} filled />
+            </View>
+          </Pressable>
+        )}
+        <Pressable onPress={onAdd} accessibilityLabel="Add a family member">
+          <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: color.canvas, alignItems: 'center', justifyContent: 'center' }}>
+            <Plus size={18} color={color.muted} />
+          </View>
+        </Pressable>
+        <View style={{ width: 22, height: 1, backgroundColor: color.hairline }} />
+        <Pressable onPress={onMirror} accessibilityLabel="Switch dock side">
+          <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: '#EFEDF8', alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ fontFamily: font.body700, fontSize: 15, color: color.primary }}>⇄</Text>
+          </View>
+        </Pressable>
+      </View>
+    </View>
   );
 }
 
