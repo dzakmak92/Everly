@@ -870,12 +870,15 @@ function MaternityView({
 }) {
   // Accordion grid: one card open at a time, panel renders full-width below.
   const [openCard, setOpenCard] = useState<string | null>(null);
+  // Full week-by-week opens from the hero (merged on top).
+  const [weekOpen, setWeekOpen] = useState(false);
   // Collapse any open card whenever the phase tab changes.
   React.useEffect(() => { setOpenCard(null); }, [phase]);
   const now = Date.now();
 
   // Hero numbers.
   const gest = gestFromDueDate(dueDate ?? undefined);
+  const wk = gest ? weekContent(gest.week) : null;
   const ppDays = maternalBirth ? Math.max(0, Math.floor((now - ppTime(maternalBirth)) / PP_MS)) : 0;
   const ppWeeks = Math.floor(ppDays / 7);
 
@@ -889,13 +892,11 @@ function MaternityView({
   const tiles =
     phase === 'pregnancy'
       ? [
-          { key: 'checkin', label: 'Daily check-in', bg: '#D8F0E6', icon: <Smile size={20} color="#2C8475" /> },
-          { key: 'week', label: 'Week-by-week', bg: '#E7E4FB', icon: <Activity size={20} color={color.primary} /> },
+          { key: 'checkin', label: 'Daily check-in', bg: '#FBE0EA', icon: <Smile size={20} color="#B04070" /> },
           { key: 'monitor', label: 'Monitoring & calls', bg: '#FBE0EA', icon: <Shield size={20} color="#B04070" /> },
           { key: 'appts', label: 'Appointments', bg: '#DCEBFA', icon: <CalIcon size={20} color="#2C5F90" /> },
           { key: 'prep', label: 'Birth prep', bg: '#FBF1CE', icon: <CheckCircle size={20} color="#7A5C20" /> },
           { key: 'names', label: 'Baby names', bg: '#E7E4FB', icon: <Star size={20} color={color.primary} /> },
-          { key: 'labour', label: 'Labour & movement', bg: '#D8F0E6', icon: <Activity size={20} color="#2C8475" /> },
           { key: 'care', label: 'Care & support', bg: '#FBE0EA', icon: <Heart size={20} color="#B04070" /> },
         ]
       : [
@@ -956,7 +957,23 @@ function MaternityView({
           </>
         )}
         {phase === 'pregnancy' && gest && (
-          <ProgressBar pct={Math.round(gest.progress * 100)} track="rgba(255,255,255,0.25)" colors={['#FFFFFF', '#E0F4EF']} />
+          <ProgressBar pct={Math.round(gest.progress * 100)} track="rgba(255,255,255,0.25)" colors={['#FFFFFF', '#FBE0EA']} />
+        )}
+        {/* Week-by-week merged into the hero — tap to open the full pager */}
+        {phase === 'pregnancy' && gest && wk && (
+          <Pressable onPress={() => setWeekOpen(true)} style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1 }]}>
+            <View style={{ backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: radius.card, paddingVertical: 13, paddingHorizontal: 14, gap: 4 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={{ flex: 1, fontFamily: font.body700, fontSize: 14, color: '#fff' }}>This week · size of a {wk.size}</Text>
+                <ChevronRight size={16} color="#fff" />
+              </View>
+              {(wk.lengthCm > 0 || wk.weightG > 0) && (
+                <Text style={{ fontFamily: font.body500, fontSize: 12, color: 'rgba(255,255,255,0.9)' }}>
+                  {wk.lengthCm > 0 ? `~${wk.lengthCm} cm` : ''}{wk.weightG > 0 ? `${wk.lengthCm > 0 ? ' · ' : ''}~${wk.weightG} g` : ''} · tap for week-by-week
+                </Text>
+              )}
+            </View>
+          </Pressable>
         )}
         {/* Baby-has-arrived lives inside the hero (live pregnancy only). */}
         {phase === 'pregnancy' && pregLive && (
@@ -975,6 +992,20 @@ function MaternityView({
 
       {/* Smart nudges (on-device) — pregnancy phase only */}
       {phase === 'pregnancy' && showGrid && nudges && nudges.length > 0 && <NudgeList items={nudges} />}
+
+      {/* Labour & movement — opened on top of the other cards (pink) */}
+      {phase === 'pregnancy' && showGrid && (
+        <View style={{ gap: 10 }}>
+          <Label>Labour & movement</Label>
+          <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 16, gap: 14, borderWidth: 2, borderColor: color.rose }, shadow.card]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <View style={{ width: 36, height: 36, borderRadius: 11, backgroundColor: '#FBE0EA', alignItems: 'center', justifyContent: 'center' }}><Activity size={20} color={color.rose} /></View>
+              <Text style={{ flex: 1, fontFamily: font.display700, fontSize: 17, color: color.ink }}>Labour & movement</Text>
+            </View>
+            <LabourPanel />
+          </View>
+        </View>
+      )}
 
       {/* Archived pregnancy state — after birth, before a new one begins */}
       {phase === 'pregnancy' && !showGrid && (
@@ -996,25 +1027,28 @@ function MaternityView({
       {/* Feature grid — tapping a card expands it inline, directly under its row */}
       {showGrid && (
       <View style={{ gap: 10 }}>
-        <Label>{phase === 'pregnancy' ? 'This week' : 'Looking after you'}</Label>
+        <Label>{phase === 'pregnancy' ? 'More for you' : 'Looking after you'}</Label>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
           {tiles.map((t, i) => {
             const active = t.key === openCard;
+            const accent = phase === 'pregnancy' ? color.rose : color.maternalTeal;
+            const activeBg = phase === 'pregnancy' ? '#FBE0EA' : '#E0F4EF';
+            const activeInk = phase === 'pregnancy' ? color.roseInk : color.tealInk;
             return (
               <React.Fragment key={t.key}>
                 <Pressable
                   onPress={() => setOpenCard((cur) => (cur === t.key ? null : t.key))}
                   style={({ pressed }) => [{ width: '47.5%', flexGrow: 1, opacity: pressed ? 0.82 : 1 }]}
                 >
-                  <View style={[{ backgroundColor: active ? '#E0F4EF' : '#fff', borderRadius: radius.card, padding: 14, gap: 9, borderWidth: 2, borderColor: active ? color.maternalTeal : 'transparent' }, shadow.card]}>
+                  <View style={[{ backgroundColor: active ? activeBg : '#fff', borderRadius: radius.card, padding: 14, gap: 9, minHeight: 102, borderWidth: 2, borderColor: active ? accent : 'transparent' }, shadow.card]}>
                     <View style={{ width: 42, height: 42, borderRadius: 13, backgroundColor: t.bg, alignItems: 'center', justifyContent: 'center' }}>{t.icon}</View>
-                    <Text style={{ fontFamily: font.body700, fontSize: 13.5, color: active ? color.tealInk : color.ink }}>{t.label}</Text>
+                    <Text style={{ fontFamily: font.body700, fontSize: 13.5, color: active ? activeInk : color.ink }}>{t.label}</Text>
                   </View>
                 </Pressable>
 
                 {/* Inline expanded panel — full width, slotted right under the open card's row */}
                 {openTile && i === panelRowEnd && (
-                  <View style={[{ width: '100%', flexBasis: '100%', backgroundColor: '#fff', borderRadius: radius.card, padding: 16, gap: 14, borderWidth: 2, borderColor: color.maternalTeal }, shadow.card]}>
+                  <View style={[{ width: '100%', flexBasis: '100%', backgroundColor: '#fff', borderRadius: radius.card, padding: 16, gap: 14, borderWidth: 2, borderColor: accent }, shadow.card]}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                       <View style={{ width: 36, height: 36, borderRadius: 11, backgroundColor: openTile.bg, alignItems: 'center', justifyContent: 'center' }}>{openTile.icon}</View>
                       <Text style={{ flex: 1, fontFamily: font.display700, fontSize: 17, color: color.ink }}>{openTile.label}</Text>
@@ -1039,8 +1073,8 @@ function MaternityView({
           {upNext.map((a) => (
             <FeedRow
               key={a.id}
-              chipBg="#E0F4EF"
-              icon={<CalIcon size={22} color={color.maternalTeal} />}
+              chipBg={phase === 'pregnancy' ? '#FBE0EA' : '#E0F4EF'}
+              icon={<CalIcon size={22} color={phase === 'pregnancy' ? color.rose : color.maternalTeal} />}
               title={a.title}
               sub={apptDateLabel(a.at)}
               trailing={<ChevronRight size={16} color={color.faint} />}
@@ -1056,6 +1090,19 @@ function MaternityView({
           {pregArchive.map((a) => <ArchiveCard key={a.id} a={a} />)}
         </View>
       )}
+
+      {/* Full week-by-week — opened from the hero */}
+      <Modal visible={weekOpen} transparent animationType="slide" onRequestClose={() => setWeekOpen(false)}>
+        <Pressable onPress={() => setWeekOpen(false)} style={{ flex: 1, backgroundColor: 'rgba(40,18,50,0.4)', justifyContent: 'flex-end' }}>
+          <Pressable onPress={() => {}} style={[{ backgroundColor: color.canvas, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, gap: 14, maxHeight: '88%' }, shadow.card]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={{ flex: 1, fontFamily: font.display700, fontSize: 18, color: color.ink }}>Week-by-week</Text>
+              <Pressable onPress={() => setWeekOpen(false)} hitSlop={10}><X size={20} color={color.muted} /></Pressable>
+            </View>
+            <ScrollView showsVerticalScrollIndicator={false}><WeekPanel dueDate={dueDate} /></ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
     </View>
   );
@@ -1223,19 +1270,19 @@ function WeekPanel({ dueDate }: { dueDate: string | null }) {
       {/* Week pager */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <Pressable onPress={() => setWeek((w) => Math.max(1, w - 1))} hitSlop={8} style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: color.canvas, alignItems: 'center', justifyContent: 'center' }}>
-          <ChevronLeft size={20} color={color.tealDeep} />
+          <ChevronLeft size={20} color={color.rose} />
         </Pressable>
         <View style={{ alignItems: 'center' }}>
           <Text style={{ fontFamily: font.display700, fontSize: 20, color: color.ink }}>Week {week}</Text>
           <Text style={{ fontFamily: font.body500, fontSize: 11.5, color: color.muted }}>of 40 · Trimester {trimester}</Text>
         </View>
         <Pressable onPress={() => setWeek((w) => Math.min(42, w + 1))} hitSlop={8} style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: color.canvas, alignItems: 'center', justifyContent: 'center' }}>
-          <ChevronRight size={20} color={color.tealDeep} />
+          <ChevronRight size={20} color={color.rose} />
         </Pressable>
       </View>
       {gest != null && week !== gest.week && (
         <Pressable onPress={() => setWeek(gest.week)} hitSlop={8} style={{ alignSelf: 'center' }}>
-          <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.maternalTeal }}>Back to my week (Week {gest.week})</Text>
+          <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.rose }}>Back to my week (Week {gest.week})</Text>
         </Pressable>
       )}
       {/* Tabs */}
@@ -1243,7 +1290,7 @@ function WeekPanel({ dueDate }: { dueDate: string | null }) {
         {(['baby', 'body', 'nutrition'] as const).map((t) => {
           const sel = t === tab;
           return (
-            <Pressable key={t} onPress={() => setTab(t)} style={{ flex: 1, paddingVertical: 8, borderRadius: radius.pill, alignItems: 'center', backgroundColor: sel ? color.maternalTeal : 'transparent' }}>
+            <Pressable key={t} onPress={() => setTab(t)} style={{ flex: 1, paddingVertical: 8, borderRadius: radius.pill, alignItems: 'center', backgroundColor: sel ? color.rose : 'transparent' }}>
               <Text style={{ fontFamily: font.body700, fontSize: 12.5, color: sel ? '#fff' : color.muted }}>{t === 'body' ? 'Your body' : t === 'baby' ? 'Baby' : 'Nutrition'}</Text>
             </Pressable>
           );
@@ -1261,7 +1308,7 @@ function WeekPanel({ dueDate }: { dueDate: string | null }) {
         <View style={{ gap: 8 }}>
           {(tab === 'body' ? tips.body : tips.nutrition).map((t, i) => (
             <View key={i} style={{ backgroundColor: color.canvas, borderRadius: radius.tile, padding: 12, flexDirection: 'row', gap: 10 }}>
-              <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: color.maternalTeal, marginTop: 6 }} />
+              <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: color.rose, marginTop: 6 }} />
               <Text style={{ flex: 1, fontFamily: font.body500, fontSize: 13, color: color.ink, lineHeight: 19 }}>{t}</Text>
             </View>
           ))}
@@ -1453,17 +1500,17 @@ function LabourPanel() {
       <View style={{ flexDirection: 'row', backgroundColor: color.canvas, borderRadius: radius.pill, padding: 3 }}>
         {([['kicks', 'Kicks'], ['contractions', 'Contractions']] as [typeof mode, string][]).map(([k, l]) => {
           const on = mode === k;
-          return <Pressable key={k} onPress={() => setMode(k)} style={{ flex: 1, paddingVertical: 8, borderRadius: radius.pill, alignItems: 'center', backgroundColor: on ? color.maternalTeal : 'transparent' }}><Text style={{ fontFamily: font.body700, fontSize: 12.5, color: on ? '#fff' : color.muted }}>{l}</Text></Pressable>;
+          return <Pressable key={k} onPress={() => setMode(k)} style={{ flex: 1, paddingVertical: 8, borderRadius: radius.pill, alignItems: 'center', backgroundColor: on ? color.rose : 'transparent' }}><Text style={{ fontFamily: font.body700, fontSize: 12.5, color: on ? '#fff' : color.muted }}>{l}</Text></Pressable>;
         })}
       </View>
       {mode === 'kicks' ? (
         <>
           <View style={{ backgroundColor: color.canvas, borderRadius: radius.tile, padding: 16, alignItems: 'center', gap: 2 }}>
-            <Text style={{ fontFamily: font.display700, fontSize: 44, color: color.primary }}>{kicks}</Text>
+            <Text style={{ fontFamily: font.display700, fontSize: 44, color: color.rose }}>{kicks}</Text>
             <Text style={{ fontFamily: font.body600, fontSize: 12.5, color: color.muted }}>of {KICK_TARGET} movements · {startedAt ? labFmt(elapsed) : 'not started'}</Text>
           </View>
           {done ? (
-            <View style={{ backgroundColor: '#D8F0E6', borderRadius: radius.tile, padding: 14, alignItems: 'center' }}><Text style={{ fontFamily: font.body700, fontSize: 13.5, color: color.tealInk }}>{KICK_TARGET} movements in {labFmt(elapsed)} 🎉</Text></View>
+            <View style={{ backgroundColor: '#FBE0EA', borderRadius: radius.tile, padding: 14, alignItems: 'center' }}><Text style={{ fontFamily: font.body700, fontSize: 13.5, color: color.roseInk }}>{KICK_TARGET} movements in {labFmt(elapsed)} 🎉</Text></View>
           ) : (
             <Button label="Record a kick" onPress={recordKick} />
           )}
