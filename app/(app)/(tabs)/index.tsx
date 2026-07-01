@@ -1538,7 +1538,7 @@ function LabourPanel() {
             <Text style={{ fontFamily: font.display700, fontSize: 36, color: activeStart ? color.rose : color.muted }}>{activeStart ? labDurSec(Math.round((conNow - activeStart) / 1000)) : '—'}</Text>
             <Text style={{ fontFamily: font.body600, fontSize: 12, color: color.muted }}>{activeStart ? 'in progress' : 'tap start when one begins'}</Text>
           </View>
-          <Button label={activeStart ? 'Stop' : 'Start'} onPress={toggleCon} />
+          <Button label={activeStart ? 'Stop' : 'Start'} onPress={toggleCon} tint={color.rose} />
           {contractionSessions.length > 0 && (
             <View style={{ gap: 8 }}>
               <PanelLabel>{contractionSessions.length} recorded</PanelLabel>
