@@ -22,6 +22,7 @@ export function Button({
   loading = false,
   disabled = false,
   variant = 'primary',
+  tint,
   style,
 }: {
   label: string;
@@ -29,11 +30,13 @@ export function Button({
   loading?: boolean;
   disabled?: boolean;
   variant?: 'primary' | 'secondary' | 'ghost';
+  tint?: string;
   style?: StyleProp<ViewStyle>;
 }) {
+  const accent = tint ?? color.primary;
   const bg =
-    variant === 'primary' ? color.primary : variant === 'secondary' ? '#fff' : 'transparent';
-  const fg = variant === 'primary' ? '#fff' : color.primary;
+    variant === 'primary' ? accent : variant === 'secondary' ? '#fff' : 'transparent';
+  const fg = variant === 'primary' ? '#fff' : accent;
   const isOff = disabled || loading;
   return (
     <Pressable
@@ -50,9 +53,9 @@ export function Button({
           gap: 8,
           opacity: isOff ? 0.55 : pressed ? 0.85 : 1,
           borderWidth: variant === 'secondary' ? 1.5 : 0,
-          borderColor: color.primary,
+          borderColor: accent,
         },
-        variant === 'primary' ? shadow.periwinkleButton : undefined,
+        variant === 'primary' && !tint ? shadow.periwinkleButton : undefined,
         style,
       ]}
     >

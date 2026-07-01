@@ -6,9 +6,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { color, font, radius, shadow } from '../../../src/theme/tokens';
 import { Button, Field } from '../../../src/components/forms';
-import { ChevronLeft, Clock } from '../../../src/components/icons';
+import { ChevronLeft, Clock, Calendar as CalIcon } from '../../../src/components/icons';
 import { EntryIcon } from '../../../src/components/EntryIcon';
 import { DurationField } from '../../../src/components/DurationField';
+import { DateField } from '../../../src/components/DateField';
 import { Silhouette } from '../../../src/components/ui';
 import { stageFrom } from '../../../src/lib/age';
 import {
@@ -86,7 +87,7 @@ export default function AddLog() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ night?: string }>();
-  const { addEntry, entries, activeChild } = useData();
+  const { addEntry, addEvent, entries, activeChild } = useData();
 
   const [night, setNight] = useState(params.night === '1');
   const [kind, setKind] = useState<EntryKind | null>(null);
@@ -98,6 +99,13 @@ export default function AddLog() {
   const [mood, setMood] = useState(2);
   const [cmd, setCmd] = useState('');
   const [toast, setToast] = useState('');
+  // Appointment composer
+  const [apptOpen, setApptOpen] = useState(false);
+  const [apTitle, setApTitle] = useState('');
+  const [apDate, setApDate] = useState('');
+  const [apTime, setApTime] = useState('');
+  const [apLoc, setApLoc] = useState('');
+  const [apErr, setApErr] = useState('');
 
   // Scope to the active child.
   const cid = activeChild?.id;
@@ -137,6 +145,23 @@ export default function AddLog() {
     else addEntry(kind, { note }); // note / meal / medicine / potty
     flash(ENTRY_META[kind].label);
     setKind(null);
+  }
+
+  function openAppt() {
+    const d = new Date();
+    setApTitle(''); setApLoc(''); setApErr('');
+    setApDate(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
+    setApTime('09:00');
+    setApptOpen(true);
+  }
+  function saveAppt() {
+    if (!apTitle.trim()) { setApErr('Add a title.'); return; }
+    const t12 = apTime.trim() || '09:00';
+    const at = new Date(`${apDate}T${t12.length === 5 ? t12 : '09:00'}:00`);
+    if (isNaN(at.getTime())) { setApErr('Check the date and time.'); return; }
+    addEvent({ title: apTitle.trim(), at: at.toISOString(), childId: cid, location: apLoc.trim() || undefined });
+    setApptOpen(false);
+    flash('Appointment');
   }
 
   function runCmd() {
@@ -219,6 +244,21 @@ export default function AddLog() {
         })}
       </View>
 
+      {/* add an appointment (event) */}
+      <Pressable
+        onPress={openAppt}
+        style={({ pressed }) => [{ backgroundColor: t.card, borderRadius: radius.card, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12, opacity: pressed ? 0.9 : 1 }, night ? null : shadow.card]}
+      >
+        <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: night ? '#2E2952' : '#DCEBFA', alignItems: 'center', justifyContent: 'center' }}>
+          <CalIcon size={20} color={night ? '#8FA4D8' : '#2C5F90'} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontFamily: font.body700, fontSize: 14.5, color: t.cardText }}>Add appointment</Text>
+          <Text style={{ fontFamily: font.body400, fontSize: 12, color: t.sub, marginTop: 2 }}>A visit, class or reminder — shows in Up next & Calendar</Text>
+        </View>
+        <Text style={{ fontFamily: font.body700, fontSize: 22, color: t.sub }}>+</Text>
+      </Pressable>
+
       {/* type-to-log (command parser) */}
       <View style={[{ backgroundColor: t.card, borderRadius: radius.card, padding: 14, gap: 10 }, night ? null : shadow.card]}>
         <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: t.sub }}>Type to log</Text>
@@ -274,6 +314,26 @@ export default function AddLog() {
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <Button label="Cancel" variant="secondary" onPress={() => setKind(null)} style={{ flex: 1 }} />
               <Button label="Save" onPress={save} style={{ flex: 1 }} />
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* appointment modal */}
+      <Modal visible={apptOpen} transparent animationType="fade" onRequestClose={() => setApptOpen(false)}>
+        <Pressable onPress={() => setApptOpen(false)} style={{ flex: 1, backgroundColor: 'rgba(20,12,40,0.5)', justifyContent: 'center', paddingHorizontal: 28 }}>
+          <Pressable onPress={() => {}} style={[{ backgroundColor: color.canvas, borderRadius: radius.card, padding: 20, gap: 12 }, shadow.card]}>
+            <Text style={{ fontFamily: font.display700, fontSize: 18, color: color.ink }}>New appointment</Text>
+            <Field label="Title" value={apTitle} onChangeText={(v) => { setApTitle(v); if (apErr) setApErr(''); }} placeholder="e.g. 6-week check" autoCapitalize="sentences" />
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <View style={{ flex: 1.4 }}><DateField label="Date" value={apDate} onChangeText={setApDate} /></View>
+              <View style={{ flex: 1 }}><Field label="Time" value={apTime} onChangeText={setApTime} placeholder="14:30" /></View>
+            </View>
+            <Field label="Location (optional)" value={apLoc} onChangeText={setApLoc} placeholder="e.g. GP surgery" autoCapitalize="sentences" />
+            {apErr ? <Text style={{ fontFamily: font.body500, fontSize: 12.5, color: color.rose }}>{apErr}</Text> : null}
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <Button label="Cancel" variant="secondary" onPress={() => setApptOpen(false)} style={{ flex: 1 }} />
+              <Button label="Add" onPress={saveAppt} style={{ flex: 1 }} />
             </View>
           </Pressable>
         </Pressable>
