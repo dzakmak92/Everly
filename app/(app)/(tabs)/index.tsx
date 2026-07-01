@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { ScrollView, View, Text, Pressable, Modal } from 'react-native';
+import { ScrollView, View, Text, Pressable, Modal, TextInput } from 'react-native';
+import Svg, { Circle } from 'react-native-svg';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, font, radius, shadow, childToken } from '../../../src/theme/tokens';
@@ -26,7 +27,7 @@ import { DayTimeline } from '../../../src/components/DayTimeline';
 import {
   useData, entriesOn, upcomingEvents, entryDetail, ENTRY_META, quickLogKinds, MOOD_LABELS, CHILD_COLORS,
   type EntryKind, type FeedSide, type DiaperType, type Child, type Lochia, type ChildColor, type PregArchive, type PregStatus,
-  type Entry, type EventItem, type Vaccine, type Medication, type KickSession, type PregVital, type PregCheckin, type PregAppt,
+  type Entry, type EventItem, type Vaccine, type Medication, type KickSession, type PregVital, type PregCheckin, type PregAppt, type BirthPrepItem,
 } from '../../../src/lib/store';
 import HealthTab from '../health';
 import TimelineTab from '../timeline';
@@ -895,8 +896,7 @@ function MaternityView({
           { key: 'checkin', label: 'Daily check-in', bg: '#FBE0EA', icon: <Smile size={20} color="#B04070" /> },
           { key: 'monitor', label: 'Monitoring & calls', bg: '#FBE0EA', icon: <Shield size={20} color="#B04070" /> },
           { key: 'appts', label: 'Appointments', bg: '#DCEBFA', icon: <CalIcon size={20} color="#2C5F90" /> },
-          { key: 'prep', label: 'Birth prep', bg: '#FBF1CE', icon: <CheckCircle size={20} color="#7A5C20" /> },
-          { key: 'names', label: 'Baby names', bg: '#E7E4FB', icon: <Star size={20} color={color.primary} /> },
+          { key: 'ready', label: 'Getting ready', bg: '#FBE0EA', icon: <CheckCircle size={20} color="#B04070" /> },
           { key: 'care', label: 'Care & support', bg: '#FBE0EA', icon: <Heart size={20} color="#B04070" /> },
         ]
       : [
@@ -1162,7 +1162,7 @@ function SelectChips({ options, value, onChange }: { options: string[]; value: s
       {options.map((opt) => {
         const sel = opt === value;
         return (
-          <Pressable key={opt} onPress={() => onChange(opt)} style={{ paddingVertical: 9, paddingHorizontal: 14, borderRadius: radius.pill, backgroundColor: sel ? color.maternalTeal : '#fff', borderWidth: 1, borderColor: sel ? color.maternalTeal : color.hairline }}>
+          <Pressable key={opt} onPress={() => onChange(opt)} style={{ paddingVertical: 9, paddingHorizontal: 14, borderRadius: radius.pill, backgroundColor: sel ? color.rose : '#fff', borderWidth: 1, borderColor: sel ? color.rose : color.hairline }}>
             <Text style={{ fontFamily: font.body600, fontSize: 12.5, color: sel ? '#fff' : color.ink }}>{opt}</Text>
           </Pressable>
         );
@@ -1194,7 +1194,7 @@ function PanelRow({ title, sub, onDelete }: { title: string; sub?: string; onDel
 function CheckRow({ label, checked, onToggle, onDelete }: { label: string; checked: boolean; onToggle: () => void; onDelete?: () => void }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: color.canvas, borderRadius: radius.tile, paddingVertical: 10, paddingHorizontal: 12 }}>
-      <Pressable onPress={onToggle} hitSlop={8} style={{ width: 22, height: 22, borderRadius: 7, alignItems: 'center', justifyContent: 'center', backgroundColor: checked ? color.maternalTeal : '#fff', borderWidth: 1.5, borderColor: checked ? color.maternalTeal : color.hairline }}>
+      <Pressable onPress={onToggle} hitSlop={8} style={{ width: 22, height: 22, borderRadius: 7, alignItems: 'center', justifyContent: 'center', backgroundColor: checked ? color.rose : '#fff', borderWidth: 1.5, borderColor: checked ? color.rose : color.hairline }}>
         {checked && <CheckCircle size={14} color="#fff" />}
       </Pressable>
       <Text style={{ flex: 1, fontFamily: font.body600, fontSize: 13, color: color.ink, textDecorationLine: checked ? 'line-through' : 'none' }}>{label}</Text>
@@ -1209,8 +1209,7 @@ function CardPanel({ cardKey, dueDate, maternalBirth, ppWeeks, onClose }: { card
     case 'week': return <WeekPanel dueDate={dueDate} />;
     case 'appts': return <PregApptsPanel />;
     case 'monitor': return <MonitorPanel />;
-    case 'prep': return <BirthPrepPanel />;
-    case 'names': return <NamesPanel />;
+    case 'ready': return <GettingReadyPanel />;
     case 'labour': return <LabourPanel />;
     case 'care': return <CarePanel />;
     case 'epds': return <WellbeingPanel />;
@@ -1221,6 +1220,194 @@ function CardPanel({ cardKey, dueDate, maternalBirth, ppWeeks, onClose }: { card
     case 'story': return <StoryPanel maternalBirth={maternalBirth} ppWeeks={ppWeeks} />;
     default: return null;
   }
+}
+
+/* ── Getting ready (birth prep + baby names, merged) ───────────────────────── */
+
+/** Circular progress dial (rose). */
+function Ring({ pct, size = 104, sw = 11, label }: { pct: number; size?: number; sw?: number; label?: string }) {
+  const r = (size - sw) / 2;
+  const c = 2 * Math.PI * r;
+  const dash = Math.max(0, Math.min(1, pct / 100)) * c;
+  return (
+    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+      <Svg width={size} height={size} style={{ position: 'absolute' }}>
+        <Circle cx={size / 2} cy={size / 2} r={r} stroke="#F0E3EA" strokeWidth={sw} fill="none" />
+        <Circle cx={size / 2} cy={size / 2} r={r} stroke={color.rose} strokeWidth={sw} fill="none" strokeLinecap="round"
+          strokeDasharray={`${dash} ${c - dash}`} transform={`rotate(-90 ${size / 2} ${size / 2})`} />
+      </Svg>
+      <Text style={{ fontFamily: font.display700, fontSize: 22, color: color.rose }}>{pct}%</Text>
+      {label ? <Text style={{ fontFamily: font.body500, fontSize: 9.5, color: color.muted, marginTop: 1 }}>{label}</Text> : null}
+    </View>
+  );
+}
+
+/** Small rose-tinted inline text input (for section add-rows / rename). */
+function MiniInput({ value, onChangeText, placeholder, onSubmit }: { value: string; onChangeText: (t: string) => void; placeholder?: string; onSubmit?: () => void }) {
+  return (
+    <TextInput
+      value={value}
+      onChangeText={onChangeText}
+      placeholder={placeholder}
+      placeholderTextColor={color.faint}
+      autoCapitalize="sentences"
+      onSubmitEditing={onSubmit}
+      returnKeyType="done"
+      style={{ backgroundColor: color.canvas, borderRadius: radius.tile, paddingHorizontal: 12, paddingVertical: 10, fontFamily: font.body500, fontSize: 13, color: color.ink }}
+    />
+  );
+}
+
+function GettingReadyPanel() {
+  const [tab, setTab] = useState<'checklist' | 'names'>('checklist');
+  return (
+    <View style={{ gap: 14 }}>
+      <View style={{ flexDirection: 'row', backgroundColor: color.canvas, borderRadius: radius.pill, padding: 3 }}>
+        {(['checklist', 'names'] as const).map((t) => {
+          const on = t === tab;
+          return (
+            <Pressable key={t} onPress={() => setTab(t)} style={{ flex: 1, paddingVertical: 9, borderRadius: radius.pill, alignItems: 'center', backgroundColor: on ? color.rose : 'transparent' }}>
+              <Text style={{ fontFamily: font.body700, fontSize: 13, color: on ? '#fff' : color.muted }}>{t === 'checklist' ? 'Checklist' : 'Names'}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+      {tab === 'checklist' ? <PrepChecklist /> : <NamesPanel />}
+    </View>
+  );
+}
+
+function PrepChecklist() {
+  const { birthPrep, addBirthPrep, toggleBirthPrep, deleteBirthPrep, prepSections, addPrepSection, renamePrepSection, deletePrepSection } = useData();
+  const extra = Array.from(new Set(birthPrep.map((i) => i.category))).filter((c) => !prepSections.includes(c));
+  const sections = [...prepSections, ...extra];
+  const total = birthPrep.length;
+  const done = birthPrep.filter((i) => i.checked).length;
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  const next = birthPrep.find((i) => !i.checked);
+
+  const [open, setOpen] = useState<Record<string, boolean>>({});
+  const isOpen = (s: string) => open[s] ?? true;
+  const [adding, setAdding] = useState(false);
+  const [secName, setSecName] = useState('');
+
+  const loadStarter = () => { PREP_CATS.forEach(addPrepSection); STARTER_PREP.forEach(addBirthPrep); };
+
+  return (
+    <View style={{ gap: 12 }}>
+      {/* Centered dial */}
+      <View style={{ alignItems: 'center', gap: 3 }}>
+        <Ring pct={pct} label={`${done} / ${total} done`} />
+        <Text style={{ fontFamily: font.body700, fontSize: 13.5, color: color.ink }}>Birth-prep checklist</Text>
+        {next ? (
+          <Text style={{ fontFamily: font.body400, fontSize: 11.5, color: color.muted }}>Next: {next.label}</Text>
+        ) : total > 0 ? (
+          <Text style={{ fontFamily: font.body400, fontSize: 11.5, color: color.rose }}>All done 🎉</Text>
+        ) : (
+          <Text style={{ fontFamily: font.body400, fontSize: 11.5, color: color.muted }}>Add items or load the starter list</Text>
+        )}
+      </View>
+
+      {sections.map((sec) => (
+        <PrepSection
+          key={sec}
+          name={sec}
+          items={birthPrep.filter((i) => i.category === sec)}
+          open={isOpen(sec)}
+          onToggle={() => setOpen((o) => ({ ...o, [sec]: !isOpen(sec) }))}
+          onAdd={(label) => addBirthPrep({ category: sec, label })}
+          onToggleItem={toggleBirthPrep}
+          onDeleteItem={deleteBirthPrep}
+          onRename={(nn) => renamePrepSection(sec, nn)}
+          onDelete={() => deletePrepSection(sec)}
+        />
+      ))}
+
+      {adding ? (
+        <View style={{ borderWidth: 1.5, borderColor: color.rose, borderStyle: 'dashed', borderRadius: radius.card, padding: 12, gap: 10 }}>
+          <PanelLabel>New section</PanelLabel>
+          <MiniInput value={secName} onChangeText={setSecName} placeholder="Section name…" onSubmit={() => { addPrepSection(secName); setSecName(''); setAdding(false); }} />
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <Button label="Cancel" variant="secondary" onPress={() => { setAdding(false); setSecName(''); }} style={{ flex: 1 }} />
+            <Button label="Add" tint={color.rose} onPress={() => { addPrepSection(secName); setSecName(''); setAdding(false); }} style={{ flex: 1 }} />
+          </View>
+        </View>
+      ) : (
+        <Pressable onPress={() => setAdding(true)} style={({ pressed }) => [{ borderWidth: 1.5, borderColor: '#E8C9D7', borderStyle: 'dashed', borderRadius: radius.card, paddingVertical: 13, alignItems: 'center', opacity: pressed ? 0.7 : 1 }]}>
+          <Text style={{ fontFamily: font.body700, fontSize: 13, color: color.rose }}>＋ Add section</Text>
+        </Pressable>
+      )}
+
+      <Button label="↻ Load starter checklist" variant="secondary" tint={color.rose} onPress={loadStarter} />
+    </View>
+  );
+}
+
+function PrepSection({ name, items, open, onToggle, onAdd, onToggleItem, onDeleteItem, onRename, onDelete }: {
+  name: string;
+  items: BirthPrepItem[];
+  open: boolean;
+  onToggle: () => void;
+  onAdd: (label: string) => void;
+  onToggleItem: (id: string) => void;
+  onDeleteItem: (id: string) => void;
+  onRename: (newName: string) => void;
+  onDelete: () => void;
+}) {
+  const done = items.filter((i) => i.checked).length;
+  const total = items.length;
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  const [label, setLabel] = useState('');
+  const [renaming, setRenaming] = useState(false);
+  const [rn, setRn] = useState(name);
+  const [confirmDel, setConfirmDel] = useState(false);
+  const submitAdd = () => { if (label.trim()) { onAdd(label.trim()); setLabel(''); } };
+
+  return (
+    <View style={{ borderWidth: 1, borderColor: color.hairline, borderRadius: radius.card, padding: 12 }}>
+      {renaming ? (
+        <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+          <View style={{ flex: 1 }}><MiniInput value={rn} onChangeText={setRn} placeholder="Section name…" onSubmit={() => { onRename(rn); setRenaming(false); }} /></View>
+          <Button label="Save" tint={color.rose} onPress={() => { onRename(rn); setRenaming(false); }} />
+          <Pressable onPress={() => { setRenaming(false); setRn(name); }} hitSlop={8}><Text style={{ fontFamily: font.body700, fontSize: 12, color: color.muted }}>Cancel</Text></Pressable>
+        </View>
+      ) : (
+        <Pressable onPress={onToggle} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Text style={{ flex: 1, fontFamily: font.body700, fontSize: 13, color: color.ink }}>{name}</Text>
+          <Text style={{ fontFamily: font.body700, fontSize: 11.5, color: color.muted }}>{done} / {total}</Text>
+          <Text style={{ fontFamily: font.body700, fontSize: 13, color: color.faint }}>{open ? '▾' : '▸'}</Text>
+        </Pressable>
+      )}
+
+      <View style={{ height: 7, borderRadius: 4, backgroundColor: '#F0E3EA', overflow: 'hidden', marginTop: 8 }}>
+        <View style={{ height: '100%', width: `${pct}%`, backgroundColor: color.rose, borderRadius: 4 }} />
+      </View>
+
+      {open && !renaming && (
+        <View style={{ marginTop: 10, gap: 6 }}>
+          {items.map((i) => (
+            <CheckRow key={i.id} label={i.label} checked={i.checked} onToggle={() => onToggleItem(i.id)} onDelete={() => onDeleteItem(i.id)} />
+          ))}
+          <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+            <View style={{ flex: 1 }}><MiniInput value={label} onChangeText={setLabel} placeholder={`Add to ${name}…`} onSubmit={submitAdd} /></View>
+            <Button label="Add" tint={color.rose} onPress={submitAdd} />
+          </View>
+          {confirmDel ? (
+            <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center', paddingTop: 8, borderTopWidth: 1, borderTopColor: color.hairline }}>
+              <Text style={{ flex: 1, fontFamily: font.body500, fontSize: 12, color: color.roseInk }}>Delete “{name}” &amp; its items?</Text>
+              <Pressable onPress={() => setConfirmDel(false)} hitSlop={8}><Text style={{ fontFamily: font.body700, fontSize: 12, color: color.muted }}>Keep</Text></Pressable>
+              <Pressable onPress={onDelete} hitSlop={8}><Text style={{ fontFamily: font.body700, fontSize: 12, color: color.rose }}>Delete</Text></Pressable>
+            </View>
+          ) : (
+            <View style={{ flexDirection: 'row', gap: 18, paddingTop: 8, borderTopWidth: 1, borderTopColor: color.hairline }}>
+              <Pressable onPress={() => { setRenaming(true); setRn(name); }} hitSlop={8}><Text style={{ fontFamily: font.body700, fontSize: 11, color: color.muted }}>✎ Rename</Text></Pressable>
+              <Pressable onPress={() => setConfirmDel(true)} hitSlop={8}><Text style={{ fontFamily: font.body700, fontSize: 11, color: color.roseInk }}>🗑 Delete section</Text></Pressable>
+            </View>
+          )}
+        </View>
+      )}
+    </View>
+  );
 }
 
 /* PREGNANCY ---------------------------------------------------------------- */
@@ -1664,7 +1851,7 @@ function NamesPanel() {
         <PanelLabel>Explore names</PanelLabel>
         <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
           {(['All', 'Girl', 'Boy', 'Unisex'] as const).map((f) => (
-            <Pressable key={f} onPress={() => { setFilter(f); setIdx(0); }} style={{ paddingVertical: 6, paddingHorizontal: 12, borderRadius: radius.pill, backgroundColor: filter === f ? color.maternalTeal : '#fff', borderWidth: 1, borderColor: filter === f ? color.maternalTeal : color.hairline }}>
+            <Pressable key={f} onPress={() => { setFilter(f); setIdx(0); }} style={{ paddingVertical: 6, paddingHorizontal: 12, borderRadius: radius.pill, backgroundColor: filter === f ? color.rose : '#fff', borderWidth: 1, borderColor: filter === f ? color.rose : color.hairline }}>
               <Text style={{ fontFamily: font.body600, fontSize: 12, color: filter === f ? '#fff' : color.ink }}>{f}</Text>
             </Pressable>
           ))}
@@ -1672,7 +1859,7 @@ function NamesPanel() {
         {card ? (
           <View style={{ backgroundColor: color.canvas, borderRadius: radius.tile, padding: 18, alignItems: 'center', gap: 4 }}>
             <Text style={{ fontFamily: font.display700, fontSize: 26, color: color.ink }}>{card.name}</Text>
-            <Text style={{ fontFamily: font.body600, fontSize: 12.5, color: color.maternalTeal }}>{card.gender} · {card.origin}</Text>
+            <Text style={{ fontFamily: font.body600, fontSize: 12.5, color: color.rose }}>{card.gender} · {card.origin}</Text>
             <Text style={{ fontFamily: font.body400, fontSize: 12.5, color: color.inkSecondary, textAlign: 'center', marginTop: 2 }}>{card.meaning}</Text>
           </View>
         ) : (
@@ -1680,23 +1867,26 @@ function NamesPanel() {
         )}
         {card && (
           <View style={{ flexDirection: 'row', gap: 10 }}>
-            <Button label="Skip" variant="secondary" onPress={() => setIdx((i) => i + 1)} style={{ flex: 1 }} />
-            <Button label="♥ Save" onPress={() => { saveName({ name: card.name, gender: card.gender }); setIdx((i) => i + 1); }} style={{ flex: 1 }} />
+            <Button label="Skip" variant="secondary" tint={color.rose} onPress={() => setIdx((i) => i + 1)} style={{ flex: 1 }} />
+            <Button label="♥ Save" tint={color.rose} onPress={() => { saveName({ name: card.name, gender: card.gender }); setIdx((i) => i + 1); }} style={{ flex: 1 }} />
           </View>
         )}
       </View>
 
+      {/* Add your own */}
+      <View style={{ gap: 10 }}>
+        <PanelLabel>Add your own</PanelLabel>
+        <Field label="Name" value={name} onChangeText={setName} placeholder="e.g. Maya" autoCapitalize="words" />
+        <SelectChips options={['Girl', 'Boy', 'Unisex']} value={gender} onChange={setGender} />
+        <Button label="Save name" tint={color.rose} onPress={add} />
+      </View>
+
+      {/* Saved shortlist */}
       <View style={{ gap: 8 }}>
         <PanelLabel>Saved names{savedNames.length ? ` · ${savedNames.length}` : ''}</PanelLabel>
         {savedNames.length === 0 ? <EmptyHint text="No saved names yet." /> : savedNames.map((n) => (
           <PanelRow key={n.id} title={n.name} sub={n.gender} onDelete={() => deleteName(n.id)} />
         ))}
-      </View>
-      <View style={{ gap: 10 }}>
-        <PanelLabel>Add your own</PanelLabel>
-        <Field label="Name" value={name} onChangeText={setName} placeholder="e.g. Maya" autoCapitalize="words" />
-        <SelectChips options={['Girl', 'Boy', 'Unisex']} value={gender} onChange={setGender} />
-        <Button label="Save name" onPress={add} />
       </View>
     </View>
   );
