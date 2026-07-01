@@ -711,14 +711,14 @@ function RailDock({
               </Pressable>
             );
           })}
+          {/* Insights promoted to sit with the avatars, above the add button */}
+          {RAIL_CATS.filter((cat) => cat.key === 'insights').map((cat) => renderCat(cat, cat.key === activeCat, onNavigate))}
+
           <Pressable onPress={onAdd} accessibilityLabel="Add a family member">
             <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: color.canvas, alignItems: 'center', justifyContent: 'center' }}>
               <Plus size={17} color={color.muted} />
             </View>
           </Pressable>
-
-          {/* Insights promoted to sit with the avatars, above the divider */}
-          {RAIL_CATS.filter((cat) => cat.key === 'insights').map((cat) => renderCat(cat, cat.key === activeCat, onNavigate))}
 
           <View style={{ width: 24, height: 1, backgroundColor: color.hairline, marginVertical: 2 }} />
 
@@ -1287,7 +1287,7 @@ function PrepChecklist() {
   const next = birthPrep.find((i) => !i.checked);
 
   const [open, setOpen] = useState<Record<string, boolean>>({});
-  const isOpen = (s: string) => open[s] ?? true;
+  const isOpen = (s: string) => open[s] ?? false;
   const [adding, setAdding] = useState(false);
   const [secName, setSecName] = useState('');
 
