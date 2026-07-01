@@ -26,6 +26,8 @@ export function buildSampleData() {
     { id: 'e1', kind: 'feed', childId: 'c1', side: 'left', durationMin: 16, at: agoMin(35) },
     { id: 'e2', kind: 'diaper', childId: 'c1', diaperType: 'wet', at: agoMin(70) },
     { id: 'e3', kind: 'sleep', childId: 'c1', durationMin: 95, at: agoMin(150) },
+    { id: 'e3b', kind: 'sleep', childId: 'c1', durationMin: 55, at: agoMin(330) },
+    { id: 'e3c', kind: 'sleep', childId: 'c1', durationMin: 45, at: agoMin(540) },
     { id: 'e4', kind: 'feed', childId: 'c1', side: 'bottle', volumeMl: 120, at: agoMin(210) },
     { id: 'e5', kind: 'pump', childId: 'c1', volumeMl: 90, at: agoMin(250) },
     { id: 'e6', kind: 'mood', childId: 'c1', mood: 3, at: agoMin(300) },
