@@ -1,9 +1,11 @@
 import React from 'react';
+import { View } from 'react-native';
 import { Redirect, Stack } from 'expo-router';
 import { useSupabase } from '../../src/lib/supabase';
 import { DataProvider, useData } from '../../src/lib/store';
 import { Splash } from '../../src/components/forms';
 import { Onboarding } from '../../src/components/Onboarding';
+import { UpdateBanner } from '../../src/components/UpdateBanner';
 import { color } from '../../src/theme/tokens';
 
 /**
@@ -17,9 +19,12 @@ function Shell() {
   // (a first-time pregnant user has no child yet, just a due date).
   if (children.length === 0 && !dueDate && !maternalBirth) return <Onboarding />;
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: color.canvas } }}>
-      <Stack.Screen name="(tabs)" />
-    </Stack>
+    <View style={{ flex: 1 }}>
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: color.canvas } }}>
+        <Stack.Screen name="(tabs)" />
+      </Stack>
+      <UpdateBanner />
+    </View>
   );
 }
 
