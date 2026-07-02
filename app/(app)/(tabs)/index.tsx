@@ -939,7 +939,14 @@ function MaternityView({
       <View style={[{ backgroundColor: color.rose, borderRadius: radius.card, padding: 20, gap: 14 }, shadow.card]}>
         {phase === 'pregnancy' ? (
           <>
-            <Text style={{ fontFamily: font.display700, fontSize: 24, color: '#fff' }}>{gest ? `Week ${gest.week}` : pregArchived ? 'Pregnancy complete 🎉' : 'Pregnancy'}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <Text style={{ flex: 1, fontFamily: font.display700, fontSize: 24, color: '#fff' }}>{gest ? `Week ${gest.week}` : pregArchived ? 'Pregnancy complete 🎉' : 'Pregnancy'}</Text>
+              {pregLive && (
+                <Pressable onPress={onArrived} accessibilityLabel="Baby has arrived" hitSlop={6} style={({ pressed }) => [{ backgroundColor: '#fff', borderRadius: 999, paddingVertical: 7, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 5, opacity: pressed ? 0.85 : 1 }, shadow.card]}>
+                  <Text style={{ fontFamily: font.body700, fontSize: 11.5, color: color.rose }}>🎉 Baby's here</Text>
+                </Pressable>
+              )}
+            </View>
             <Text style={{ fontFamily: font.body500, fontSize: 13, color: 'rgba(255,255,255,0.85)', marginTop: 4 }}>
               {gest
                 ? `${gest.daysToGo} days to go · Trimester ${gest.trimester}`
@@ -972,19 +979,6 @@ function MaternityView({
                   {wk.lengthCm > 0 ? `~${wk.lengthCm} cm` : ''}{wk.weightG > 0 ? `${wk.lengthCm > 0 ? ' · ' : ''}~${wk.weightG} g` : ''} · tap for week-by-week
                 </Text>
               )}
-            </View>
-          </Pressable>
-        )}
-        {/* Baby-has-arrived lives inside the hero (live pregnancy only). */}
-        {phase === 'pregnancy' && pregLive && (
-          <Pressable onPress={onArrived} style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}>
-            <View style={{ backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: radius.card, paddingVertical: 13, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <CheckCircle size={20} color="#fff" />
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: font.body700, fontSize: 14, color: '#fff' }}>Baby has arrived 🎉</Text>
-                <Text style={{ fontFamily: font.body400, fontSize: 12, color: 'rgba(255,255,255,0.85)', marginTop: 1 }}>Move into your postpartum journey</Text>
-              </View>
-              <ChevronRight size={16} color="#fff" />
             </View>
           </Pressable>
         )}
