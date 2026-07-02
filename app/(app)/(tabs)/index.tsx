@@ -7,7 +7,7 @@ import { color, font, radius, shadow, childToken } from '../../../src/theme/toke
 import { Button, Field } from '../../../src/components/forms';
 import { Logo } from '../../../src/components/Logo';
 import {
-  ChevronRight, Bottle, Calendar as CalendarIcon, Syringe,
+  ChevronRight, Bottle, Syringe,
   Heart, Calendar as CalIcon, Activity, Smile, Shield, CheckCircle, Star, Leaf, X, Plus, ChevronLeft, Check,
   HeartPulse, StarOutline, BarChart, User,
 } from '../../../src/components/icons';
@@ -24,8 +24,9 @@ import { EPDS_QUESTIONS, scoreEpds, BAND_LABEL, CRISIS_RESOURCES } from '../../.
 import { youStoryEvents } from '../../../src/lib/story';
 import { childRhythm, nextFeed, napWindow, childNudges, pregnancyNudges, fmtDur, type Nudge, type Prediction, type ChildRhythm } from '../../../src/lib/intelligence';
 import { DayTimeline } from '../../../src/components/DayTimeline';
+import { useWeather } from '../../../src/lib/useWeather';
 import {
-  useData, entriesOn, upcomingEvents, entryDetail, ENTRY_META, quickLogKinds, MOOD_LABELS, CHILD_COLORS,
+  useData, entriesOn, entryDetail, ENTRY_META, quickLogKinds, MOOD_LABELS, CHILD_COLORS,
   type EntryKind, type FeedSide, type DiaperType, type Child, type Lochia, type ChildColor, type PregArchive, type PregStatus,
   type Entry, type EventItem, type Vaccine, type Medication, type KickSession, type PregVital, type PregCheckin, type PregAppt, type BirthPrepItem,
 } from '../../../src/lib/store';
@@ -161,10 +162,8 @@ export default function Today() {
   const sleepLabel = sleepMin >= 60 ? `${Math.floor(sleepMin / 60)}h ${sleepMin % 60}m` : `${sleepMin}m`;
   const lastFeed = forChild(entries).find((e) => e.kind === 'feed');
 
-  // "Up next" sources — upcoming events (active child + family-wide) and the next due vaccine.
-  const nextEvents = upcomingEvents(events).filter((e) => !cid || !e.childId || e.childId === cid).slice(0, 2);
+  // Next due vaccine (this child) — a small reminder under the appointments card.
   const dueVax = forChild(vaccines).filter((v) => !v.givenDate)[0];
-  const childName = (id?: string) => children.find((c) => c.id === id)?.name;
 
   function open(k: EntryKind) { setKind(k); setSide('left'); setDiaper('wet'); setMl(''); setMins(''); setNote(''); setMood(2); }
   function save() {
@@ -179,8 +178,6 @@ export default function Today() {
     else addEntry(kind, { note }); // note / meal / medicine / potty
     setKind(null);
   }
-
-  const hasNext = nextEvents.length > 0 || dueVax;
 
   // On-device intelligence for the focused child / pregnancy.
   const now = Date.now();
@@ -298,18 +295,15 @@ export default function Today() {
         </View>
       )}
 
-      {/* Up next — above the timeline */}
-      {hasNext && (
+      {/* Appointments — themed to this child, above the timeline */}
+      {activeChild && <ChildAppointments childId={activeChild.id} colorKey={activeChild.color} />}
+
+      {/* Next due vaccine reminder */}
+      {dueVax && (
         <View style={{ gap: 10 }}>
           <Label>Up next</Label>
-          {nextEvents.map((ev) => (
-            <FeedRow key={ev.id} chipBg="#E7E4FB" icon={<CalendarIcon size={22} color={color.primary} />} title={ev.title} sub={`${ev.location ? ev.location + ' · ' : ''}${dayTimeOf(ev.at)}`}
-              trailing={<ChevronRight size={16} color={color.faint} />} />
-          ))}
-          {dueVax && (
-            <FeedRow chipBg="#FBE0EA" icon={<Syringe size={22} color={color.rose} />} title={`${childName(dueVax.childId) ? childName(dueVax.childId) + ' · ' : ''}${dueVax.name}`}
-              sub={dueVax.dueDate ? `Due ${dueVax.dueDate}` : 'Scheduled'} trailing={<Badge text="vaccine" bg="#FBE0EA" fg={color.rose} />} />
-          )}
+          <FeedRow chipBg="#FBE0EA" icon={<Syringe size={22} color={color.rose} />} title={dueVax.name}
+            sub={dueVax.dueDate ? `Due ${dueVax.dueDate}` : 'Scheduled'} trailing={<Badge text="vaccine" bg="#FBE0EA" fg={color.rose} />} />
         </View>
       )}
 
@@ -866,7 +860,6 @@ function MaternityView({
       ? [
           { key: 'checkin', label: 'Daily check-in', bg: '#FBE0EA', icon: <Smile size={20} color="#B04070" /> },
           { key: 'monitor', label: 'Monitoring & calls', bg: '#FBE0EA', icon: <Shield size={20} color="#B04070" /> },
-          { key: 'appts', label: 'Appointments', bg: '#DCEBFA', icon: <CalIcon size={20} color="#2C5F90" /> },
           { key: 'ready', label: 'Getting ready', bg: '#FBE0EA', icon: <CheckCircle size={20} color="#B04070" /> },
           { key: 'care', label: 'Care & support', bg: '#FBE0EA', icon: <Heart size={20} color="#B04070" /> },
         ]
@@ -955,6 +948,9 @@ function MaternityView({
         )}
       </View>
 
+      {/* Appointments — full-width, above the kick counter */}
+      {phase === 'pregnancy' && showGrid && <PregnancyAppointments />}
+
       {/* Labour & movement — opened on top of the other cards (pink) */}
       {phase === 'pregnancy' && showGrid && (
         <View style={{ gap: 10 }}>
@@ -1028,15 +1024,15 @@ function MaternityView({
       </View>
       )}
 
-      {/* Up next */}
-      {showGrid && upNext.length > 0 && (
+      {/* Up next (postpartum only — pregnancy appointments live in their own card) */}
+      {showGrid && phase === 'postpartum' && upNext.length > 0 && (
         <View style={{ gap: 10 }}>
           <Label>Up next</Label>
           {upNext.map((a) => (
             <FeedRow
               key={a.id}
-              chipBg={phase === 'pregnancy' ? '#FBE0EA' : '#E0F4EF'}
-              icon={<CalIcon size={22} color={phase === 'pregnancy' ? color.rose : color.maternalTeal} />}
+              chipBg="#E0F4EF"
+              icon={<CalIcon size={22} color={color.maternalTeal} />}
               title={a.title}
               sub={apptDateLabel(a.at)}
               trailing={<ChevronRight size={16} color={color.faint} />}
@@ -1603,6 +1599,204 @@ function MonitorPanel() {
       )}
     </View>
   );
+}
+
+/* ── Appointments card ──────────────────────────────────────────────────────
+   One reusable, colour-themed card used across modules (Mum&Me + each child).
+   Collapsed: a weather week strip + the next appointment. Expanded: the whole
+   month. Location is stored per appointment and opens in Maps on tap. */
+
+type ApptItem = { id: string; title: string; at: string; location?: string; mapsUrl?: string; kind?: 'appointment' | 'test'; result?: string };
+/** Readable ink per child colour (matches the module accents). */
+const CHILD_INK: Record<string, string> = { lilac: '#54579E', sky: '#2C5F90', mint: '#22806C', blush: '#B04070', peach: '#B5662E', butter: '#8A6A1E', sage: '#567F39' };
+const apptDayKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const WD_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+function AppointmentsCard({ accent, fill, items, allowTests, onAdd, onDelete }: {
+  accent: string; fill: string; items: ApptItem[]; allowTests?: boolean;
+  onAdd: (i: { title: string; at: string; location?: string; kind?: 'appointment' | 'test'; result?: string }) => void;
+  onDelete: (id: string) => void;
+}) {
+  const wx = useWeather();
+  const [expanded, setExpanded] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [kind, setKind] = useState<'appointment' | 'test'>('appointment');
+  const [title, setTitle] = useState('');
+  const [date, setDate] = useState(todayISO());
+  const [time, setTime] = useState('09:00');
+  const [location, setLocation] = useState('');
+  const [result, setResult] = useState('');
+  const [selKey, setSelKey] = useState<string | null>(null);
+  const [month, setMonth] = useState(() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() }; });
+
+  const now = Date.now();
+  const sorted = [...items].sort((a, b) => a.at.localeCompare(b.at));
+  const upcoming = sorted.filter((a) => new Date(a.at).getTime() >= now);
+  const next = upcoming.find((a) => (a.kind ?? 'appointment') === 'appointment') ?? upcoming[0] ?? null;
+  const apptDays = new Set(items.map((a) => apptDayKey(new Date(a.at))));
+  const wxOf = (d: Date) => wx.days[apptDayKey(d)] ?? null;
+
+  const openMaps = (a: ApptItem) => {
+    const url = a.mapsUrl || (a.location ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a.location)}` : null);
+    if (url) Linking.openURL(url);
+  };
+  const daysToGo = next ? Math.round((new Date(next.at).getTime() - now) / 86400000) : null;
+  const countdown = daysToGo == null ? '' : daysToGo <= 0 ? 'today' : daysToGo === 1 ? 'tomorrow' : `in ${daysToGo} days`;
+  const nextWx = next ? wxOf(new Date(next.at)) : null;
+
+  const submit = () => {
+    if (!title.trim()) return;
+    onAdd({ title, at: `${date}T${(time.trim() || '09:00')}:00`, location: location.trim() || undefined, kind: allowTests ? kind : undefined, result: allowTests && kind === 'test' ? result : undefined });
+    setTitle(''); setLocation(''); setResult(''); setAddOpen(false);
+  };
+
+  // collapsed: the next 7 days
+  const week = Array.from({ length: 7 }, (_, i) => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + i); return d; });
+  // expanded: a Monday-first month grid
+  const first = new Date(month.y, month.m, 1);
+  const gridStart = new Date(month.y, month.m, 1 - ((first.getDay() + 6) % 7));
+  const cells = Array.from({ length: 42 }, (_, i) => { const d = new Date(gridStart); d.setDate(gridStart.getDate() + i); return d; });
+  const selectedKey = selKey ?? (next ? apptDayKey(new Date(next.at)) : apptDayKey(new Date()));
+  const selAppts = items.filter((a) => apptDayKey(new Date(a.at)) === selectedKey).sort((a, b) => a.at.localeCompare(b.at));
+  const timeLabel = (iso: string) => new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+
+  return (
+    <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 15, gap: 12 }, shadow.card]}>
+      {/* header + week/month toggle */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        <View style={{ width: 34, height: 34, borderRadius: 11, backgroundColor: fill, alignItems: 'center', justifyContent: 'center' }}><CalIcon size={18} color={accent} /></View>
+        <Text style={{ flex: 1, fontFamily: font.display700, fontSize: 16, color: color.ink }}>Appointments</Text>
+        <View style={{ flexDirection: 'row', backgroundColor: color.canvas, borderRadius: radius.pill, padding: 3 }}>
+          {([['Week', false], ['Month', true]] as const).map(([l, e]) => {
+            const on = expanded === e;
+            return <Pressable key={l} onPress={() => setExpanded(e)} style={{ borderRadius: radius.pill, paddingVertical: 5, paddingHorizontal: 11, backgroundColor: on ? accent : 'transparent' }}><Text style={{ fontFamily: font.body700, fontSize: 10.5, color: on ? '#fff' : color.muted }}>{l}</Text></Pressable>;
+          })}
+        </View>
+      </View>
+
+      {!expanded ? (
+        <>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 2 }}>
+            <Text style={{ fontFamily: font.body700, fontSize: 10, letterSpacing: 0.6, color: color.muted }}>THIS WEEK</Text>
+            {wx.place ? <Text style={{ fontFamily: font.body600, fontSize: 10, color: color.muted }}>{wx.place} · forecast</Text> : null}
+          </View>
+          <View style={{ flexDirection: 'row', gap: 4 }}>
+            {week.map((d) => {
+              const has = apptDays.has(apptDayKey(d));
+              const w = wxOf(d);
+              return (
+                <View key={d.toISOString()} style={{ flex: 1, alignItems: 'center', paddingVertical: 6, borderRadius: 11, backgroundColor: has ? fill : color.canvas }}>
+                  <Text style={{ fontFamily: font.body700, fontSize: 8, color: color.faint }}>{WD_SHORT[d.getDay()].toUpperCase()}</Text>
+                  <Text style={{ fontFamily: font.display700, fontSize: 13, color: has ? accent : color.ink, marginTop: 1 }}>{d.getDate()}</Text>
+                  {w ? <Text style={{ fontSize: 13, marginTop: 3 }}>{w.emoji}</Text> : null}
+                  {w ? <Text style={{ fontFamily: font.body700, fontSize: 8, color: color.muted, marginTop: 1 }}>{w.tmax}°</Text> : null}
+                  <View style={{ width: 4, height: 4, borderRadius: 2, marginTop: 3, backgroundColor: has ? accent : 'transparent' }} />
+                </View>
+              );
+            })}
+          </View>
+        </>
+      ) : (
+        <>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 18 }}>
+            <Pressable hitSlop={10} onPress={() => setMonth((s) => ({ y: s.m === 0 ? s.y - 1 : s.y, m: (s.m + 11) % 12 }))}><ChevronLeft size={16} color={color.muted} /></Pressable>
+            <Text style={{ fontFamily: font.display700, fontSize: 14, color: color.ink }}>{MONTH_NAMES[month.m]} {month.y}</Text>
+            <Pressable hitSlop={10} onPress={() => setMonth((s) => ({ y: s.m === 11 ? s.y + 1 : s.y, m: (s.m + 1) % 12 }))}><ChevronRight size={16} color={color.muted} /></Pressable>
+          </View>
+          <View style={{ flexDirection: 'row' }}>
+            {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((l, i) => <Text key={i} style={{ flex: 1, textAlign: 'center', fontFamily: font.body700, fontSize: 9, color: color.faint }}>{l}</Text>)}
+          </View>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+            {cells.map((d) => {
+              const k = apptDayKey(d);
+              const out = d.getMonth() !== month.m;
+              const has = apptDays.has(k);
+              const sel = k === selectedKey;
+              return (
+                <Pressable key={k} onPress={() => { setSelKey(k); setDate(k); }} style={{ width: `${100 / 7}%`, aspectRatio: 1, alignItems: 'center', justifyContent: 'center' }}>
+                  <View style={{ width: 30, height: 30, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: sel ? accent : has ? fill : 'transparent' }}>
+                    <Text style={{ fontFamily: font.display700, fontSize: 12, color: sel ? '#fff' : out ? color.faint : color.inkSecondary }}>{d.getDate()}</Text>
+                  </View>
+                  <View style={{ width: 4, height: 4, borderRadius: 2, marginTop: 2, backgroundColor: has && !sel ? accent : 'transparent' }} />
+                </Pressable>
+              );
+            })}
+          </View>
+        </>
+      )}
+
+      {/* next appointment banner */}
+      {next && (
+        <View style={{ backgroundColor: fill, borderRadius: radius.tile, padding: 13, gap: 3 }}>
+          <Text style={{ fontFamily: font.body700, fontSize: 9.5, letterSpacing: 0.6, color: accent }}>NEXT · {countdown}</Text>
+          <Text style={{ fontFamily: font.display700, fontSize: 16, color: accent }}>{next.title}</Text>
+          <Text style={{ fontFamily: font.body500, fontSize: 11.5, color: color.inkSecondary }}>{apptDateLabel(next.at)}</Text>
+          {nextWx ? <Text style={{ fontFamily: font.body500, fontSize: 11, color: color.inkSecondary }}>{nextWx.emoji} {nextWx.label}, {nextWx.tmax}° that day</Text> : null}
+          {next.location ? (
+            <Pressable onPress={() => openMaps(next)} accessibilityLabel="Open location in Maps" style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.65)', borderRadius: 10, padding: 9, marginTop: 6 }}>
+              <Text style={{ fontSize: 15 }}>📍</Text>
+              <View style={{ flex: 1, minWidth: 0 }}><Text style={{ fontFamily: font.body700, fontSize: 11.5, color: accent }} numberOfLines={1}>{next.location}</Text></View>
+              <Text style={{ fontFamily: font.body700, fontSize: 10.5, color: accent }}>Open in Maps ›</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      )}
+
+      {/* expanded: the selected day's appointments (with delete) */}
+      {expanded && (
+        <View style={{ gap: 7 }}>
+          <PanelLabel>{new Date(`${selectedKey}T00:00:00`).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}</PanelLabel>
+          {selAppts.length === 0 ? <EmptyHint text="Nothing on this day." /> : selAppts.map((a) => (
+            <View key={a.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: color.canvas, borderRadius: radius.tile, paddingVertical: 9, paddingHorizontal: 11 }}>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={{ fontFamily: font.body700, fontSize: 12.5, color: color.ink }}>{a.title}{a.kind === 'test' ? ' · test' : ''}</Text>
+                <Text style={{ fontFamily: font.body400, fontSize: 10.5, color: color.muted }}>{timeLabel(a.at)}{a.location ? ` · ${a.location}` : ''}{a.result ? ` · ${a.result}` : ''}</Text>
+              </View>
+              {a.location ? <Pressable onPress={() => openMaps(a)} hitSlop={6}><Text style={{ fontSize: 14 }}>📍</Text></Pressable> : null}
+              <Pressable onPress={() => onDelete(a.id)} hitSlop={8}><Text style={{ fontFamily: font.body700, fontSize: 17, color: color.faint }}>×</Text></Pressable>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {/* add */}
+      {addOpen ? (
+        <View style={{ gap: 9, borderTopWidth: 1, borderTopColor: color.hairline, paddingTop: 12 }}>
+          {allowTests && <SelectChips options={['appointment', 'test']} value={kind} onChange={(v) => setKind(v as 'appointment' | 'test')} />}
+          <Field label="Title" value={title} onChangeText={setTitle} placeholder={allowTests && kind === 'test' ? 'e.g. GTT blood test' : 'e.g. 20-week scan'} autoCapitalize="sentences" />
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <View style={{ flex: 1.5 }}><DateField label="Date" value={date} onChangeText={setDate} /></View>
+            <View style={{ flex: 1 }}><Field label="Time" value={time} onChangeText={setTime} placeholder="09:00" /></View>
+          </View>
+          <Field label="Location (optional)" value={location} onChangeText={setLocation} placeholder="e.g. City Hospital" autoCapitalize="sentences" />
+          {location.trim() ? <Text style={{ fontFamily: font.body400, fontSize: 10.5, color: color.muted, marginTop: -3 }}>📍 Tap the location later to open it in Maps.</Text> : null}
+          {allowTests && kind === 'test' && <Field label="Result (optional)" value={result} onChangeText={setResult} placeholder="e.g. Normal" autoCapitalize="sentences" />}
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <Button label="Cancel" variant="secondary" onPress={() => setAddOpen(false)} style={{ flex: 1 }} />
+            <Button label="Add" onPress={submit} style={{ flex: 1 }} tint={accent} />
+          </View>
+        </View>
+      ) : (
+        <Pressable onPress={() => setAddOpen(true)} style={{ borderWidth: 1.4, borderColor: fill, borderStyle: 'dashed', borderRadius: radius.tile, paddingVertical: 11, alignItems: 'center' }}>
+          <Text style={{ fontFamily: font.body700, fontSize: 12.5, color: accent }}>＋ Add appointment</Text>
+        </Pressable>
+      )}
+    </View>
+  );
+}
+
+/** Mum&Me variant — pregnancy appointments (with tests), rose theme. */
+function PregnancyAppointments() {
+  const { pregAppts, addPregAppt, deletePregAppt } = useData();
+  return <AppointmentsCard accent={color.roseInk} fill="#FBE0EA" items={pregAppts} allowTests onAdd={(i) => addPregAppt({ title: i.title, at: i.at, kind: i.kind ?? 'appointment', result: i.result, location: i.location })} onDelete={deletePregAppt} />;
+}
+
+/** Child variant — the child's calendar events, themed to the child's colour. */
+function ChildAppointments({ childId, colorKey }: { childId: string; colorKey: ChildColor }) {
+  const { events, addEvent, deleteEvent } = useData();
+  const items: ApptItem[] = events.filter((e) => e.childId === childId).map((e) => ({ id: e.id, title: e.title, at: e.at, location: e.location }));
+  return <AppointmentsCard accent={CHILD_INK[colorKey] ?? color.primary} fill={childToken[colorKey].fill} items={items} onAdd={(i) => addEvent({ title: i.title, at: i.at, childId, location: i.location })} onDelete={deleteEvent} />;
 }
 
 const labFmt = (ms: number) => { const s = Math.floor(ms / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
