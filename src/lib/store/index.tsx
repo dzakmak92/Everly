@@ -71,7 +71,7 @@ export type PregArchive = { id: string; dueDate: string; bornDate: string; check
 export type BirthPrepItem = { id: string; category: string; label: string; checked: boolean };
 export type SavedName = { id: string; name: string; gender: string };
 export type PregStatus = 'active' | 'paused' | 'archived';
-export type PregAppt = { id: string; title: string; at: string; kind: 'appointment' | 'test'; result?: string };
+export type PregAppt = { id: string; title: string; at: string; kind: 'appointment' | 'test'; result?: string; location?: string; mapsUrl?: string };
 export type PregVital = { id: string; at: string; kind: 'glucose' | 'bp'; glucose?: number; systolic?: number; diastolic?: number; tag?: string };
 
 export type EpdsResult = { id: string; at: string; total: number; band: string; selfHarmFlag: boolean };
@@ -240,7 +240,7 @@ type DataValue = {
   pregStatus: PregStatus;
   setPregStatus: (s: PregStatus) => void;
   pregAppts: PregAppt[];
-  addPregAppt: (input: { title: string; at: string; kind: 'appointment' | 'test'; result?: string }) => void;
+  addPregAppt: (input: { title: string; at: string; kind: 'appointment' | 'test'; result?: string; location?: string; mapsUrl?: string }) => void;
   deletePregAppt: (id: string) => void;
   pregVitals: PregVital[];
   addPregVital: (input: { kind: 'glucose' | 'bp'; glucose?: number; systolic?: number; diastolic?: number; tag?: string }) => void;
@@ -628,8 +628,8 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
 
   const setPregStatus = useCallback((s: PregStatus) => setPregStatusState(s), []);
 
-  const addPregAppt = useCallback((input: { title: string; at: string; kind: 'appointment' | 'test'; result?: string }) => {
-    setPregAppts((prev) => [...prev, { id: newId(), title: input.title.trim(), at: input.at, kind: input.kind, result: input.result?.trim() || undefined }].sort((a, b) => a.at.localeCompare(b.at)));
+  const addPregAppt = useCallback((input: { title: string; at: string; kind: 'appointment' | 'test'; result?: string; location?: string; mapsUrl?: string }) => {
+    setPregAppts((prev) => [...prev, { id: newId(), title: input.title.trim(), at: input.at, kind: input.kind, result: input.result?.trim() || undefined, location: input.location?.trim() || undefined, mapsUrl: input.mapsUrl?.trim() || undefined }].sort((a, b) => a.at.localeCompare(b.at)));
   }, []);
   const deletePregAppt = useCallback((id: string) => setPregAppts((prev) => prev.filter((a) => a.id !== id)), []);
 
