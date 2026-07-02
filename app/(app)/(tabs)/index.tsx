@@ -2056,10 +2056,6 @@ function CareCheckinCard() {
     addCheckin({ mood: mood ?? 2, symptoms: todayCheckin?.symptoms ?? [], weightKg: weight ?? undefined, waterL: water || undefined, sleepH: sleep ?? undefined, meals });
   };
 
-  /* ── mood trend ── */
-  const recentMood = checkins.filter((c) => now.getTime() - ccMs(c.at) <= 14 * 86400000).sort((a, b) => ccMs(a.at) - ccMs(b.at));
-  const avgMood = recentMood.length ? Math.round(recentMood.reduce((s, c) => s + c.mood, 0) / recentMood.length) : null;
-
   /* ── weight: cumulative gain vs a BMI-based recommended corridor ── */
   const wSeries = checkins.filter((c) => c.weightKg != null).sort((a, b) => ccMs(a.at) - ccMs(b.at))
     .map((c) => ({ kg: c.weightKg as number, wk: gestFromDueDate(dueDate ?? undefined, new Date(c.at))?.week ?? 0 }));
@@ -2096,6 +2092,12 @@ function CareCheckinCard() {
   const sleepFor = (d: Date) => checkins.find((c) => ccSameDay(c.at, d) && c.sleepH != null)?.sleepH ?? 0;
   const waterVals = days7.map(waterFor); const wMax = Math.max(2, ...waterVals);
   const sleepVals = days7.map(sleepFor); const sMax = Math.max(9, ...sleepVals);
+  const dayLabels = days7.map((d) => ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'][d.getDay()]);
+  const dayAxis = (
+    <View style={{ flexDirection: 'row', gap: 4, marginTop: 4 }}>
+      {dayLabels.map((d, i) => <Text key={i} style={{ flex: 1, textAlign: 'center', fontFamily: i === 6 ? font.body700 : font.body500, fontSize: 8.5, color: i === 6 ? color.roseInk : '#a9a0b0' }}>{d}</Text>)}
+    </View>
+  );
 
   const contacts = supportContacts;
   const [adding, setAdding] = useState(false);
@@ -2129,34 +2131,6 @@ function CareCheckinCard() {
         <Text style={{ flex: 1, fontFamily: font.display700, fontSize: 16, color: color.ink }}>Care &amp; check-in</Text>
       </View>
 
-      {/* Mood */}
-      {label('How are you feeling?')}
-      <View style={{ flexDirection: 'row', gap: 6 }}>
-        {CARE_MOODS.map((e, i) => {
-          const sel = mood === i;
-          return (
-            <Pressable key={i} accessibilityLabel={`Feeling ${MOODS[i]}`} onPress={() => setMood(i)} style={{ flex: 1, aspectRatio: 1, borderRadius: radius.tile, backgroundColor: sel ? '#FBE0EA' : '#FAF3F6', borderWidth: 1.5, borderColor: sel ? rose : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ fontSize: 21 }}>{e}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
-
-      {/* Mood trend */}
-      {recentMood.length > 0 && avgMood !== null && (
-        <>
-          {label('Your mood · last 2 weeks')}
-          <View style={blockStyle}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 9 }}>
-              <Text style={{ fontFamily: font.display700, fontSize: 15, color: roseInk }}>{MOODS[avgMood]} {CARE_MOODS[avgMood]}</Text>
-              <Text style={{ fontFamily: font.body500, fontSize: 10.5, color: color.muted }}>{recentMood.length} check-in{recentMood.length === 1 ? '' : 's'}</Text>
-            </View>
-            <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 4, height: 40 }}>
-              {recentMood.slice(-14).map((c) => <View key={c.id} style={{ flex: 1, height: `${((c.mood + 1) / 5) * 100}%`, minHeight: 4, borderRadius: 3, backgroundColor: c.mood >= 3 ? rose : '#E7A9C4' }} />)}
-            </View>
-          </View>
-        </>
-      )}
 
       {/* Weight */}
       {label('Weight')}
@@ -2248,6 +2222,7 @@ function CareCheckinCard() {
           <View style={{ position: 'absolute', left: 0, right: 0, top: `${(1 - 2 / wMax) * 100}%`, borderTopWidth: 1.5, borderColor: '#9AB0C9', borderStyle: 'dashed' }} />
           {waterVals.map((v, i) => <View key={i} style={{ flex: 1, height: `${Math.max(4, (v / wMax) * 100)}%`, borderRadius: 3, backgroundColor: '#7FB0D8' }} />)}
         </View>
+        {dayAxis}
         <Text style={{ fontFamily: font.body700, fontSize: 8, color: '#9AB0C9', textAlign: 'right', marginTop: 2 }}>– – 2L goal</Text>
       </View>
 
@@ -2259,6 +2234,7 @@ function CareCheckinCard() {
           <View style={{ position: 'absolute', left: 0, right: 0, top: `${(1 - 9 / sMax) * 100}%`, height: `${((9 - 7) / sMax) * 100}%`, backgroundColor: '#DCEFE3', borderRadius: 2 }} />
           {sleepVals.map((v, i) => <View key={i} style={{ flex: 1, height: `${Math.max(4, (v / sMax) * 100)}%`, borderRadius: 3, backgroundColor: '#B8A6E0' }} />)}
         </View>
+        {dayAxis}
         <View style={{ flexDirection: 'row', gap: 11, marginTop: 6 }}><ChartKey sw="#B8A6E0" t="Hours slept" /><ChartKey sw="#DCEFE3" t="7–9h recommended" /></View>
       </View>
 
