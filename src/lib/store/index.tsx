@@ -63,7 +63,7 @@ export type Routine = { id: string; childId?: string; name: string; steps: Routi
 export type Chore = { id: string; childId?: string; label: string; points: number; done: boolean };
 export type Milestone = { id: string; childId: string; title: string; date: string; note?: string };
 
-export type PregCheckin = { id: string; at: string; mood: number; symptoms: string[]; weightKg?: number };
+export type PregCheckin = { id: string; at: string; mood: number; symptoms: string[]; weightKg?: number; waterL?: number; sleepH?: number; meals?: string[] };
 
 /** A completed pregnancy, kept read-only once the baby has arrived. */
 export type PregArchive = { id: string; dueDate: string; bornDate: string; checkins: PregCheckin[]; archivedAt: string };
@@ -204,7 +204,7 @@ type DataValue = {
   dueDate: string | null;
   setDueDate: (d: string | null) => void;
   checkins: PregCheckin[];
-  addCheckin: (input: { mood: number; symptoms: string[]; weightKg?: number }) => void;
+  addCheckin: (input: { mood: number; symptoms: string[]; weightKg?: number; waterL?: number; sleepH?: number; meals?: string[] }) => void;
   deleteCheckin: (id: string) => void;
   pregArchive: PregArchive[];
   closePregnancy: (bornDate: string) => void;
@@ -593,8 +593,8 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
   const deleteExpense = useCallback((id: string) => setExpenses((prev) => prev.filter((e) => e.id !== id)), []);
 
   const setDueDate = useCallback((dd: string | null) => setDueDateState(dd?.trim() || null), []);
-  const addCheckin = useCallback((input: { mood: number; symptoms: string[]; weightKg?: number }) => {
-    setCheckins((prev) => [{ id: newId(), at: new Date().toISOString(), mood: input.mood, symptoms: input.symptoms, weightKg: input.weightKg }, ...prev]);
+  const addCheckin = useCallback((input: { mood: number; symptoms: string[]; weightKg?: number; waterL?: number; sleepH?: number; meals?: string[] }) => {
+    setCheckins((prev) => [{ id: newId(), at: new Date().toISOString(), mood: input.mood, symptoms: input.symptoms, weightKg: input.weightKg, waterL: input.waterL, sleepH: input.sleepH, meals: input.meals }, ...prev]);
   }, []);
   const deleteCheckin = useCallback((id: string) => setCheckins((prev) => prev.filter((c) => c.id !== id)), []);
   // Close the live pregnancy: snapshot it into the read-only archive and clear

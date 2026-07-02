@@ -129,3 +129,24 @@ export const RED_FLAGS_CALL_SOON = [
   'Sudden swelling of face, hands or feet',
   'Itching, especially hands and feet at night',
 ];
+
+/** Short, chip-friendly red flags (paired with the fuller list above). */
+export const RED_FLAGS_SHORT: { emoji: string; label: string }[] = [
+  { emoji: '🩸', label: 'Heavy bleeding' },
+  { emoji: '🤕', label: 'Severe belly pain' },
+  { emoji: '👶', label: 'Baby moving less' },
+  { emoji: '👁️', label: 'Headache + vision' },
+  { emoji: '💧', label: 'Waters break early' },
+  { emoji: '🌡️', label: 'Fever over 38°' },
+];
+
+/** "What to expect" — common, usually-normal symptoms by trimester. */
+const EXPECTED_BY_TRIMESTER: Record<1 | 2 | 3, { emoji: string; label: string }[]> = {
+  1: [{ emoji: '🤢', label: 'Nausea' }, { emoji: '😴', label: 'Fatigue' }, { emoji: '🤱', label: 'Tender breasts' }, { emoji: '🚽', label: 'Frequent wee' }, { emoji: '🍋', label: 'Food aversions' }],
+  2: [{ emoji: '⚡', label: 'More energy' }, { emoji: '🤰', label: 'Bump growing' }, { emoji: '👣', label: 'First kicks' }, { emoji: '🤧', label: 'Congestion' }, { emoji: '🦶', label: 'Mild swelling' }],
+  3: [{ emoji: '🔥', label: 'Heartburn' }, { emoji: '😮‍💨', label: 'Breathlessness' }, { emoji: '🦶', label: 'Swollen feet' }, { emoji: '😴', label: 'Poor sleep' }, { emoji: '〰️', label: 'Braxton Hicks' }, { emoji: '🚽', label: 'Frequent wee' }],
+};
+export function expectedSymptoms(week: number): { emoji: string; label: string }[] {
+  const tri = week <= 12 ? 1 : week <= 27 ? 2 : 3;
+  return EXPECTED_BY_TRIMESTER[tri];
+}

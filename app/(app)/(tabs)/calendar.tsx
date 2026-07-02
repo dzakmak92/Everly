@@ -68,7 +68,6 @@ export default function CalendarTab() {
   const owners: Owner[] = [
     ...(hasMumme ? [{ key: 'mumme', label: 'Mum&Me', dot: APPT_COLOR, fill: '#FBE0EA', ink: '#B04070' }] : []),
     ...children.map((c) => ({ key: c.id, label: c.name, dot: childToken[c.color].stroke, fill: childToken[c.color].fill, ink: CHILD_INK[c.color] ?? color.primary })),
-    ...(events.some((e) => !e.childId) ? [{ key: 'family', label: 'Family', dot: EVENT_COLOR, fill: fill.lilac, ink: color.primary }] : []),
   ];
   const ownerOf = (childId?: string) => (childId ? childId : 'family');
   const ownerMeta = (k: string) => owners.find((o) => o.key === k);
@@ -216,9 +215,6 @@ export default function CalendarTab() {
       {/* Module selector pills — between the calendar and the selected-day section */}
       {owners.length > 1 && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingHorizontal: 2 }}>
-          <Pressable onPress={() => setHidden(new Set())} style={[{ borderRadius: radius.pill, paddingVertical: 7, paddingHorizontal: 14, backgroundColor: hidden.size === 0 ? color.primary : '#fff' }, shadow.card]}>
-            <Text style={{ fontFamily: font.body700, fontSize: 11.5, color: hidden.size === 0 ? '#fff' : color.muted }}>All</Text>
-          </Pressable>
           {owners.map((o) => {
             const on = shown(o.key);
             return (
