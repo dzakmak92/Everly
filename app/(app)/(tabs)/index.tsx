@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ScrollView, View, Text, Pressable, Modal, TextInput, Linking, ActivityIndicator, Animated, Easing } from 'react-native';
-import Svg, { Circle, Rect, Polyline, Polygon, Line as SvgLine } from 'react-native-svg';
+import Svg, { Circle, Rect, Polyline, Polygon, Line as SvgLine, Text as SvgText } from 'react-native-svg';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, font, radius, shadow, childToken } from '../../../src/theme/tokens';
@@ -19,6 +19,7 @@ import { useSupabase } from '../../../src/lib/supabase';
 import { ageLabel, stageFrom } from '../../../src/lib/age';
 import {
   gestFromDueDate, weekContent, MOODS, PREG_SYMPTOMS, RED_FLAGS_CALL_NOW, RED_FLAGS_CALL_SOON, RED_FLAGS_SHORT, expectedSymptoms, dueDateFromLmp, TRIMESTER_TIPS, BABY_NAMES,
+  bmiFrom, gainGoal, recommendedGain,
 } from '../../../src/lib/pregnancy';
 import { EPDS_QUESTIONS, scoreEpds, BAND_LABEL, CRISIS_RESOURCES } from '../../../src/lib/epds';
 import { helplinesFor } from '../../../src/lib/helplines';
@@ -2026,7 +2027,7 @@ function CityPickerModal({ visible, wx, onClose }: { visible: boolean; wx: Retur
 }
 
 function CareCheckinCard() {
-  const { checkins, addCheckin, deleteCheckin, supportContacts, addSupportContact, deleteSupportContact, dueDate } = useData();
+  const { checkins, addCheckin, deleteCheckin, supportContacts, addSupportContact, deleteSupportContact, dueDate, startWeightKg, setStartWeightKg, heightCm, setHeightCm } = useData();
   const wx = useWeather();
   const now = new Date();
   const gest = gestFromDueDate(dueDate ?? undefined);
@@ -2040,12 +2041,16 @@ function CareCheckinCard() {
   const [meals, setMeals] = useState<string[]>(todayCheckin?.meals ?? []);
   const [cityOpen, setCityOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [editField, setEditField] = useState<null | 'start' | 'height'>(null);
+  const [fieldVal, setFieldVal] = useState('');
 
   // last recorded weight (for a sensible starting point when logging today)
   const lastWeight = checkins.filter((c) => c.weightKg != null).sort((a, b) => ccMs(b.at) - ccMs(a.at))[0]?.weightKg ?? 65;
   const wVal = weight ?? Math.round(lastWeight * 10) / 10;
   const sVal = sleep ?? 7;
   const toggleMeal = (k: string) => setMeals((m) => (m.includes(k) ? m.filter((x) => x !== k) : [...m, k]));
+  const openEdit = (f: 'start' | 'height') => { setEditField(f); setFieldVal((f === 'start' ? startWeightKg : heightCm)?.toString() ?? ''); };
+  const commitEdit = () => { const n = parseFloat(fieldVal.replace(',', '.')); const v = isNaN(n) || n <= 0 ? null : n; if (editField === 'start') setStartWeightKg(v); else if (editField === 'height') setHeightCm(v); setEditField(null); };
   const save = () => {
     if (todayCheckin) deleteCheckin(todayCheckin.id);
     addCheckin({ mood: mood ?? 2, symptoms: todayCheckin?.symptoms ?? [], weightKg: weight ?? undefined, waterL: water || undefined, sleepH: sleep ?? undefined, meals });
@@ -2055,21 +2060,34 @@ function CareCheckinCard() {
   const recentMood = checkins.filter((c) => now.getTime() - ccMs(c.at) <= 14 * 86400000).sort((a, b) => ccMs(a.at) - ccMs(b.at));
   const avgMood = recentMood.length ? Math.round(recentMood.reduce((s, c) => s + c.mood, 0) / recentMood.length) : null;
 
-  /* ── weight trend + healthy band ── */
-  const wPts = checkins.filter((c) => c.weightKg != null).sort((a, b) => ccMs(a.at) - ccMs(b.at)).slice(-10)
-    .map((c) => ({ kg: c.weightKg as number, wk: gestFromDueDate(dueDate ?? undefined, new Date(c.at))?.week ?? null }));
-  const startKg = wPts[0]?.kg ?? null;
-  const startWk = wPts[0]?.wk ?? null;
-  const expectedAt = (wk: number | null) => (startKg == null ? 0 : startKg + 0.4 * ((wk ?? startWk ?? 0) - (startWk ?? 0)));
-  const band = wPts.map((p) => ({ up: expectedAt(p.wk) + 2, lo: expectedAt(p.wk) - 2 }));
-  const WW = 280, WH = 88, wpad = 10;
-  const allV = [...wPts.map((p) => p.kg), ...band.flatMap((b) => [b.up, b.lo])];
-  const vmin = allV.length ? Math.min(...allV) - 0.6 : 60, vmax = allV.length ? Math.max(...allV) + 0.6 : 80;
-  const wx0 = (i: number) => (wPts.length <= 1 ? WW / 2 : (i / (wPts.length - 1)) * (WW - 16) + 8);
-  const wy = (v: number) => wpad + (1 - (v - vmin) / ((vmax - vmin) || 1)) * (WH - 2 * wpad);
-  const lastKg = wPts[wPts.length - 1]?.kg ?? null;
-  const lastBand = band[band.length - 1];
-  const wStatus = lastKg == null || !lastBand ? '' : lastKg > lastBand.up ? 'Above range' : lastKg < lastBand.lo ? 'Below range' : 'On track';
+  /* ── weight: cumulative gain vs a BMI-based recommended corridor ── */
+  const wSeries = checkins.filter((c) => c.weightKg != null).sort((a, b) => ccMs(a.at) - ccMs(b.at))
+    .map((c) => ({ kg: c.weightKg as number, wk: gestFromDueDate(dueDate ?? undefined, new Date(c.at))?.week ?? 0 }));
+  const firstLoggedKg = wSeries[0]?.kg ?? null;
+  const startKg = startWeightKg ?? firstLoggedKg;                 // pre-pregnancy / booking baseline
+  const bmi = startKg != null && heightCm != null ? bmiFrom(startKg, heightCm) : null;
+  const goal = gainGoal(bmi);
+  const goalMid = (goal.lo + goal.hi) / 2;
+  const gainPts = startKg == null ? [] : wSeries.map((p) => ({ wk: p.wk, gain: p.kg - startKg, kg: p.kg }));
+  const lastKg = wSeries[wSeries.length - 1]?.kg ?? null;
+  const lastGain = gainPts.length ? gainPts[gainPts.length - 1].gain : null;
+  const curWeek = week ?? (gainPts[gainPts.length - 1]?.wk ?? 0);
+  const recNow = recommendedGain(curWeek, goal);
+  const wStatus = lastGain == null ? '' : lastGain > recNow.hi + 0.4 ? 'Above range' : lastGain < recNow.lo - 0.4 ? 'Below range' : 'On track';
+  const pace = gainPts.length >= 2 ? (gainPts[gainPts.length - 1].gain - gainPts[0].gain) / ((gainPts[gainPts.length - 1].wk - gainPts[0].wk) || 1) : null;
+  const paceOk = pace == null ? true : pace >= 0.2 && pace <= 0.7;
+  const projected = lastGain == null ? null : pace != null ? lastGain + pace * Math.max(0, 40 - curWeek) : lastGain;
+  // chart geometry — plot gain (kg above start) across weeks
+  const WW = 300, WH = 138, wpad = 14, xL = 22;
+  const axMinWk = Math.max(0, Math.floor(Math.min(curWeek, gainPts[0]?.wk ?? curWeek)));
+  const axMaxWk = 40;
+  const corWks = Array.from({ length: 9 }, (_, i) => axMinWk + (i / 8) * (axMaxWk - axMinWk));
+  const corridor = corWks.map((wk) => ({ wk, ...recommendedGain(wk, goal) }));
+  const gAll = [0, ...gainPts.map((p) => p.gain), ...(projected != null ? [projected] : []), ...corridor.flatMap((c) => [c.lo, c.hi])];
+  const gMin = Math.min(...gAll) - 0.8, gMax = Math.max(...gAll) + 0.8;
+  const gx = (wk: number) => xL + ((wk - axMinWk) / ((axMaxWk - axMinWk) || 1)) * (WW - xL - 8);
+  const gy = (v: number) => wpad + (1 - (v - gMin) / ((gMax - gMin) || 1)) * (WH - 2 * wpad - 14);
+  const wStatusOk = wStatus === 'On track';
 
   /* ── water & sleep (last 7 days from check-ins) ── */
   const days7 = Array.from({ length: 7 }, (_, i) => { const d = new Date(now); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - (6 - i)); return d; });
@@ -2142,28 +2160,81 @@ function CareCheckinCard() {
       {/* Weight */}
       {label('Weight')}
       <View style={blockStyle}>
-        {metricRow('⚖️', 'Weight', wVal.toFixed(1), 'kg', wStatus, wStatus === 'On track', () => setWeight(Math.round((wVal - 0.1) * 10) / 10), () => setWeight(Math.round((wVal + 0.1) * 10) / 10))}
-        {wPts.length === 0 ? (
-          <Text style={{ fontFamily: font.body400, fontSize: 11.5, color: color.muted, paddingVertical: 6 }}>Log your weight to see the trend.</Text>
-        ) : (
+        {metricRow('⚖️', 'Log today', wVal.toFixed(1), 'kg', wStatus, wStatusOk, () => setWeight(Math.round((wVal - 0.1) * 10) / 10), () => setWeight(Math.round((wVal + 0.1) * 10) / 10))}
+
+        {gainPts.length >= 1 && lastGain != null && startKg != null ? (
           <>
-            <Svg width="100%" height={74} viewBox={`0 0 ${WW} ${WH}`} preserveAspectRatio="none">
-              {band.length > 1 && (
-                <Polygon points={[...band.map((b, i) => `${wx0(i)},${wy(b.up)}`), ...band.map((b, i) => `${wx0(i)},${wy(b.lo)}`).reverse()].join(' ')} fill="#DCEFE3" />
-              )}
-              {startKg != null && <SvgLine x1={0} y1={wy(startKg)} x2={WW} y2={wy(startKg)} stroke="#B7A7AE" strokeWidth={1.2} strokeDasharray="4 4" />}
-              {wPts.length > 1 && <Polyline points={wPts.map((p, i) => `${wx0(i)},${wy(p.kg)}`).join(' ')} fill="none" stroke={rose} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />}
-              {startKg != null && <Circle cx={wx0(0)} cy={wy(startKg)} r={4.5} fill="#fff" stroke="#B7A7AE" strokeWidth={2} />}
-              {wPts.map((p, i) => { const b = band[i]; const bad = b && (p.kg > b.up || p.kg < b.lo); return i === wPts.length - 1 || bad ? <Circle key={i} cx={wx0(i)} cy={wy(p.kg)} r={4} fill={bad ? '#D8505A' : rose} stroke="#fff" strokeWidth={2} /> : null; })}
+            {/* gain headline */}
+            <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 4, marginBottom: 6 }}>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={{ fontFamily: font.display700, fontSize: 26, color: roseInk, lineHeight: 28 }}>{lastGain >= 0 ? '+' : ''}{lastGain.toFixed(1)}<Text style={{ fontFamily: font.body500, fontSize: 13, color: color.muted }}> kg gained</Text></Text>
+                <Text style={{ fontFamily: font.body400, fontSize: 10.5, color: color.muted, marginTop: 2 }}>since {startKg.toFixed(1)} kg start · goal {goal.lo}–{goal.hi} kg by birth</Text>
+              </View>
+              {wStatus ? <View style={{ backgroundColor: wStatusOk ? '#E4F3EC' : '#FBE7D8', borderRadius: radius.pill, paddingVertical: 3, paddingHorizontal: 9 }}><Text style={{ fontFamily: font.body700, fontSize: 10, color: wStatusOk ? '#1E6C50' : '#B5662E' }}>{wStatus}</Text></View> : null}
+            </View>
+
+            {/* cumulative-gain corridor chart */}
+            <Svg width="100%" height={116} viewBox={`0 0 ${WW} ${WH}`}>
+              <SvgLine x1={xL} y1={gy(0)} x2={WW - 8} y2={gy(0)} stroke="#D8C6D1" strokeWidth={1} strokeDasharray="3 3" />
+              <SvgText x={xL - 3} y={gy(0) + 3} fontSize={7.5} fill="#b6acb4" textAnchor="end">0</SvgText>
+              <Polygon points={[...corridor.map((c) => `${gx(c.wk)},${gy(c.hi)}`), ...corridor.map((c) => `${gx(c.wk)},${gy(c.lo)}`).reverse()].join(' ')} fill="#DCEFE3" />
+              {projected != null && <SvgLine x1={gx(curWeek)} y1={gy(lastGain)} x2={gx(40)} y2={gy(projected)} stroke={rose} strokeWidth={2} strokeDasharray="4 4" opacity={0.45} />}
+              {gainPts.length > 1 && <Polyline points={gainPts.map((p) => `${gx(p.wk)},${gy(p.gain)}`).join(' ')} fill="none" stroke={rose} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" />}
+              {gainPts.map((p, i) => { const r = recommendedGain(p.wk, goal); const bad = p.gain > r.hi + 0.4 || p.gain < r.lo - 0.4; return bad ? <Circle key={i} cx={gx(p.wk)} cy={gy(p.gain)} r={3.5} fill="#D8505A" stroke="#fff" strokeWidth={1.5} /> : null; })}
+              <Circle cx={gx(curWeek)} cy={gy(lastGain)} r={4.5} fill={rose} stroke="#fff" strokeWidth={2} />
+              {projected != null && <Circle cx={gx(40)} cy={gy(projected)} r={4} fill="#fff" stroke={rose} strokeWidth={2} />}
+              {projected != null && <SvgText x={gx(40)} y={gy(projected) - 6} fontSize={7.5} fill={roseInk} textAnchor="end" fontWeight="700">≈{projected >= 0 ? '+' : ''}{projected.toFixed(0)} by 40w</SvgText>}
+              {[axMinWk, Math.round((axMinWk + 40) / 2), 40].map((w, i) => <SvgText key={i} x={gx(w)} y={WH - 3} fontSize={7.5} fill="#b6acb4" textAnchor="middle">{w === 40 ? '40w' : Math.round(w)}</SvgText>)}
             </Svg>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 6 }}>
-              <ChartKey sw="#fff" border="#B7A7AE" t={`Start ${startKg?.toFixed(1)}`} />
-              <ChartKey sw={rose} t="You" />
-              <ChartKey sw="#DCEFE3" t="Healthy range" />
-              <ChartKey sw="#D8505A" t="Too high / low" />
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 4 }}>
+              <ChartKey sw={rose} t="Your gain" />
+              <ChartKey sw="#DCEFE3" t="Recommended range" />
+              <ChartKey sw={rose} t="Projected" />
+            </View>
+
+            {/* insight stats */}
+            <View style={{ flexDirection: 'row', gap: 7, marginTop: 10 }}>
+              <MiniStat v={pace != null ? `${pace >= 0 ? '+' : ''}${pace.toFixed(2)}` : '—'} k="kg / week" badge={pace != null ? (paceOk ? 'Good pace' : pace > 0.7 ? 'Fast' : 'Slow') : ''} ok={paceOk} />
+              <MiniStat v={`${lastGain >= 0 ? '+' : ''}${lastGain.toFixed(1)}`} k="total gain" badge={wStatus === 'On track' ? 'In range' : wStatus === 'Above range' ? 'High' : wStatus === 'Below range' ? 'Low' : ''} ok={wStatusOk} />
+              <MiniStat v={projected != null ? `≈${projected.toFixed(0)}` : '—'} k="at birth" badge={projected != null ? (projected >= goal.lo && projected <= goal.hi ? 'On target' : projected > goal.hi ? 'Over' : 'Under') : ''} ok={projected != null && projected >= goal.lo && projected <= goal.hi} />
             </View>
           </>
+        ) : (
+          <Text style={{ fontFamily: font.body400, fontSize: 11.5, color: color.muted, paddingVertical: 6 }}>Set your start weight below, then log today to see your gain against the recommended range.</Text>
         )}
+
+        {/* Starting point — anchors the chart & BMI */}
+        <View style={{ borderTopWidth: 1, borderTopColor: '#EFE0E9', marginTop: 12, paddingTop: 11 }}>
+          <Text style={{ fontFamily: font.body700, fontSize: 9.5, letterSpacing: 0.5, textTransform: 'uppercase', color: '#B7889F', marginBottom: 8 }}>Starting point</Text>
+          {editField ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <TextInput value={fieldVal} onChangeText={setFieldVal} keyboardType="decimal-pad" autoFocus placeholder={editField === 'start' ? 'kg' : 'cm'} placeholderTextColor={color.faint}
+                style={{ flex: 1, backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#E0C2D2', borderRadius: 11, paddingVertical: 8, paddingHorizontal: 11, fontFamily: font.body700, fontSize: 15, color: color.ink }} />
+              <Pressable onPress={commitEdit} style={{ backgroundColor: rose, borderRadius: 11, paddingVertical: 9, paddingHorizontal: 14 }}><Text style={{ fontFamily: font.body700, fontSize: 12, color: '#fff' }}>Save</Text></Pressable>
+              <Pressable onPress={() => setEditField(null)} hitSlop={8}><Text style={{ fontFamily: font.body700, fontSize: 12, color: color.muted }}>Cancel</Text></Pressable>
+            </View>
+          ) : (
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              {([['start', 'Start weight', startWeightKg, 'kg'], ['height', 'Height', heightCm, 'cm']] as const).map(([f, k, val, unit]) => (
+                <Pressable key={f} onPress={() => openEdit(f)} style={{ flex: 1, backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#EBD9E3', borderRadius: 12, paddingVertical: 8, paddingHorizontal: 11 }}>
+                  <Text style={{ fontFamily: font.body700, fontSize: 8.5, letterSpacing: 0.3, textTransform: 'uppercase', color: '#B7889F' }}>{k}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 3 }}>
+                    <Text style={{ fontFamily: font.display700, fontSize: 15, color: val != null ? color.ink : color.faint }}>{val != null ? (f === 'start' ? val.toFixed(1) : String(val)) : '—'}<Text style={{ fontFamily: font.body500, fontSize: 10, color: color.muted }}> {unit}</Text></Text>
+                    <Text style={{ fontFamily: font.body700, fontSize: 11, color: roseInk }}>{val != null ? 'Edit' : 'Add'}</Text>
+                  </View>
+                </Pressable>
+              ))}
+            </View>
+          )}
+          {bmi != null ? (
+            <View style={{ marginTop: 9, backgroundColor: '#EEF6F1', borderWidth: 1, borderColor: '#CFE7D8', borderRadius: 11, paddingVertical: 8, paddingHorizontal: 11, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text style={{ fontFamily: font.body700, fontSize: 11, color: '#3a6a52' }}>Pre-pregnancy BMI {bmi.toFixed(1)}</Text>
+              <View style={{ backgroundColor: '#fff', borderRadius: radius.pill, paddingVertical: 2, paddingHorizontal: 9 }}><Text style={{ fontFamily: font.body700, fontSize: 10, color: '#1E6C50' }}>{goal.category} · {goal.lo}–{goal.hi} kg</Text></View>
+            </View>
+          ) : (
+            <Text style={{ fontFamily: font.body400, fontSize: 10, color: color.muted, marginTop: 7, paddingHorizontal: 2 }}>Add height to personalise your range — using a general 11.5–16 kg goal for now.</Text>
+          )}
+        </View>
       </View>
 
       {/* Water */}
@@ -2284,6 +2355,17 @@ function CareCheckinCard() {
       </>)}
 
       <CityPickerModal visible={cityOpen} wx={wx} onClose={() => setCityOpen(false)} />
+    </View>
+  );
+}
+
+/** A compact insight tile (value + caption + status badge) for the weight chart. */
+function MiniStat({ v, k, badge, ok }: { v: string; k: string; badge: string; ok: boolean }) {
+  return (
+    <View style={{ flex: 1, backgroundColor: '#fff', borderRadius: 12, paddingVertical: 9, paddingHorizontal: 6, alignItems: 'center' }}>
+      <Text style={{ fontFamily: font.display700, fontSize: 15, color: color.ink }}>{v}</Text>
+      <Text style={{ fontFamily: font.body700, fontSize: 8.5, letterSpacing: 0.2, textTransform: 'uppercase', color: '#9a8f98', marginTop: 2 }}>{k}</Text>
+      {badge ? <Text style={{ fontFamily: font.body700, fontSize: 8.5, color: ok ? '#1E6C50' : '#B5662E', marginTop: 3 }}>{badge}</Text> : null}
     </View>
   );
 }

@@ -150,3 +150,35 @@ export function expectedSymptoms(week: number): { emoji: string; label: string }
   const tri = week <= 12 ? 1 : week <= 27 ? 2 : 3;
   return EXPECTED_BY_TRIMESTER[tri];
 }
+
+/* ── Pregnancy weight-gain guidance (IOM 2009, by pre-pregnancy BMI) ── */
+export type GainGoal = { lo: number; hi: number; category: string };
+
+/** Body-mass index from weight (kg) and height (cm). */
+export function bmiFrom(weightKg: number, heightCm: number): number {
+  const m = heightCm / 100;
+  return m > 0 ? weightKg / (m * m) : 0;
+}
+
+/** Recommended total pregnancy weight-gain range for a pre-pregnancy BMI. */
+export function gainGoal(bmi: number | null): GainGoal {
+  if (bmi == null || bmi <= 0) return { lo: 11.5, hi: 16, category: 'Estimated' };
+  if (bmi < 18.5) return { lo: 12.5, hi: 18, category: 'Underweight' };
+  if (bmi < 25) return { lo: 11.5, hi: 16, category: 'Normal' };
+  if (bmi < 30) return { lo: 7, hi: 11.5, category: 'Overweight' };
+  return { lo: 5, hi: 9, category: 'Obese' };
+}
+
+/**
+ * Cumulative recommended weight gain (kg above pre-pregnancy) at a gestational
+ * week: a small T1 gain (~0.5–2 kg by week 13) then a steady rate to term that
+ * lands on the goal range at week 40.
+ */
+export function recommendedGain(week: number, goal: GainGoal): { lo: number; hi: number } {
+  const w = Math.max(0, Math.min(40, week));
+  const t1lo = 0.5, t1hi = 2; // reached by ~week 13
+  if (w <= 13) return { lo: (w / 13) * t1lo, hi: (w / 13) * t1hi };
+  const rateLo = (goal.lo - t1lo) / 27;
+  const rateHi = (goal.hi - t1hi) / 27;
+  return { lo: t1lo + (w - 13) * rateLo, hi: t1hi + (w - 13) * rateHi };
+}

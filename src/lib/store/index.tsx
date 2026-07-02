@@ -148,6 +148,8 @@ const DEMO_PREMIUM_KEY = 'everly.demoPremium.v1';
 const PREPSECTIONS_KEY = 'everly.prepSections.v1';
 const DEFAULT_PREP_SECTIONS = ['For Mum', 'For Baby', 'Birth plan'];
 const SUPPORT_KEY = 'everly.supportContacts.v1';
+const START_WEIGHT_KEY = 'everly.startWeightKg.v1';
+const HEIGHT_KEY = 'everly.heightCm.v1';
 
 function newId() {
   return `${Date.now().toString(36)}-${Math.floor(Math.random() * 1e6).toString(36)}`;
@@ -238,6 +240,10 @@ type DataValue = {
   supportContacts: SupportContact[];
   addSupportContact: (input: { name: string; role?: string; phone?: string }) => void;
   deleteSupportContact: (id: string) => void;
+  startWeightKg: number | null;
+  setStartWeightKg: (v: number | null) => void;
+  heightCm: number | null;
+  setHeightCm: (v: number | null) => void;
   pregStatus: PregStatus;
   setPregStatus: (s: PregStatus) => void;
   pregAppts: PregAppt[];
@@ -304,6 +310,8 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
   const [epdsResults, setEpdsResults] = useState<EpdsResult[]>([]);
   const [recoveryLogs, setRecoveryLogs] = useState<RecoveryLog[]>([]);
   const [tzContacts, setTzContacts] = useState<TzContact[]>([]);
+  const [startWeightKg, setStartWeightKgState] = useState<number | null>(null);
+  const [heightCm, setHeightCmState] = useState<number | null>(null);
   const [savedTips, setSavedTips] = useState<SavedTip[]>([]);
   const [birthPrep, setBirthPrep] = useState<BirthPrepItem[]>([]);
   const [prepSections, setPrepSections] = useState<string[]>(DEFAULT_PREP_SECTIONS);
@@ -340,6 +348,14 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
     setSupportContacts((prev) => saveSupport([...prev, { id: newId(), name: input.name.trim(), role: input.role?.trim() || undefined, phone: input.phone?.trim() || undefined }]));
   }, []);
   const deleteSupportContact = useCallback((id: string) => setSupportContacts((prev) => saveSupport(prev.filter((c) => c.id !== id))), []);
+
+  // Pre-pregnancy / booking weight + height (anchors the weight-gain chart & BMI) — loaded/saved independently.
+  useEffect(() => {
+    AsyncStorage.getItem(START_WEIGHT_KEY).then((v) => { if (v) setStartWeightKgState(JSON.parse(v)); }).catch(() => {});
+    AsyncStorage.getItem(HEIGHT_KEY).then((v) => { if (v) setHeightCmState(JSON.parse(v)); }).catch(() => {});
+  }, []);
+  const setStartWeightKg = useCallback((v: number | null) => { setStartWeightKgState(v); AsyncStorage.setItem(START_WEIGHT_KEY, JSON.stringify(v)).catch(() => {}); }, []);
+  const setHeightCm = useCallback((v: number | null) => { setHeightCmState(v); AsyncStorage.setItem(HEIGHT_KEY, JSON.stringify(v)).catch(() => {}); }, []);
   const addPrepSection = useCallback((name: string) => {
     const n = name.trim(); if (!n) return;
     setPrepSections((prev) => (prev.includes(n) ? prev : saveSections([...prev, n])));
@@ -722,6 +738,7 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
       prepSections, addPrepSection, renamePrepSection, deletePrepSection,
       savedNames, saveName, deleteName,
       supportContacts, addSupportContact, deleteSupportContact,
+      startWeightKg, setStartWeightKg, heightCm, setHeightCm,
       pregStatus, setPregStatus,
       pregAppts, addPregAppt, deletePregAppt, updatePregAppt,
       pregVitals, addPregVital, deletePregVital,
