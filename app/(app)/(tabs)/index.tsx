@@ -952,22 +952,22 @@ function MaternityView({
       {/* Appointments — full-width, above the kick counter */}
       {phase === 'pregnancy' && showGrid && <PregnancyAppointments />}
 
-      {/* Labour & movement — opened on top of the other cards (pink) */}
+      {/* Care & check-in — full-width (replaces the check-in & care tiles) */}
+      {phase === 'pregnancy' && showGrid && <CareCheckinCard />}
+
+      {/* Labour & movement — below Care (pink) */}
       {phase === 'pregnancy' && showGrid && (
         <View style={{ gap: 10 }}>
           <Label>Labour & movement</Label>
           <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 16, gap: 14, borderWidth: 2, borderColor: color.rose }, shadow.card]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <View style={{ width: 36, height: 36, borderRadius: 11, backgroundColor: '#FBE0EA', alignItems: 'center', justifyContent: 'center' }}><Activity size={20} color={color.rose} /></View>
-              <Text style={{ flex: 1, fontFamily: font.display700, fontSize: 17, color: color.ink }}>Labour & movement</Text>
+              <Text style={{ flex: 1, fontFamily: font.display700, fontSize: 17, color: color.ink }}>Labour &amp; movement</Text>
             </View>
             <LabourPanel />
           </View>
         </View>
       )}
-
-      {/* Care & check-in — full-width, below Labour (replaces the check-in & care tiles) */}
-      {phase === 'pregnancy' && showGrid && <CareCheckinCard />}
 
       {/* Archived pregnancy state — after birth, before a new one begins */}
       {phase === 'pregnancy' && !showGrid && (
@@ -1676,7 +1676,7 @@ function AppointmentsCard({ accent, fill, items, allowTests, onAdd, onEdit, onDe
   const timeLabel = (iso: string) => new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 
   return (
-    <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 15, gap: 12 }, shadow.card]}>
+    <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 15, gap: 12, borderWidth: 2, borderColor: accent }, shadow.card]}>
       {/* header + week/month toggle */}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
         <View style={{ width: 34, height: 34, borderRadius: 11, backgroundColor: fill, alignItems: 'center', justifyContent: 'center' }}><CalIcon size={18} color={accent} /></View>
@@ -2125,7 +2125,7 @@ function CareCheckinCard() {
   );
 
   return (
-    <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 16 }, shadow.card]}>
+    <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 16, borderWidth: 2, borderColor: color.rose }, shadow.card]}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9, marginBottom: 6 }}>
         <View style={{ width: 34, height: 34, borderRadius: 11, backgroundColor: '#FBE0EA', alignItems: 'center', justifyContent: 'center' }}><Heart size={18} color={rose} filled /></View>
         <Text style={{ flex: 1, fontFamily: font.display700, fontSize: 16, color: color.ink }}>Care &amp; check-in</Text>
