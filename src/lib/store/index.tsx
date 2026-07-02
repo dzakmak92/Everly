@@ -88,6 +88,7 @@ export type ContractionSession = { id: string; at: string; durationSec: number; 
 
 export type TzContact = { id: string; name: string; tz: string; location?: string };
 export type SavedTip = { id: string; at: string; text: string };
+export type SupportContact = { id: string; name: string; role?: string; phone?: string };
 
 export type Caregiver = { id: string; name: string; role?: string };
 /** Expense paidBy is 'me' or a caregiver id; splitPct = the other party's share. */
@@ -146,6 +147,7 @@ const CONTRACTIONS_KEY = 'everly.contractions.v1';
 const DEMO_PREMIUM_KEY = 'everly.demoPremium.v1';
 const PREPSECTIONS_KEY = 'everly.prepSections.v1';
 const DEFAULT_PREP_SECTIONS = ['For Mum', 'For Baby', 'Birth plan'];
+const SUPPORT_KEY = 'everly.supportContacts.v1';
 
 function newId() {
   return `${Date.now().toString(36)}-${Math.floor(Math.random() * 1e6).toString(36)}`;
@@ -232,6 +234,9 @@ type DataValue = {
   savedNames: SavedName[];
   saveName: (input: { name: string; gender: string }) => void;
   deleteName: (id: string) => void;
+  supportContacts: SupportContact[];
+  addSupportContact: (input: { name: string; role?: string; phone?: string }) => void;
+  deleteSupportContact: (id: string) => void;
   pregStatus: PregStatus;
   setPregStatus: (s: PregStatus) => void;
   pregAppts: PregAppt[];
@@ -299,6 +304,7 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
   const [savedTips, setSavedTips] = useState<SavedTip[]>([]);
   const [birthPrep, setBirthPrep] = useState<BirthPrepItem[]>([]);
   const [prepSections, setPrepSections] = useState<string[]>(DEFAULT_PREP_SECTIONS);
+  const [supportContacts, setSupportContacts] = useState<SupportContact[]>([]);
   const [savedNames, setSavedNames] = useState<SavedName[]>([]);
   const [pregStatus, setPregStatusState] = useState<PregStatus>('active');
   const [pregAppts, setPregAppts] = useState<PregAppt[]>([]);
@@ -323,6 +329,14 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
   // Birth-prep section names (user-editable) — loaded/saved independently.
   useEffect(() => { AsyncStorage.getItem(PREPSECTIONS_KEY).then((v) => { if (v) setPrepSections(JSON.parse(v)); }).catch(() => {}); }, []);
   const saveSections = (next: string[]) => { AsyncStorage.setItem(PREPSECTIONS_KEY, JSON.stringify(next)).catch(() => {}); return next; };
+
+  // Support circle (midwife/partner/doula…) — loaded/saved independently.
+  useEffect(() => { AsyncStorage.getItem(SUPPORT_KEY).then((v) => { if (v) setSupportContacts(JSON.parse(v)); }).catch(() => {}); }, []);
+  const saveSupport = (next: SupportContact[]) => { AsyncStorage.setItem(SUPPORT_KEY, JSON.stringify(next)).catch(() => {}); return next; };
+  const addSupportContact = useCallback((input: { name: string; role?: string; phone?: string }) => {
+    setSupportContacts((prev) => saveSupport([...prev, { id: newId(), name: input.name.trim(), role: input.role?.trim() || undefined, phone: input.phone?.trim() || undefined }]));
+  }, []);
+  const deleteSupportContact = useCallback((id: string) => setSupportContacts((prev) => saveSupport(prev.filter((c) => c.id !== id))), []);
   const addPrepSection = useCallback((name: string) => {
     const n = name.trim(); if (!n) return;
     setPrepSections((prev) => (prev.includes(n) ? prev : saveSections([...prev, n])));
@@ -687,6 +701,7 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
       birthPrep, addBirthPrep, toggleBirthPrep, deleteBirthPrep,
       prepSections, addPrepSection, renamePrepSection, deletePrepSection,
       savedNames, saveName, deleteName,
+      supportContacts, addSupportContact, deleteSupportContact,
       pregStatus, setPregStatus,
       pregAppts, addPregAppt, deletePregAppt,
       pregVitals, addPregVital, deletePregVital,
@@ -700,7 +715,7 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
       clearAll,
       demoPremium, setDemoPremium, loadSampleData,
     }),
-    [loading, children, activeChild, setActiveChild, addChild, updateChild, deleteChild, entries, addEntry, deleteEntry, events, addEvent, deleteEvent, vaccines, addVaccine, updateVaccine, deleteVaccine, medications, addMedication, toggleMedication, deleteMedication, growth, addGrowth, deleteGrowth, routines, addRoutine, addRoutineStep, toggleStep, resetRoutine, deleteRoutine, chores, addChore, toggleChore, deleteChore, milestones, addMilestone, deleteMilestone, caregivers, addCaregiver, deleteCaregiver, custody, setCustodyDay, expenses, addExpense, toggleExpenseSettled, deleteExpense, dueDate, setDueDate, checkins, addCheckin, deleteCheckin, pregArchive, closePregnancy, dockSide, setDockSide, maternalBirth, setMaternalBirth, epdsResults, addEpdsResult, deleteEpdsResult, recoveryLogs, addRecoveryLog, deleteRecoveryLog, tzContacts, addTzContact, deleteTzContact, savedTips, saveTip, deleteTip, birthPrep, addBirthPrep, toggleBirthPrep, deleteBirthPrep, prepSections, addPrepSection, renamePrepSection, deletePrepSection, savedNames, saveName, deleteName, pregStatus, setPregStatus, pregAppts, addPregAppt, deletePregAppt, pregVitals, addPregVital, deletePregVital, lastPeriod, setLastPeriod, cycleLength, setCycleLength, ttcItems, addTtc, toggleTtc, deleteTtc, momCare, addMomCare, deleteMomCare, pelvicLog, addPelvic, matAppts, addMatAppt, deleteMatAppt, kickSessions, addKickSession, deleteKickSession, clearKickSessions, contractionSessions, addContraction, deleteContraction, clearContractions, clearAll, demoPremium, setDemoPremium, loadSampleData],
+    [loading, children, activeChild, setActiveChild, addChild, updateChild, deleteChild, entries, addEntry, deleteEntry, events, addEvent, deleteEvent, vaccines, addVaccine, updateVaccine, deleteVaccine, medications, addMedication, toggleMedication, deleteMedication, growth, addGrowth, deleteGrowth, routines, addRoutine, addRoutineStep, toggleStep, resetRoutine, deleteRoutine, chores, addChore, toggleChore, deleteChore, milestones, addMilestone, deleteMilestone, caregivers, addCaregiver, deleteCaregiver, custody, setCustodyDay, expenses, addExpense, toggleExpenseSettled, deleteExpense, dueDate, setDueDate, checkins, addCheckin, deleteCheckin, pregArchive, closePregnancy, dockSide, setDockSide, maternalBirth, setMaternalBirth, epdsResults, addEpdsResult, deleteEpdsResult, recoveryLogs, addRecoveryLog, deleteRecoveryLog, tzContacts, addTzContact, deleteTzContact, savedTips, saveTip, deleteTip, birthPrep, addBirthPrep, toggleBirthPrep, deleteBirthPrep, prepSections, addPrepSection, renamePrepSection, deletePrepSection, savedNames, saveName, deleteName, supportContacts, addSupportContact, deleteSupportContact, pregStatus, setPregStatus, pregAppts, addPregAppt, deletePregAppt, pregVitals, addPregVital, deletePregVital, lastPeriod, setLastPeriod, cycleLength, setCycleLength, ttcItems, addTtc, toggleTtc, deleteTtc, momCare, addMomCare, deleteMomCare, pelvicLog, addPelvic, matAppts, addMatAppt, deleteMatAppt, kickSessions, addKickSession, deleteKickSession, clearKickSessions, contractionSessions, addContraction, deleteContraction, clearContractions, clearAll, demoPremium, setDemoPremium, loadSampleData],
   );
 
   return <DataContext.Provider value={value}>{node}</DataContext.Provider>;
