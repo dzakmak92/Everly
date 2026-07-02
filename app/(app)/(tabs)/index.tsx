@@ -1613,6 +1613,8 @@ const KICK_TARGET = 10;
 function LabourPanel() {
   const { kickSessions, addKickSession, deleteKickSession, contractionSessions, addContraction, deleteContraction } = useData();
   const [mode, setMode] = useState<'kicks' | 'contractions'>('kicks');
+  const [showKickHist, setShowKickHist] = useState(false);
+  const [showConHist, setShowConHist] = useState(false);
   const [kicks, setKicks] = useState(0);
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [kickNow, setKickNow] = useState(Date.now());
@@ -1676,8 +1678,11 @@ function LabourPanel() {
           <Button label={kicks > 0 ? 'Save & reset' : 'Reset'} variant="secondary" onPress={resetKicks} />
           {kickSessions.length > 0 && (
             <View style={{ gap: 8 }}>
-              <PanelLabel>Recent sessions</PanelLabel>
-              {kickSessions.slice(0, 4).map((s) => <PanelRow key={s.id} title={`${s.count} ${s.count === 1 ? 'movement' : 'movements'}${s.durationMin != null ? ` · ${s.durationMin}m` : ''}`} sub={dayTimeOf(s.at)} onDelete={() => deleteKickSession(s.id)} />)}
+              <Pressable onPress={() => setShowKickHist((v) => !v)} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <View style={{ flex: 1 }}><PanelLabel>Recent sessions · {kickSessions.length}</PanelLabel></View>
+                <Text style={{ fontFamily: font.body700, fontSize: 13, color: color.faint }}>{showKickHist ? '▾' : '▸'}</Text>
+              </Pressable>
+              {showKickHist && kickSessions.slice(0, 4).map((s) => <PanelRow key={s.id} title={`${s.count} ${s.count === 1 ? 'movement' : 'movements'}${s.durationMin != null ? ` · ${s.durationMin}m` : ''}`} sub={dayTimeOf(s.at)} onDelete={() => deleteKickSession(s.id)} />)}
             </View>
           )}
         </>
@@ -1690,8 +1695,11 @@ function LabourPanel() {
           <Button label={activeStart ? 'Stop' : 'Start'} onPress={toggleCon} tint={color.rose} />
           {contractionSessions.length > 0 && (
             <View style={{ gap: 8 }}>
-              <PanelLabel>{contractionSessions.length} recorded</PanelLabel>
-              {contractionSessions.slice(0, 4).map((c) => <PanelRow key={c.id} title={labDurSec(c.durationSec)} sub={c.intervalSec != null ? `${labDurSec(c.intervalSec)} apart` : 'first'} onDelete={() => deleteContraction(c.id)} />)}
+              <Pressable onPress={() => setShowConHist((v) => !v)} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <View style={{ flex: 1 }}><PanelLabel>{contractionSessions.length} recorded</PanelLabel></View>
+                <Text style={{ fontFamily: font.body700, fontSize: 13, color: color.faint }}>{showConHist ? '▾' : '▸'}</Text>
+              </Pressable>
+              {showConHist && contractionSessions.slice(0, 4).map((c) => <PanelRow key={c.id} title={labDurSec(c.durationSec)} sub={c.intervalSec != null ? `${labDurSec(c.intervalSec)} apart` : 'first'} onDelete={() => deleteContraction(c.id)} />)}
             </View>
           )}
         </>
