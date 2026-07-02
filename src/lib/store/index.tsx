@@ -167,6 +167,7 @@ type DataValue = {
   events: EventItem[]; // soonest first
   addEvent: (input: { title: string; at: string; childId?: string; location?: string; note?: string }) => void;
   deleteEvent: (id: string) => void;
+  updateEvent: (id: string, patch: { title?: string; at?: string; location?: string }) => void;
   vaccines: Vaccine[];
   addVaccine: (input: { childId: string; name: string; dueDate?: string; givenDate?: string; provider?: string }) => void;
   updateVaccine: (id: string, patch: Partial<Vaccine>) => void;
@@ -242,6 +243,7 @@ type DataValue = {
   pregAppts: PregAppt[];
   addPregAppt: (input: { title: string; at: string; kind: 'appointment' | 'test'; result?: string; location?: string; mapsUrl?: string }) => void;
   deletePregAppt: (id: string) => void;
+  updatePregAppt: (id: string, patch: { title?: string; at?: string; kind?: 'appointment' | 'test'; result?: string; location?: string; mapsUrl?: string }) => void;
   pregVitals: PregVital[];
   addPregVital: (input: { kind: 'glucose' | 'bp'; glucose?: number; systolic?: number; diastolic?: number; tag?: string }) => void;
   deletePregVital: (id: string) => void;
@@ -261,6 +263,7 @@ type DataValue = {
   matAppts: MatAppt[];
   addMatAppt: (input: { title: string; at: string; kind: 'appointment' | 'check'; prep?: string }) => void;
   deleteMatAppt: (id: string) => void;
+  updateMatAppt: (id: string, patch: { title?: string; at?: string; kind?: 'appointment' | 'check'; prep?: string }) => void;
   kickSessions: KickSession[]; // newest first
   addKickSession: (input: { count: number; durationMin?: number }) => void;
   deleteKickSession: (id: string) => void;
@@ -528,6 +531,9 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
   }, []);
 
   const deleteEvent = useCallback((id: string) => setEvents((prev) => prev.filter((e) => e.id !== id)), []);
+  const updateEvent = useCallback((id: string, patch: { title?: string; at?: string; location?: string }) => {
+    setEvents((prev) => prev.map((e) => e.id === id ? { ...e, ...(patch.title !== undefined ? { title: patch.title.trim() } : {}), ...(patch.at !== undefined ? { at: patch.at } : {}), ...(patch.location !== undefined ? { location: patch.location.trim() || undefined } : {}) } : e).sort((a, b) => a.at.localeCompare(b.at)));
+  }, []);
 
   const addVaccine = useCallback((input: { childId: string; name: string; dueDate?: string; givenDate?: string; provider?: string }) => {
     setVaccines((prev) => [...prev, { id: newId(), childId: input.childId, name: input.name.trim(), dueDate: input.dueDate?.trim() || undefined, givenDate: input.givenDate?.trim() || undefined, provider: input.provider?.trim() || undefined }]);
@@ -632,6 +638,17 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
     setPregAppts((prev) => [...prev, { id: newId(), title: input.title.trim(), at: input.at, kind: input.kind, result: input.result?.trim() || undefined, location: input.location?.trim() || undefined, mapsUrl: input.mapsUrl?.trim() || undefined }].sort((a, b) => a.at.localeCompare(b.at)));
   }, []);
   const deletePregAppt = useCallback((id: string) => setPregAppts((prev) => prev.filter((a) => a.id !== id)), []);
+  const updatePregAppt = useCallback((id: string, patch: { title?: string; at?: string; kind?: 'appointment' | 'test'; result?: string; location?: string; mapsUrl?: string }) => {
+    setPregAppts((prev) => prev.map((a) => a.id === id ? {
+      ...a,
+      ...(patch.title !== undefined ? { title: patch.title.trim() } : {}),
+      ...(patch.at !== undefined ? { at: patch.at } : {}),
+      ...(patch.kind !== undefined ? { kind: patch.kind } : {}),
+      ...(patch.result !== undefined ? { result: patch.result.trim() || undefined } : {}),
+      ...(patch.location !== undefined ? { location: patch.location.trim() || undefined } : {}),
+      ...(patch.mapsUrl !== undefined ? { mapsUrl: patch.mapsUrl.trim() || undefined } : {}),
+    } : a).sort((a, b) => a.at.localeCompare(b.at)));
+  }, []);
 
   const addPregVital = useCallback((input: { kind: 'glucose' | 'bp'; glucose?: number; systolic?: number; diastolic?: number; tag?: string }) => {
     setPregVitals((prev) => [{ id: newId(), at: new Date().toISOString(), ...input }, ...prev]);
@@ -650,6 +667,9 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
     setMatAppts((prev) => [...prev, { id: newId(), title: input.title.trim(), at: input.at, kind: input.kind, prep: input.prep?.trim() || undefined }].sort((a, b) => a.at.localeCompare(b.at)));
   }, []);
   const deleteMatAppt = useCallback((id: string) => setMatAppts((prev) => prev.filter((a) => a.id !== id)), []);
+  const updateMatAppt = useCallback((id: string, patch: { title?: string; at?: string; kind?: 'appointment' | 'check'; prep?: string }) => {
+    setMatAppts((prev) => prev.map((a) => a.id === id ? { ...a, ...(patch.title !== undefined ? { title: patch.title.trim() } : {}), ...(patch.at !== undefined ? { at: patch.at } : {}), ...(patch.kind !== undefined ? { kind: patch.kind } : {}), ...(patch.prep !== undefined ? { prep: patch.prep.trim() || undefined } : {}) } : a).sort((a, b) => a.at.localeCompare(b.at)));
+  }, []);
 
   const addKickSession = useCallback((input: { count: number; durationMin?: number }) => {
     setKickSessions((prev) => [{ id: newId(), at: new Date().toISOString(), count: input.count, durationMin: input.durationMin }, ...prev]);
@@ -685,7 +705,7 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
   const value = useMemo<DataValue>(
     () => ({
       loading, children, activeChild, setActiveChild, addChild, updateChild, deleteChild,
-      entries, addEntry, deleteEntry, events, addEvent, deleteEvent,
+      entries, addEntry, deleteEntry, events, addEvent, deleteEvent, updateEvent,
       vaccines, addVaccine, updateVaccine, deleteVaccine,
       medications, addMedication, toggleMedication, deleteMedication,
       growth, addGrowth, deleteGrowth,
@@ -703,19 +723,19 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
       savedNames, saveName, deleteName,
       supportContacts, addSupportContact, deleteSupportContact,
       pregStatus, setPregStatus,
-      pregAppts, addPregAppt, deletePregAppt,
+      pregAppts, addPregAppt, deletePregAppt, updatePregAppt,
       pregVitals, addPregVital, deletePregVital,
       lastPeriod, setLastPeriod, cycleLength, setCycleLength,
       ttcItems, addTtc, toggleTtc, deleteTtc,
       momCare, addMomCare, deleteMomCare,
       pelvicLog, addPelvic,
-      matAppts, addMatAppt, deleteMatAppt,
+      matAppts, addMatAppt, deleteMatAppt, updateMatAppt,
       kickSessions, addKickSession, deleteKickSession, clearKickSessions,
       contractionSessions, addContraction, deleteContraction, clearContractions,
       clearAll,
       demoPremium, setDemoPremium, loadSampleData,
     }),
-    [loading, children, activeChild, setActiveChild, addChild, updateChild, deleteChild, entries, addEntry, deleteEntry, events, addEvent, deleteEvent, vaccines, addVaccine, updateVaccine, deleteVaccine, medications, addMedication, toggleMedication, deleteMedication, growth, addGrowth, deleteGrowth, routines, addRoutine, addRoutineStep, toggleStep, resetRoutine, deleteRoutine, chores, addChore, toggleChore, deleteChore, milestones, addMilestone, deleteMilestone, caregivers, addCaregiver, deleteCaregiver, custody, setCustodyDay, expenses, addExpense, toggleExpenseSettled, deleteExpense, dueDate, setDueDate, checkins, addCheckin, deleteCheckin, pregArchive, closePregnancy, dockSide, setDockSide, maternalBirth, setMaternalBirth, epdsResults, addEpdsResult, deleteEpdsResult, recoveryLogs, addRecoveryLog, deleteRecoveryLog, tzContacts, addTzContact, deleteTzContact, savedTips, saveTip, deleteTip, birthPrep, addBirthPrep, toggleBirthPrep, deleteBirthPrep, prepSections, addPrepSection, renamePrepSection, deletePrepSection, savedNames, saveName, deleteName, supportContacts, addSupportContact, deleteSupportContact, pregStatus, setPregStatus, pregAppts, addPregAppt, deletePregAppt, pregVitals, addPregVital, deletePregVital, lastPeriod, setLastPeriod, cycleLength, setCycleLength, ttcItems, addTtc, toggleTtc, deleteTtc, momCare, addMomCare, deleteMomCare, pelvicLog, addPelvic, matAppts, addMatAppt, deleteMatAppt, kickSessions, addKickSession, deleteKickSession, clearKickSessions, contractionSessions, addContraction, deleteContraction, clearContractions, clearAll, demoPremium, setDemoPremium, loadSampleData],
+    [loading, children, activeChild, setActiveChild, addChild, updateChild, deleteChild, entries, addEntry, deleteEntry, events, addEvent, deleteEvent, updateEvent, vaccines, addVaccine, updateVaccine, deleteVaccine, medications, addMedication, toggleMedication, deleteMedication, growth, addGrowth, deleteGrowth, routines, addRoutine, addRoutineStep, toggleStep, resetRoutine, deleteRoutine, chores, addChore, toggleChore, deleteChore, milestones, addMilestone, deleteMilestone, caregivers, addCaregiver, deleteCaregiver, custody, setCustodyDay, expenses, addExpense, toggleExpenseSettled, deleteExpense, dueDate, setDueDate, checkins, addCheckin, deleteCheckin, pregArchive, closePregnancy, dockSide, setDockSide, maternalBirth, setMaternalBirth, epdsResults, addEpdsResult, deleteEpdsResult, recoveryLogs, addRecoveryLog, deleteRecoveryLog, tzContacts, addTzContact, deleteTzContact, savedTips, saveTip, deleteTip, birthPrep, addBirthPrep, toggleBirthPrep, deleteBirthPrep, prepSections, addPrepSection, renamePrepSection, deletePrepSection, savedNames, saveName, deleteName, supportContacts, addSupportContact, deleteSupportContact, pregStatus, setPregStatus, pregAppts, addPregAppt, deletePregAppt, updatePregAppt, pregVitals, addPregVital, deletePregVital, lastPeriod, setLastPeriod, cycleLength, setCycleLength, ttcItems, addTtc, toggleTtc, deleteTtc, momCare, addMomCare, deleteMomCare, pelvicLog, addPelvic, matAppts, addMatAppt, deleteMatAppt, updateMatAppt, kickSessions, addKickSession, deleteKickSession, clearKickSessions, contractionSessions, addContraction, deleteContraction, clearContractions, clearAll, demoPremium, setDemoPremium, loadSampleData],
   );
 
   return <DataContext.Provider value={value}>{node}</DataContext.Provider>;
