@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { ScrollView, View, Text, Pressable, Modal, TextInput } from 'react-native';
+import { ScrollView, View, Text, Pressable, Modal, TextInput, Linking } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -187,10 +187,8 @@ export default function Today() {
   const rhythm = cid ? childRhythm(cid, entries, now) : null;
   const feedPred = rhythm ? nextFeed(rhythm, now) : null;
   const napPred = rhythm ? napWindow(rhythm, now) : null;
-  const childNudgeList = cid && rhythm ? childNudges(cid, { entries, medications, vaccines }, rhythm, now) : [];
-  const pregNudgeList = hasJourney && !maternalBirth
-    ? pregnancyNudges({ kickSessions, pregVitals, checkins, pregAppts }, gestFromDueDate(dueDate ?? undefined)?.week ?? null, now)
-    : [];
+  // "Needs a look" now lives only on the family overview (as per-member pills);
+  // the child/Mum&Me views no longer repeat the nudge list.
   const tlItems = today.map((e) => ({ id: e.id, title: ENTRY_META[e.kind].label, at: e.at, color: ENTRY_META[e.kind].ink }));
 
   const showDock = children.length > 0 || hasJourney;
@@ -272,7 +270,6 @@ export default function Today() {
           pregAppts={pregAppts}
           matAppts={matAppts}
           pregArchive={pregArchive}
-          nudges={pregNudgeList}
           onArrived={openHandoff}
           onStartPregnancy={openDuePicker}
         />
@@ -300,9 +297,6 @@ export default function Today() {
           )}
         </View>
       )}
-
-      {/* Smart nudges — below predicted/actual, above up next */}
-      <NudgeList items={childNudgeList} />
 
       {/* Up next — above the timeline */}
       {hasNext && (
@@ -524,28 +518,6 @@ function PredictionHero({ nap, feed, rhythm }: { nap: Prediction | null; feed: P
         <HeroChip v={`${rhythm.napsToday}`} l="naps today" />
         <HeroChip v={rhythm.sleepTodayMin ? fmtDur(rhythm.sleepTodayMin) : '—'} l="sleep today" />
       </View>
-    </View>
-  );
-}
-
-/** "Needs a look" — the top few smart nudges. */
-function NudgeList({ items }: { items: Nudge[] }) {
-  if (!items.length) return null;
-  return (
-    <View style={{ gap: 10 }}>
-      <Label>Needs a look</Label>
-      {items.slice(0, 3).map((n) => (
-        <View key={n.id} style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 11 }, shadow.card]}>
-          <View style={{ width: 34, height: 34, borderRadius: 11, backgroundColor: color.canvas, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontSize: 16 }}>{n.icon}</Text>
-          </View>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={{ fontFamily: font.body700, fontSize: 13, color: color.ink }}>{n.title}</Text>
-            {n.sub ? <Text style={{ fontFamily: font.body400, fontSize: 11.5, color: color.muted, marginTop: 1 }}>{n.sub}</Text> : null}
-          </View>
-          {n.cta ? <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.primary }}>{n.cta}</Text> : null}
-        </View>
-      ))}
     </View>
   );
 }
@@ -856,7 +828,7 @@ const archWeekOf = (a: { dueDate: string; bornDate: string }) =>
   Math.max(0, Math.floor((280 - Math.round((ppTime(a.dueDate) - ppTime(a.bornDate)) / PP_MS)) / 7));
 
 function MaternityView({
-  phase, setPhase, dueDate, maternalBirth, pregAppts, matAppts, pregArchive, nudges, onArrived, onStartPregnancy,
+  phase, setPhase, dueDate, maternalBirth, pregAppts, matAppts, pregArchive, onArrived, onStartPregnancy,
 }: {
   phase: 'pregnancy' | 'postpartum';
   setPhase: (p: 'pregnancy' | 'postpartum') => void;
@@ -865,7 +837,6 @@ function MaternityView({
   pregAppts: ApptLike[];
   matAppts: ApptLike[];
   pregArchive: PregArchive[];
-  nudges?: Nudge[];
   onArrived: () => void;
   onStartPregnancy: () => void;
 }) {
@@ -983,9 +954,6 @@ function MaternityView({
           </Pressable>
         )}
       </View>
-
-      {/* Smart nudges (on-device) — pregnancy phase only */}
-      {phase === 'pregnancy' && showGrid && nudges && nudges.length > 0 && <NudgeList items={nudges} />}
 
       {/* Labour & movement — opened on top of the other cards (pink) */}
       {phase === 'pregnancy' && showGrid && (
@@ -1738,32 +1706,164 @@ const PREG_STATUS: { key: PregStatus; label: string; desc: string }[] = [
   { key: 'archived', label: 'Archived', desc: 'Move this pregnancy to a quiet, retrievable archive.' },
 ];
 
-/** Care & support — pregnancy status + crisis resources, matching preg-care. */
+/** Emoji faces for the mood scale (indices line up with MOODS labels). */
+const CARE_MOODS = ['😞', '😕', '🙂', '😀', '🤩'];
+const careIsToday = (iso: string) => new Date(iso).toDateString() === new Date().toDateString();
+/** Pull a single dialable number out of a helpline detail string, if there is one. */
+const dialable = (s: string) => (s.match(/\d[\d\s-]{4,}\d/) || [])[0]?.replace(/[\s-]/g, '');
+
+/**
+ * Care & support — the "looking after you" hub: a quick mood check with a
+ * fortnight trend, self-care logging, your support circle, crisis helplines,
+ * and (tucked at the foot) the pregnancy status control.
+ */
 function CarePanel() {
-  const { pregStatus, setPregStatus } = useData();
+  const { pregStatus, setPregStatus, checkins, addCheckin, momCare, addMomCare, supportContacts, addSupportContact, deleteSupportContact } = useData();
+
+  const now = Date.now();
+  const todays = checkins.filter((c) => careIsToday(c.at)).sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
+  const todayMood = todays.length ? todays[0].mood : null;
+  const recent = checkins.filter((c) => now - new Date(c.at).getTime() <= 14 * 86400000).sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
+  const avgMood = recent.length ? Math.round(recent.reduce((s, c) => s + c.mood, 0) / recent.length) : null;
+
+  const todayWater = momCare.filter((m) => m.kind === 'water' && careIsToday(m.at)).reduce((s, m) => s + m.value, 0);
+  const weekSleep = momCare.filter((m) => m.kind === 'sleep' && now - new Date(m.at).getTime() <= 7 * 86400000);
+  const avgSleep = weekSleep.length ? (weekSleep.reduce((s, m) => s + m.value, 0) / weekSleep.length).toFixed(1) : null;
+  const restToday = momCare.filter((m) => m.kind === 'comfort' && careIsToday(m.at)).length;
+
+  const [adding, setAdding] = useState(false);
+  const [nm, setNm] = useState('');
+  const [role, setRole] = useState('');
+  const [phone, setPhone] = useState('');
+  const addContact = () => { if (!nm.trim()) return; addSupportContact({ name: nm, role, phone }); setNm(''); setRole(''); setPhone(''); setAdding(false); };
+
   return (
-    <View style={{ gap: 14 }}>
-      <Text style={{ fontFamily: font.body400, fontSize: 12.5, color: color.muted }}>However your journey unfolds, Everly adapts around you — these options are free and private.</Text>
-      <View style={{ gap: 8 }}>
-        <PanelLabel>This pregnancy</PanelLabel>
-        {PREG_STATUS.map((s) => {
-          const sel = s.key === pregStatus;
-          return (
-            <Pressable key={s.key} onPress={() => setPregStatus(s.key)} style={{ backgroundColor: sel ? color.maternalTeal : color.canvas, borderRadius: radius.tile, padding: 13 }}>
-              <Text style={{ fontFamily: font.body700, fontSize: 13.5, color: sel ? '#fff' : color.ink }}>{s.label}{sel ? ' · current' : ''}</Text>
-              <Text style={{ fontFamily: font.body400, fontSize: 12, color: sel ? 'rgba(255,255,255,0.9)' : color.muted, marginTop: 2 }}>{s.desc}</Text>
-            </Pressable>
-          );
-        })}
+    <View style={{ gap: 16 }}>
+      <Text style={{ fontFamily: font.body400, fontSize: 12.5, color: color.muted }}>However your journey unfolds, Everly adapts around you — private and free.</Text>
+
+      {/* Today's mood */}
+      <View style={{ gap: 9 }}>
+        <PanelLabel>How are you feeling today?</PanelLabel>
+        <View style={{ flexDirection: 'row', gap: 6 }}>
+          {CARE_MOODS.map((emoji, i) => {
+            const sel = todayMood === i;
+            return (
+              <Pressable key={i} accessibilityLabel={`Feeling ${MOODS[i]}`} onPress={() => { if (todayMood !== i) addCheckin({ mood: i, symptoms: [] }); }}
+                style={{ flex: 1, aspectRatio: 1, borderRadius: radius.tile, backgroundColor: sel ? '#FBE0EA' : color.canvas, borderWidth: 1.5, borderColor: sel ? color.rose : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ fontSize: 22 }}>{emoji}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
-      <View style={{ backgroundColor: '#FBE0EA', borderRadius: radius.tile, padding: 14, gap: 8 }}>
-        <Text style={{ fontFamily: font.body700, fontSize: 13, color: color.roseInk }}>Support, any time</Text>
-        {CRISIS_RESOURCES.map((r, i) => (
-          <View key={i}>
-            <Text style={{ fontFamily: font.body700, fontSize: 12.5, color: color.ink }}>{r.name}</Text>
-            <Text style={{ fontFamily: font.body400, fontSize: 12, color: color.inkSecondary }}>{r.detail}</Text>
+
+      {/* Fortnight mood trend */}
+      {recent.length > 0 && avgMood !== null && (
+        <View style={{ gap: 9 }}>
+          <PanelLabel>Your mood · last 2 weeks</PanelLabel>
+          <View style={{ backgroundColor: '#FAF3F6', borderRadius: radius.tile, padding: 13 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
+              <Text style={{ fontFamily: font.display700, fontSize: 16, color: color.roseInk }}>{MOODS[avgMood]} {CARE_MOODS[avgMood]}</Text>
+              <Text style={{ fontFamily: font.body500, fontSize: 11, color: color.muted }}>{recent.length} check-in{recent.length === 1 ? '' : 's'}</Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 4, height: 46 }}>
+              {recent.slice(-14).map((c) => (
+                <View key={c.id} style={{ flex: 1, height: `${((c.mood + 1) / 5) * 100}%`, minHeight: 4, borderRadius: 3, backgroundColor: c.mood >= 3 ? color.rose : '#E7A9C4' }} />
+              ))}
+            </View>
+          </View>
+        </View>
+      )}
+
+      {/* Self-care */}
+      <View style={{ gap: 9 }}>
+        <PanelLabel>Self-care today</PanelLabel>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <Pressable onPress={() => addMomCare({ kind: 'water', value: 250 })} style={{ flex: 1, backgroundColor: '#FAF3F6', borderRadius: radius.tile, paddingVertical: 11, alignItems: 'center' }}>
+            <Text style={{ fontFamily: font.display700, fontSize: 15, color: color.ink }}>{(todayWater / 1000).toFixed(1)}L</Text>
+            <Text style={{ fontFamily: font.body600, fontSize: 9.5, color: color.muted, marginTop: 2 }}>💧 water · +250</Text>
+          </Pressable>
+          <View style={{ flex: 1, backgroundColor: '#FAF3F6', borderRadius: radius.tile, paddingVertical: 11, alignItems: 'center' }}>
+            <Text style={{ fontFamily: font.display700, fontSize: 15, color: color.ink }}>{avgSleep ? `${avgSleep}h` : '—'}</Text>
+            <Text style={{ fontFamily: font.body600, fontSize: 9.5, color: color.muted, marginTop: 2 }}>😴 sleep · 7d</Text>
+          </View>
+          <Pressable onPress={() => addMomCare({ kind: 'comfort', value: 3 })} style={{ flex: 1, backgroundColor: '#FAF3F6', borderRadius: radius.tile, paddingVertical: 11, alignItems: 'center' }}>
+            <Text style={{ fontFamily: font.display700, fontSize: 15, color: color.ink }}>{restToday > 0 ? `${restToday}×` : '＋'}</Text>
+            <Text style={{ fontFamily: font.body600, fontSize: 9.5, color: color.muted, marginTop: 2 }}>😌 rest</Text>
+          </Pressable>
+        </View>
+      </View>
+
+      {/* Support circle */}
+      <View style={{ gap: 9 }}>
+        <PanelLabel>Your support circle</PanelLabel>
+        {supportContacts.map((c) => (
+          <View key={c.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#FAF3F6', borderRadius: radius.tile, paddingVertical: 9, paddingHorizontal: 11 }}>
+            <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#FBE0EA', alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ fontFamily: font.display700, fontSize: 14, color: color.roseInk }}>{c.name.charAt(0).toUpperCase()}</Text>
+            </View>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={{ fontFamily: font.body700, fontSize: 12.5, color: color.ink }}>{c.name}</Text>
+              {c.role ? <Text style={{ fontFamily: font.body400, fontSize: 10.5, color: color.muted, marginTop: 1 }}>{c.role}</Text> : null}
+            </View>
+            {c.phone ? (
+              <Pressable onPress={() => Linking.openURL(`tel:${c.phone}`)} accessibilityLabel={`Call ${c.name}`} style={{ backgroundColor: color.rose, borderRadius: radius.pill, paddingVertical: 6, paddingHorizontal: 13 }}>
+                <Text style={{ fontFamily: font.body700, fontSize: 11, color: '#fff' }}>Call</Text>
+              </Pressable>
+            ) : null}
+            <Pressable onPress={() => deleteSupportContact(c.id)} hitSlop={8}><Text style={{ fontFamily: font.body700, fontSize: 17, color: color.faint }}>×</Text></Pressable>
           </View>
         ))}
+        {adding ? (
+          <View style={{ gap: 8, backgroundColor: '#FAF3F6', borderRadius: radius.tile, padding: 12 }}>
+            <Field label="Name" value={nm} onChangeText={setNm} placeholder="e.g. Sarah" autoCapitalize="words" />
+            <Field label="Role (optional)" value={role} onChangeText={setRole} placeholder="e.g. Midwife, partner, doula" autoCapitalize="sentences" />
+            <Field label="Phone (optional)" value={phone} onChangeText={setPhone} placeholder="e.g. 07123 456789" />
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <Button label="Cancel" variant="secondary" onPress={() => setAdding(false)} style={{ flex: 1 }} />
+              <Button label="Add" onPress={addContact} style={{ flex: 1 }} tint={color.rose} />
+            </View>
+          </View>
+        ) : (
+          <Pressable onPress={() => setAdding(true)} style={{ borderWidth: 1.4, borderColor: '#E0C2D2', borderStyle: 'dashed', borderRadius: radius.tile, paddingVertical: 11, alignItems: 'center' }}>
+            <Text style={{ fontFamily: font.body700, fontSize: 12.5, color: color.roseInk }}>＋ Add someone (partner, doula…)</Text>
+          </Pressable>
+        )}
+      </View>
+
+      {/* Crisis helplines — tappable where a number can be dialled */}
+      <View style={{ backgroundColor: '#FBE0EA', borderRadius: radius.tile, padding: 14, gap: 4 }}>
+        <Text style={{ fontFamily: font.body700, fontSize: 13, color: color.roseInk, marginBottom: 4 }}>Support, any time</Text>
+        {CRISIS_RESOURCES.map((r, i) => {
+          const dial = dialable(r.detail);
+          const body = (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9, paddingVertical: 7, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: 'rgba(176,64,112,0.14)' }}>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={{ fontFamily: font.body700, fontSize: 12.5, color: color.ink }}>{r.name}</Text>
+                <Text style={{ fontFamily: font.body400, fontSize: 12, color: color.inkSecondary }}>{r.detail}</Text>
+              </View>
+              {dial ? <Text style={{ fontSize: 15 }}>📞</Text> : null}
+            </View>
+          );
+          return dial
+            ? <Pressable key={i} accessibilityLabel={`Call ${r.name}`} onPress={() => Linking.openURL(`tel:${dial}`)}>{body}</Pressable>
+            : <View key={i}>{body}</View>;
+        })}
+      </View>
+
+      {/* Pregnancy status — a quiet control at the foot */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 12, borderTopWidth: 1, borderTopColor: color.hairline }}>
+        <Text style={{ fontFamily: font.body500, fontSize: 11.5, color: color.muted }}>This pregnancy</Text>
+        <View style={{ flexDirection: 'row', backgroundColor: color.canvas, borderRadius: radius.pill, padding: 3, marginLeft: 'auto' }}>
+          {PREG_STATUS.map((s) => {
+            const sel = s.key === pregStatus;
+            return (
+              <Pressable key={s.key} onPress={() => setPregStatus(s.key)} style={{ borderRadius: radius.pill, paddingVertical: 6, paddingHorizontal: 12, backgroundColor: sel ? color.rose : 'transparent' }}>
+                <Text style={{ fontFamily: font.body700, fontSize: 11, color: sel ? '#fff' : color.muted }}>{s.label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
     </View>
   );
