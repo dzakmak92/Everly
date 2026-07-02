@@ -24,7 +24,7 @@ import { EPDS_QUESTIONS, scoreEpds, BAND_LABEL, CRISIS_RESOURCES } from '../../.
 import { youStoryEvents } from '../../../src/lib/story';
 import { childRhythm, nextFeed, napWindow, childNudges, pregnancyNudges, fmtDur, type Nudge, type Prediction, type ChildRhythm } from '../../../src/lib/intelligence';
 import { DayTimeline } from '../../../src/components/DayTimeline';
-import { useWeather } from '../../../src/lib/useWeather';
+import { useWeather, WeatherGlyph, wxLabel } from '../../../src/lib/weather';
 import {
   useData, entriesOn, entryDetail, ENTRY_META, quickLogKinds, MOOD_LABELS, CHILD_COLORS,
   type EntryKind, type FeedSide, type DiaperType, type Child, type Lochia, type ChildColor, type PregArchive, type PregStatus,
@@ -1635,7 +1635,7 @@ function AppointmentsCard({ accent, fill, items, allowTests, onAdd, onDelete }: 
   const upcoming = sorted.filter((a) => new Date(a.at).getTime() >= now);
   const next = upcoming.find((a) => (a.kind ?? 'appointment') === 'appointment') ?? upcoming[0] ?? null;
   const apptDays = new Set(items.map((a) => apptDayKey(new Date(a.at))));
-  const wxOf = (d: Date) => wx.days[apptDayKey(d)] ?? null;
+  const wxOf = (d: Date) => wx.wxForDate(d);
 
   const openMaps = (a: ApptItem) => {
     const url = a.mapsUrl || (a.location ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a.location)}` : null);
@@ -1679,7 +1679,7 @@ function AppointmentsCard({ accent, fill, items, allowTests, onAdd, onDelete }: 
         <>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 2 }}>
             <Text style={{ fontFamily: font.body700, fontSize: 10, letterSpacing: 0.6, color: color.muted }}>THIS WEEK</Text>
-            {wx.place ? <Text style={{ fontFamily: font.body600, fontSize: 10, color: color.muted }}>{wx.place} · forecast</Text> : null}
+            {wx.location ? <Text style={{ fontFamily: font.body600, fontSize: 10, color: color.muted }}>{wx.location.name} · forecast</Text> : null}
           </View>
           <View style={{ flexDirection: 'row', gap: 4 }}>
             {week.map((d) => {
@@ -1689,8 +1689,8 @@ function AppointmentsCard({ accent, fill, items, allowTests, onAdd, onDelete }: 
                 <View key={d.toISOString()} style={{ flex: 1, alignItems: 'center', paddingVertical: 6, borderRadius: 11, backgroundColor: has ? fill : color.canvas }}>
                   <Text style={{ fontFamily: font.body700, fontSize: 8, color: color.faint }}>{WD_SHORT[d.getDay()].toUpperCase()}</Text>
                   <Text style={{ fontFamily: font.display700, fontSize: 13, color: has ? accent : color.ink, marginTop: 1 }}>{d.getDate()}</Text>
-                  {w ? <Text style={{ fontSize: 13, marginTop: 3 }}>{w.emoji}</Text> : null}
-                  {w ? <Text style={{ fontFamily: font.body700, fontSize: 8, color: color.muted, marginTop: 1 }}>{w.tmax}°</Text> : null}
+                  {w ? <View style={{ marginTop: 3 }}><WeatherGlyph code={w.code} size={15} /></View> : null}
+                  {w ? <Text style={{ fontFamily: font.body700, fontSize: 8, color: color.muted, marginTop: 1 }}>{w.tMax}°</Text> : null}
                   <View style={{ width: 4, height: 4, borderRadius: 2, marginTop: 3, backgroundColor: has ? accent : 'transparent' }} />
                 </View>
               );
@@ -1732,7 +1732,12 @@ function AppointmentsCard({ accent, fill, items, allowTests, onAdd, onDelete }: 
           <Text style={{ fontFamily: font.body700, fontSize: 9.5, letterSpacing: 0.6, color: accent }}>NEXT · {countdown}</Text>
           <Text style={{ fontFamily: font.display700, fontSize: 16, color: accent }}>{next.title}</Text>
           <Text style={{ fontFamily: font.body500, fontSize: 11.5, color: color.inkSecondary }}>{apptDateLabel(next.at)}</Text>
-          {nextWx ? <Text style={{ fontFamily: font.body500, fontSize: 11, color: color.inkSecondary }}>{nextWx.emoji} {nextWx.label}, {nextWx.tmax}° that day</Text> : null}
+          {nextWx ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+              <WeatherGlyph code={nextWx.code} size={15} />
+              <Text style={{ fontFamily: font.body500, fontSize: 11, color: color.inkSecondary }}>{wxLabel(nextWx.code)}, {nextWx.tMax}° that day</Text>
+            </View>
+          ) : null}
           {next.location ? (
             <Pressable onPress={() => openMaps(next)} accessibilityLabel="Open location in Maps" style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.65)', borderRadius: 10, padding: 9, marginTop: 6 }}>
               <Text style={{ fontSize: 15 }}>📍</Text>
