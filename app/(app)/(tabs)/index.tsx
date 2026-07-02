@@ -2039,6 +2039,7 @@ function CareCheckinCard() {
   const [sleep, setSleep] = useState<number | null>(todayCheckin?.sleepH ?? null);
   const [meals, setMeals] = useState<string[]>(todayCheckin?.meals ?? []);
   const [cityOpen, setCityOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   // last recorded weight (for a sensible starting point when logging today)
   const lastWeight = checkins.filter((c) => c.weightKg != null).sort((a, b) => ccMs(b.at) - ccMs(a.at))[0]?.weightKg ?? 65;
@@ -2092,12 +2093,10 @@ function CareCheckinCard() {
     </View>
   );
   const blockStyle = { backgroundColor: '#FAF3F6', borderRadius: radius.tile, padding: 12 } as const;
-  const metricRow = (emoji: string, name: string, sub: string | null, val: string, unit: string, status: string, statusOk: boolean, onDec: () => void, onInc: () => void) => (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 9 }}>
+  const metricRow = (emoji: string, name: string, val: string, unit: string, status: string, statusOk: boolean, onDec: () => void, onInc: () => void) => (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 9 }}>
       <Text style={{ fontSize: 16 }}>{emoji}</Text>
-      <View style={{ flex: 1, minWidth: 0 }}>
-        <Text style={{ fontFamily: font.body700, fontSize: 12, color: '#7d7a90' }}>{name}{sub ? <Text style={{ fontFamily: font.body500, color: color.faint }}>  {sub}</Text> : null}</Text>
-      </View>
+      <Text numberOfLines={1} style={{ flex: 1, minWidth: 0, fontFamily: font.body700, fontSize: 12, color: '#7d7a90' }}>{name}</Text>
       <Text style={{ fontFamily: font.display700, fontSize: 17, color: color.ink }}>{val}<Text style={{ fontFamily: font.body500, fontSize: 10, color: color.muted }}>{unit}</Text></Text>
       {status ? <View style={{ backgroundColor: statusOk ? '#E4F3EC' : '#FBE7D8', borderRadius: radius.pill, paddingVertical: 2, paddingHorizontal: 7 }}><Text style={{ fontFamily: font.body700, fontSize: 9, color: statusOk ? '#1E6C50' : '#B5662E' }}>{status}</Text></View> : null}
       <Stepper accent={roseInk} onDec={onDec} onInc={onInc} />
@@ -2143,7 +2142,7 @@ function CareCheckinCard() {
       {/* Weight */}
       {label('Weight')}
       <View style={blockStyle}>
-        {metricRow('⚖️', 'Weight', startKg != null && lastKg != null ? `· ${(lastKg - startKg >= 0 ? '+' : '')}${(lastKg - startKg).toFixed(1)} from ${startKg.toFixed(1)} start` : null, wVal.toFixed(1), 'kg', wStatus, wStatus === 'On track', () => setWeight(Math.round((wVal - 0.1) * 10) / 10), () => setWeight(Math.round((wVal + 0.1) * 10) / 10))}
+        {metricRow('⚖️', 'Weight', wVal.toFixed(1), 'kg', wStatus, wStatus === 'On track', () => setWeight(Math.round((wVal - 0.1) * 10) / 10), () => setWeight(Math.round((wVal + 0.1) * 10) / 10))}
         {wPts.length === 0 ? (
           <Text style={{ fontFamily: font.body400, fontSize: 11.5, color: color.muted, paddingVertical: 6 }}>Log your weight to see the trend.</Text>
         ) : (
@@ -2170,7 +2169,7 @@ function CareCheckinCard() {
       {/* Water */}
       {label('Water')}
       <View style={blockStyle}>
-        {metricRow('💧', 'Water', null, water.toFixed(1), 'L', water >= 2 ? 'Goal met' : 'Below 2L', water >= 2, () => setWater(Math.max(0, Math.round((water - 0.25) * 100) / 100)), () => setWater(Math.round((water + 0.25) * 100) / 100))}
+        {metricRow('💧', 'Water', water.toFixed(1), 'L', water >= 2 ? 'Goal met' : 'Below 2L', water >= 2, () => setWater(Math.max(0, Math.round((water - 0.25) * 100) / 100)), () => setWater(Math.round((water + 0.25) * 100) / 100))}
         <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 4, height: 42, position: 'relative' }}>
           <View style={{ position: 'absolute', left: 0, right: 0, top: `${(1 - 2 / wMax) * 100}%`, borderTopWidth: 1.5, borderColor: '#9AB0C9', borderStyle: 'dashed' }} />
           {waterVals.map((v, i) => <View key={i} style={{ flex: 1, height: `${Math.max(4, (v / wMax) * 100)}%`, borderRadius: 3, backgroundColor: '#7FB0D8' }} />)}
@@ -2181,7 +2180,7 @@ function CareCheckinCard() {
       {/* Sleep */}
       {label('Sleep')}
       <View style={blockStyle}>
-        {metricRow('😴', 'Sleep', null, sVal.toFixed(1), 'h', sVal >= 7 && sVal <= 9 ? 'Good' : sVal < 7 ? 'Low' : 'High', sVal >= 7 && sVal <= 9, () => setSleep(Math.max(0, Math.round((sVal - 0.5) * 10) / 10)), () => setSleep(Math.round((sVal + 0.5) * 10) / 10))}
+        {metricRow('😴', 'Sleep', sVal.toFixed(1), 'h', sVal >= 7 && sVal <= 9 ? 'Good' : sVal < 7 ? 'Low' : 'High', sVal >= 7 && sVal <= 9, () => setSleep(Math.max(0, Math.round((sVal - 0.5) * 10) / 10)), () => setSleep(Math.round((sVal + 0.5) * 10) / 10))}
         <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 4, height: 42, position: 'relative' }}>
           <View style={{ position: 'absolute', left: 0, right: 0, top: `${(1 - 9 / sMax) * 100}%`, height: `${((9 - 7) / sMax) * 100}%`, backgroundColor: '#DCEFE3', borderRadius: 2 }} />
           {sleepVals.map((v, i) => <View key={i} style={{ flex: 1, height: `${Math.max(4, (v / sMax) * 100)}%`, borderRadius: 3, backgroundColor: '#B8A6E0' }} />)}
@@ -2205,7 +2204,14 @@ function CareCheckinCard() {
 
       <Button label="Save today" onPress={save} tint={rose} style={{ marginTop: 16 }} />
 
-      <View style={{ height: 1, backgroundColor: color.hairline, marginTop: 16 }} />
+      {/* Expand / collapse — guidance & support hidden by default */}
+      <Pressable onPress={() => setExpanded((v) => !v)} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 12, marginTop: 4 }}>
+        <Text style={{ fontFamily: font.body700, fontSize: 12, color: roseInk }}>{expanded ? 'Show less' : 'Guidance & support'}</Text>
+        <Text style={{ fontFamily: font.body700, fontSize: 11, color: roseInk }}>{expanded ? '▴' : '▾'}</Text>
+      </Pressable>
+
+      {expanded && (<>
+      <View style={{ height: 1, backgroundColor: color.hairline }} />
 
       {/* What to expect this week */}
       {week != null && (() => {
@@ -2275,6 +2281,7 @@ function CareCheckinCard() {
           </Pressable>
         ))}
       </View>
+      </>)}
 
       <CityPickerModal visible={cityOpen} wx={wx} onClose={() => setCityOpen(false)} />
     </View>
