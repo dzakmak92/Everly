@@ -207,26 +207,27 @@ export default function Today() {
     <View style={{ flex: 1, backgroundColor: color.canvas }}>
       {/* Fixed header — the rail runs from just beneath this down to the bottom */}
       <View style={{ paddingTop: insets.top + 14, paddingHorizontal: 20, gap: 8 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: 2 }}>
-          <Logo width={22} height={26} />
-          <Text style={{ fontFamily: font.display700, fontSize: 19, color: color.ink }}>Everly</Text>
-        </View>
         {onOverview ? (
-          // Family overview is the home — a light greeting reads as the page title.
-          <Text style={{ fontFamily: font.display700, fontSize: 20, color: color.ink, paddingHorizontal: 2, marginTop: 2 }}>{greeting()}, {name}</Text>
+          // Family overview is the home — the app logo + a light greeting.
+          <>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: 2 }}>
+              <Logo width={22} height={26} />
+              <Text style={{ fontFamily: font.display700, fontSize: 19, color: color.ink }}>Everly</Text>
+            </View>
+            <Text style={{ fontFamily: font.display700, fontSize: 20, color: color.ink, paddingHorizontal: 2, marginTop: 2 }}>{greeting()}, {name}</Text>
+          </>
         ) : (
+          // Inside a module the module's own title replaces the app logo/title.
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 2 }}>
             {multiModule && (
               <Pressable onPress={goOverview} hitSlop={8} accessibilityLabel="Back to family overview" style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 2, opacity: pressed ? 0.6 : 1 })}>
-                <ChevronLeft size={16} color={color.primary} />
-                <Text style={{ fontFamily: font.body700, fontSize: 12.5, color: color.primary }}>Family</Text>
+                <ChevronLeft size={18} color={color.primary} />
+                <Text style={{ fontFamily: font.body700, fontSize: 13, color: color.primary }}>Family</Text>
               </Pressable>
             )}
-            {showDock && (
-              <Text style={{ fontFamily: font.body600, fontSize: 13, color: color.muted }}>
-                {multiModule ? '· ' : ''}{activeCat ? catLabel : isYou ? `Mum&Me · ${youStatusLabel(dueDate, maternalBirth)}` : (activeChild ? `${activeChild.name}${activeChild.birthDate ? ` · ${ageLabel(activeChild.birthDate)}` : ''}` : '')}
-              </Text>
-            )}
+            <Text style={{ flex: 1, fontFamily: font.display700, fontSize: 20, color: color.ink }} numberOfLines={1}>
+              {activeCat ? catLabel : isYou ? `Mum&Me · ${youStatusLabel(dueDate, maternalBirth)}` : (activeChild ? `${activeChild.name}${activeChild.birthDate ? ` · ${ageLabel(activeChild.birthDate)}` : ''}` : '')}
+            </Text>
           </View>
         )}
       </View>
