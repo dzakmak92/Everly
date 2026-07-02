@@ -1675,15 +1675,26 @@ function LabourPanel() {
             </View>
             <Text style={{ fontFamily: font.body600, fontSize: 12.5, color: color.muted }}>{kicks} of {KICK_TARGET} · {startedAt ? labFmt(elapsed) : 'not started'}</Text>
           </View>
-          <Button label={kicks > 0 ? 'Save & reset' : 'Reset'} variant="secondary" onPress={resetKicks} />
-          {kickSessions.length > 0 && (
+          {kickSessions.length > 0 ? (
             <View style={{ gap: 8 }}>
-              <Pressable onPress={() => setShowKickHist((v) => !v)} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <View style={{ flex: 1 }}><PanelLabel>Recent sessions · {kickSessions.length}</PanelLabel></View>
-                <Text style={{ fontFamily: font.body700, fontSize: 13, color: color.faint }}>{showKickHist ? '▾' : '▸'}</Text>
-              </Pressable>
+              {/* Reset + Recent share one split bar to save vertical space */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderColor: color.hairline, borderRadius: radius.tile, overflow: 'hidden' }}>
+                <Pressable onPress={resetKicks} style={({ pressed }) => [{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 13, opacity: pressed ? 0.7 : 1 }]}>
+                  <Text style={{ fontFamily: font.body700, fontSize: 13, color: color.primary }}>{kicks > 0 ? 'Save & reset' : 'Reset'}</Text>
+                </Pressable>
+                <View style={{ width: 1.5, alignSelf: 'stretch', backgroundColor: color.hairline }} />
+                <Pressable onPress={() => setShowKickHist((v) => !v)} style={({ pressed }) => [{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingVertical: 13, opacity: pressed ? 0.7 : 1 }]}>
+                  <Text style={{ fontFamily: font.body700, fontSize: 13, color: color.muted }}>Recent</Text>
+                  <View style={{ backgroundColor: color.canvas, borderRadius: radius.pill, paddingVertical: 2, paddingHorizontal: 7 }}>
+                    <Text style={{ fontFamily: font.body700, fontSize: 10.5, color: color.primary }}>{kickSessions.length}</Text>
+                  </View>
+                  <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.faint }}>{showKickHist ? '▾' : '▸'}</Text>
+                </Pressable>
+              </View>
               {showKickHist && kickSessions.slice(0, 4).map((s) => <PanelRow key={s.id} title={`${s.count} ${s.count === 1 ? 'movement' : 'movements'}${s.durationMin != null ? ` · ${s.durationMin}m` : ''}`} sub={dayTimeOf(s.at)} onDelete={() => deleteKickSession(s.id)} />)}
             </View>
+          ) : (
+            <Button label={kicks > 0 ? 'Save & reset' : 'Reset'} variant="secondary" onPress={resetKicks} />
           )}
         </>
       ) : (
