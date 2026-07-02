@@ -2078,15 +2078,16 @@ function CareCheckinCard() {
   const paceOk = pace == null ? true : pace >= 0.2 && pace <= 0.7;
   const projected = lastGain == null ? null : pace != null ? lastGain + pace * Math.max(0, 40 - curWeek) : lastGain;
   // chart geometry — plot gain (kg above start) across weeks
-  const WW = 300, WH = 138, wpad = 14, xL = 22;
+  const WW = 300, WH = 150, wpad = 14, xL = 22, plotBot = 120;
   const axMinWk = Math.max(0, Math.floor(Math.min(curWeek, gainPts[0]?.wk ?? curWeek)));
   const axMaxWk = 40;
   const corWks = Array.from({ length: 9 }, (_, i) => axMinWk + (i / 8) * (axMaxWk - axMinWk));
   const corridor = corWks.map((wk) => ({ wk, ...recommendedGain(wk, goal) }));
+  const weekTicks = (() => { const t: number[] = []; for (let w = Math.ceil(axMinWk / 2) * 2; w <= 40; w += 2) t.push(w); return t; })();
   const gAll = [0, ...gainPts.map((p) => p.gain), ...(projected != null ? [projected] : []), ...corridor.flatMap((c) => [c.lo, c.hi])];
   const gMin = Math.min(...gAll) - 0.8, gMax = Math.max(...gAll) + 0.8;
   const gx = (wk: number) => xL + ((wk - axMinWk) / ((axMaxWk - axMinWk) || 1)) * (WW - xL - 8);
-  const gy = (v: number) => wpad + (1 - (v - gMin) / ((gMax - gMin) || 1)) * (WH - 2 * wpad - 14);
+  const gy = (v: number) => wpad + (1 - (v - gMin) / ((gMax - gMin) || 1)) * (plotBot - wpad);
   const wStatusOk = wStatus === 'On track';
 
   /* ── water & sleep (last 7 days from check-ins) ── */
@@ -2160,31 +2161,33 @@ function CareCheckinCard() {
       {/* Weight */}
       {label('Weight')}
       <View style={blockStyle}>
-        {metricRow('⚖️', 'Log today', wVal.toFixed(1), 'kg', wStatus, wStatusOk, () => setWeight(Math.round((wVal - 0.1) * 10) / 10), () => setWeight(Math.round((wVal + 0.1) * 10) / 10))}
+        {/* Title row — current weight (log today via steppers) */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
+          <Text style={{ fontSize: 18 }}>⚖️</Text>
+          <Text style={{ fontFamily: font.display700, fontSize: 25, color: color.ink, lineHeight: 27 }}>{wVal.toFixed(1)}<Text style={{ fontFamily: font.body500, fontSize: 13, color: color.muted }}> kg</Text></Text>
+          {wStatus ? <View style={{ backgroundColor: wStatusOk ? '#E4F3EC' : '#FBE7D8', borderRadius: radius.pill, paddingVertical: 3, paddingHorizontal: 9 }}><Text style={{ fontFamily: font.body700, fontSize: 10, color: wStatusOk ? '#1E6C50' : '#B5662E' }}>{wStatus}</Text></View> : null}
+          <View style={{ marginLeft: 'auto' }}><Stepper accent={roseInk} onDec={() => setWeight(Math.round((wVal - 0.1) * 10) / 10)} onInc={() => setWeight(Math.round((wVal + 0.1) * 10) / 10)} /></View>
+        </View>
 
         {gainPts.length >= 1 && lastGain != null && startKg != null ? (
           <>
-            {/* gain headline */}
-            <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 4, marginBottom: 6 }}>
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={{ fontFamily: font.display700, fontSize: 26, color: roseInk, lineHeight: 28 }}>{lastGain >= 0 ? '+' : ''}{lastGain.toFixed(1)}<Text style={{ fontFamily: font.body500, fontSize: 13, color: color.muted }}> kg gained</Text></Text>
-                <Text style={{ fontFamily: font.body400, fontSize: 10.5, color: color.muted, marginTop: 2 }}>since {startKg.toFixed(1)} kg start · goal {goal.lo}–{goal.hi} kg by birth</Text>
-              </View>
-              {wStatus ? <View style={{ backgroundColor: wStatusOk ? '#E4F3EC' : '#FBE7D8', borderRadius: radius.pill, paddingVertical: 3, paddingHorizontal: 9 }}><Text style={{ fontFamily: font.body700, fontSize: 10, color: wStatusOk ? '#1E6C50' : '#B5662E' }}>{wStatus}</Text></View> : null}
-            </View>
+            <Text style={{ fontFamily: font.body400, fontSize: 10.5, color: color.muted, marginTop: 6, marginBottom: 4, paddingHorizontal: 2 }}>since {startKg.toFixed(1)} kg start · <Text style={{ fontFamily: font.body700, color: roseInk }}>{lastGain >= 0 ? '+' : ''}{lastGain.toFixed(1)} kg gained</Text> · goal {goal.lo}–{goal.hi} kg by birth</Text>
 
             {/* cumulative-gain corridor chart */}
-            <Svg width="100%" height={116} viewBox={`0 0 ${WW} ${WH}`}>
+            <Svg width="100%" height={128} viewBox={`0 0 ${WW} ${WH}`}>
+              {weekTicks.map((w, i) => <SvgLine key={`g${i}`} x1={gx(w)} y1={16} x2={gx(w)} y2={plotBot} stroke="#EBDCE4" strokeWidth={1} />)}
               <SvgLine x1={xL} y1={gy(0)} x2={WW - 8} y2={gy(0)} stroke="#D8C6D1" strokeWidth={1} strokeDasharray="3 3" />
               <SvgText x={xL - 3} y={gy(0) + 3} fontSize={7.5} fill="#b6acb4" textAnchor="end">0</SvgText>
               <Polygon points={[...corridor.map((c) => `${gx(c.wk)},${gy(c.hi)}`), ...corridor.map((c) => `${gx(c.wk)},${gy(c.lo)}`).reverse()].join(' ')} fill="#DCEFE3" />
+              <SvgLine x1={gx(curWeek)} y1={16} x2={gx(curWeek)} y2={plotBot} stroke={rose} strokeWidth={1.4} strokeDasharray="3 3" opacity={0.55} />
               {projected != null && <SvgLine x1={gx(curWeek)} y1={gy(lastGain)} x2={gx(40)} y2={gy(projected)} stroke={rose} strokeWidth={2} strokeDasharray="4 4" opacity={0.45} />}
               {gainPts.length > 1 && <Polyline points={gainPts.map((p) => `${gx(p.wk)},${gy(p.gain)}`).join(' ')} fill="none" stroke={rose} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" />}
               {gainPts.map((p, i) => { const r = recommendedGain(p.wk, goal); const bad = p.gain > r.hi + 0.4 || p.gain < r.lo - 0.4; return bad ? <Circle key={i} cx={gx(p.wk)} cy={gy(p.gain)} r={3.5} fill="#D8505A" stroke="#fff" strokeWidth={1.5} /> : null; })}
               <Circle cx={gx(curWeek)} cy={gy(lastGain)} r={4.5} fill={rose} stroke="#fff" strokeWidth={2} />
               {projected != null && <Circle cx={gx(40)} cy={gy(projected)} r={4} fill="#fff" stroke={rose} strokeWidth={2} />}
               {projected != null && <SvgText x={gx(40)} y={gy(projected) - 6} fontSize={7.5} fill={roseInk} textAnchor="end" fontWeight="700">≈{projected >= 0 ? '+' : ''}{projected.toFixed(0)} by 40w</SvgText>}
-              {[axMinWk, Math.round((axMinWk + 40) / 2), 40].map((w, i) => <SvgText key={i} x={gx(w)} y={WH - 3} fontSize={7.5} fill="#b6acb4" textAnchor="middle">{w === 40 ? '40w' : Math.round(w)}</SvgText>)}
+              {weekTicks.map((w, i) => <SvgText key={`t${i}`} x={gx(w)} y={WH - 16} fontSize={9.5} fill="#7d6a74" textAnchor="middle" fontWeight="700">{w}</SvgText>)}
+              <SvgText x={gx((axMinWk + 40) / 2)} y={WH - 3} fontSize={8} fill="#b0a6ae" textAnchor="middle" fontWeight="700">weeks</SvgText>
             </Svg>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 4 }}>
               <ChartKey sw={rose} t="Your gain" />
