@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { ScrollView, View, Text, Pressable, Modal, ActivityIndicator } from 'react-native';
+import { ScrollView, View, Text, Pressable, Modal, ActivityIndicator, Linking } from 'react-native';
 import Svg, { Circle, Line, Text as SvgText } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { color, font, radius, shadow, fill } from '../../../src/theme/tokens';
+import { color, font, radius, shadow, fill, childToken } from '../../../src/theme/tokens';
 import { ChevronLeft, ChevronRight, Calendar, Shield, Activity, Heart, X, Search, BabyBean } from '../../../src/components/icons';
 import { Button, Field } from '../../../src/components/forms';
 import { useData, ENTRY_META, entryDetail, EntryKind, EventItem, Entry } from '../../../src/lib/store';
@@ -19,8 +19,11 @@ type ViewMode = (typeof VIEWS)[number];
 const EVENT_COLOR = color.primary; // periwinkle/lilac for scheduled events
 const ENTRY_COLOR = '#3FA98A'; // mint for logged entries
 const APPT_COLOR = '#B04070'; // rose for pregnancy / Mum&Me appointments
+/** Readable ink per child colour (matches the module accents). */
+const CHILD_INK: Record<string, string> = { lilac: '#54579E', sky: '#2C5F90', mint: '#22806C', blush: '#B04070', peach: '#B5662E', butter: '#8A6A1E', sage: '#567F39' };
 
-type Appt = { id: string; title: string; at: string; source: 'Pregnancy' | 'Mum&Me' };
+type Appt = { id: string; title: string; at: string; source: 'preg' | 'mat'; location?: string; kind?: string; result?: string; prep?: string };
+type Owner = { key: string; label: string; dot: string; fill: string; ink: string };
 
 const key = (y: number, m: number, d: number) => `${y}-${m}-${d}`;
 const timeOf = (iso: string) => new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
@@ -47,14 +50,32 @@ function entryTile(kind: EntryKind): { bg: string; stroke: string; Icon: typeof 
 
 export default function CalendarTab() {
   const insets = useSafeAreaInsets();
-  const { entries, events, addEvent, deleteEvent, activeChild, pregAppts, matAppts } = useData();
+  const {
+    entries, events, addEvent, updateEvent, deleteEvent, activeChild, children,
+    pregAppts, updatePregAppt, deletePregAppt, matAppts, updateMatAppt, deleteMatAppt,
+    dueDate, maternalBirth,
+  } = useData();
   const wx = useWeather();
 
-  // Pregnancy + Mum&Me appointments shown read-only alongside calendar events.
+  // Pregnancy + Mum&Me appointments, unified for the calendar.
   const appts: Appt[] = [
-    ...pregAppts.map((a) => ({ id: a.id, title: a.title, at: a.at, source: 'Pregnancy' as const })),
-    ...matAppts.map((a) => ({ id: a.id, title: a.title, at: a.at, source: 'Mum&Me' as const })),
+    ...pregAppts.map((a) => ({ id: a.id, title: a.title, at: a.at, source: 'preg' as const, location: a.location, kind: a.kind, result: a.result })),
+    ...matAppts.map((a) => ({ id: a.id, title: a.title, at: a.at, source: 'mat' as const, location: undefined, kind: a.kind, prep: a.prep })),
   ];
+
+  // Colour-coded owners: Mum&Me (pink) + each child (their colour) + Family.
+  const hasMumme = !!(dueDate || maternalBirth || pregAppts.length || matAppts.length);
+  const owners: Owner[] = [
+    ...(hasMumme ? [{ key: 'mumme', label: 'Mum&Me', dot: APPT_COLOR, fill: '#FBE0EA', ink: '#B04070' }] : []),
+    ...children.map((c) => ({ key: c.id, label: c.name, dot: childToken[c.color].stroke, fill: childToken[c.color].fill, ink: CHILD_INK[c.color] ?? color.primary })),
+    ...(events.some((e) => !e.childId) ? [{ key: 'family', label: 'Family', dot: EVENT_COLOR, fill: fill.lilac, ink: color.primary }] : []),
+  ];
+  const ownerOf = (childId?: string) => (childId ? childId : 'family');
+  const ownerMeta = (k: string) => owners.find((o) => o.key === k);
+  const [hidden, setHidden] = useState<Set<string>>(new Set());
+  const shown = (k: string) => !hidden.has(k);
+  const toggleOwner = (k: string) => setHidden((h) => { const n = new Set(h); n.has(k) ? n.delete(k) : n.add(k); return n; });
+  const [editId, setEditId] = useState<string | null>(null);
 
   const now = new Date();
   const [view, setView] = useState({ y: now.getFullYear(), m: now.getMonth() });
@@ -67,9 +88,10 @@ export default function CalendarTab() {
   const [tlLayout, setTlLayout] = useState<'ribbon' | 'clock'>('ribbon');
 
   const selKey = key(sel.y, sel.m, sel.d);
-  const entryDays = new Set(entries.map((e) => dkey(e.at)));
-  const eventDays = new Set(events.map((e) => dkey(e.at)));
-  const apptDays = new Set(appts.map((a) => dkey(a.at)));
+  // Day-membership sets, filtered by the module selector.
+  const entryDays = new Set(entries.filter((e) => shown(ownerOf(e.childId))).map((e) => dkey(e.at)));
+  const eventDays = new Set(events.filter((e) => shown(ownerOf(e.childId))).map((e) => dkey(e.at)));
+  const apptDays = new Set(shown('mumme') ? appts.map((a) => dkey(a.at)) : []);
 
   const firstWeekday = monIndex(new Date(view.y, view.m, 1).getDay());
   const daysInMonth = new Date(view.y, view.m + 1, 0).getDate();
@@ -81,9 +103,9 @@ export default function CalendarTab() {
   const todayKey = key(now.getFullYear(), now.getMonth(), now.getDate());
   const selIsToday = selKey === todayKey;
 
-  const selEvents = events.filter((e) => dkey(e.at) === selKey);
-  const selEntries = entries.filter((e) => dkey(e.at) === selKey);
-  const selAppts = appts.filter((a) => dkey(a.at) === selKey);
+  const selEvents = events.filter((e) => dkey(e.at) === selKey && shown(ownerOf(e.childId)));
+  const selEntries = entries.filter((e) => dkey(e.at) === selKey && shown(ownerOf(e.childId)));
+  const selAppts = appts.filter((a) => dkey(a.at) === selKey && shown('mumme'));
 
   // Timed items (events + appointments) for the day-timeline overview.
   const dayItems: TlItem[] = [
@@ -93,7 +115,7 @@ export default function CalendarTab() {
 
   // Agenda mode: upcoming events in the viewed month (and beyond), sorted ascending.
   const agendaEvents = [...events]
-    .filter((e) => new Date(e.at) >= new Date(now.getFullYear(), now.getMonth(), now.getDate()))
+    .filter((e) => new Date(e.at) >= new Date(now.getFullYear(), now.getMonth(), now.getDate()) && shown(ownerOf(e.childId)))
     .sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
 
   function shift(delta: number) {
@@ -191,6 +213,26 @@ export default function CalendarTab() {
         )}
       </View>
 
+      {/* Module selector pills — between the calendar and the selected-day section */}
+      {owners.length > 1 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingHorizontal: 2 }}>
+          <Pressable onPress={() => setHidden(new Set())} style={[{ borderRadius: radius.pill, paddingVertical: 7, paddingHorizontal: 14, backgroundColor: hidden.size === 0 ? color.primary : '#fff' }, shadow.card]}>
+            <Text style={{ fontFamily: font.body700, fontSize: 11.5, color: hidden.size === 0 ? '#fff' : color.muted }}>All</Text>
+          </Pressable>
+          {owners.map((o) => {
+            const on = shown(o.key);
+            return (
+              <Pressable key={o.key} onPress={() => toggleOwner(o.key)} style={[{ flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: radius.pill, paddingVertical: 7, paddingLeft: 7, paddingRight: 13, backgroundColor: on ? o.dot : '#fff' }, shadow.card]}>
+                <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: on ? 'rgba(255,255,255,0.28)' : o.fill, alignItems: 'center', justifyContent: 'center' }}>
+                  <Text style={{ fontFamily: font.display700, fontSize: 10, color: on ? '#fff' : o.ink }}>{o.key === 'mumme' ? '♥' : o.label.charAt(0).toUpperCase()}</Text>
+                </View>
+                <Text style={{ fontFamily: font.body700, fontSize: 11.5, color: on ? '#fff' : color.muted }}>{o.label}</Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      )}
+
       {/* Selected-day header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4 }}>
         <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 1.1, textTransform: 'uppercase', color: color.muted }}>
@@ -224,17 +266,29 @@ export default function CalendarTab() {
         </View>
       )}
 
-      {/* Events */}
-      {selEvents.map((ev) => (
-        <EventCard key={ev.id} ev={ev} onDelete={() => deleteEvent(ev.id)} />
-      ))}
+      {/* Events (colour-coded per child, editable) */}
+      {selEvents.map((ev) => {
+        const o = ownerMeta(ownerOf(ev.childId));
+        return editId === ev.id
+          ? <ScheduleEditForm key={ev.id} owner={o} title={ev.title} at={ev.at} location={ev.location}
+              onCancel={() => setEditId(null)}
+              onDelete={() => { deleteEvent(ev.id); setEditId(null); }}
+              onSave={(p) => { updateEvent(ev.id, p); setEditId(null); }} />
+          : <ScheduleRow key={ev.id} owner={o} title={ev.title} at={ev.at} location={ev.location} onEdit={() => setEditId(ev.id)} />;
+      })}
 
-      {/* Pregnancy / Mum&Me appointments (read-only here) */}
-      {selAppts.map((a) => (
-        <ApptCard key={a.id} appt={a} />
-      ))}
+      {/* Mum&Me appointments (editable) */}
+      {selAppts.map((a) => {
+        const o = ownerMeta('mumme');
+        return editId === a.id
+          ? <ScheduleEditForm key={a.id} owner={o} title={a.title} at={a.at} location={a.location} sublabel="Mum&Me"
+              onCancel={() => setEditId(null)}
+              onDelete={() => { a.source === 'preg' ? deletePregAppt(a.id) : deleteMatAppt(a.id); setEditId(null); }}
+              onSave={(p) => { a.source === 'preg' ? updatePregAppt(a.id, { title: p.title, at: p.at, location: p.location }) : updateMatAppt(a.id, { title: p.title, at: p.at }); setEditId(null); }} />
+          : <ScheduleRow key={a.id} owner={o} title={a.title} at={a.at} location={a.location} sublabel="Mum&Me" onEdit={() => setEditId(a.id)} />;
+      })}
 
-      {/* Logged entries */}
+      {/* Logged entries (read-only) */}
       {selEntries.map((e) => (
         <EntryCard key={e.id} entry={e} />
       ))}
@@ -317,9 +371,9 @@ function ClockTimeline({ items }: { items: TlItem[] }) {
           const a = angle(h);
           return <Line key={h} x1={cx + (R - 8) * Math.cos(a)} y1={cy + (R - 8) * Math.sin(a)} x2={cx + (R + 8) * Math.cos(a)} y2={cy + (R + 8) * Math.sin(a)} stroke={color.faint} strokeWidth={2} />;
         })}
-        {[0, 6, 12, 18].map((h) => {
+        {([[0, '12'], [6, '3'], [12, '6'], [18, '9']] as const).map(([h, label]) => {
           const a = angle(h);
-          return <SvgText key={h} x={cx + (R - 22) * Math.cos(a)} y={cy + (R - 22) * Math.sin(a) + 4} fontSize={10} fill={color.muted} textAnchor="middle">{h === 0 ? '24' : String(h)}</SvgText>;
+          return <SvgText key={h} x={cx + (R - 22) * Math.cos(a)} y={cy + (R - 22) * Math.sin(a) + 4} fontSize={10} fill={color.muted} textAnchor="middle">{label}</SvgText>;
         })}
         <SvgText x={cx} y={cy - 1} fontSize={26} fontWeight="700" fill={color.ink} textAnchor="middle">{String(items.length)}</SvgText>
         <SvgText x={cx} y={cy + 16} fontSize={11} fill={color.muted} textAnchor="middle">{items.length === 1 ? 'event' : 'events'}</SvgText>
@@ -605,38 +659,52 @@ function AgendaList({ events, onSelect }: { events: EventItem[]; onSelect: (e: E
 
 /* ── selected-day cards ─────────────────────────────────────────────────── */
 
-function EventCard({ ev, onDelete }: { ev: EventItem; onDelete: () => void }) {
-  const sub = [timeOf(ev.at), ev.location].filter(Boolean).join(' · ');
+const openInMaps = (loc?: string) => { if (loc) Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc)}`); };
+
+/** An owner-coloured schedule row with an Edit affordance. */
+function ScheduleRow({ owner, title, at, location, sublabel, onEdit }: { owner?: Owner; title: string; at: string; location?: string; sublabel?: string; onEdit: () => void }) {
+  const c = owner?.dot ?? EVENT_COLOR; const f = owner?.fill ?? fill.lilac; const ink = owner?.ink ?? color.primary;
   return (
-    <View style={[{ backgroundColor: '#fff', borderRadius: radius.cardSm, paddingVertical: 14, paddingHorizontal: 16, flexDirection: 'row', gap: 12, alignItems: 'center' }, shadow.card]}>
-      <View style={{ width: 40, height: 40, backgroundColor: fill.lilac, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}>
-        <Calendar size={18} color={EVENT_COLOR} />
+    <View style={[{ backgroundColor: '#fff', borderRadius: radius.cardSm, paddingVertical: 12, paddingHorizontal: 14, flexDirection: 'row', gap: 11, alignItems: 'center', overflow: 'hidden' }, shadow.card]}>
+      <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, backgroundColor: c }} />
+      <View style={{ width: 36, height: 36, backgroundColor: f, borderRadius: 11, alignItems: 'center', justifyContent: 'center', marginLeft: 3 }}>
+        <Text style={{ fontFamily: font.display700, fontSize: 14, color: ink }}>{owner?.key === 'mumme' ? '♥' : (owner?.label ?? '?').charAt(0).toUpperCase()}</Text>
       </View>
-      <View style={{ flex: 1 }}>
-        <Text style={{ fontFamily: font.body700, fontSize: 14, color: color.ink, marginBottom: 3 }}>{ev.title}</Text>
-        {sub ? <Text style={{ fontFamily: font.body400, fontSize: 12, color: color.muted }}>{sub}</Text> : null}
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text style={{ fontFamily: font.body700, fontSize: 13.5, color: color.ink }}>{title}</Text>
+        <Text style={{ fontFamily: font.body400, fontSize: 11.5, color: color.muted, marginTop: 2 }}>
+          {timeOf(at)}{sublabel ? ` · ${sublabel}` : ''}{location ? ' · ' : ''}
+          {location ? <Text onPress={() => openInMaps(location)} style={{ fontFamily: font.body700, color: ink }}>📍 {location} ›</Text> : null}
+        </Text>
       </View>
-      <View style={{ width: 8, height: 8, backgroundColor: EVENT_COLOR, borderRadius: 4 }} />
-      <Pressable onPress={onDelete} hitSlop={8} style={{ paddingLeft: 8 }}>
-        <X size={16} color={color.faint} />
-      </Pressable>
+      <Pressable onPress={onEdit} hitSlop={8}><Text style={{ fontFamily: font.body700, fontSize: 12, color: color.primary }}>Edit</Text></Pressable>
     </View>
   );
 }
 
-function ApptCard({ appt }: { appt: Appt }) {
-  const tint = appt.source === 'Pregnancy' ? '#E7E4FB' : '#FBE0EA';
-  const Icon = appt.source === 'Pregnancy' ? BabyBean : Heart;
+/** Inline edit form for a schedule row (title / time / location + delete). */
+function ScheduleEditForm({ owner, title, at, location, sublabel, onSave, onCancel, onDelete }: { owner?: Owner; title: string; at: string; location?: string; sublabel?: string; onSave: (p: { title: string; at: string; location?: string }) => void; onCancel: () => void; onDelete: () => void }) {
+  const d0 = new Date(at);
+  const [t, setT] = useState(title);
+  const [tm, setTm] = useState(`${String(d0.getHours()).padStart(2, '0')}:${String(d0.getMinutes()).padStart(2, '0')}`);
+  const [loc, setLoc] = useState(location ?? '');
+  const save = () => {
+    if (!t.trim()) return;
+    const [hh, mm] = tm.split(':').map((x) => parseInt(x, 10));
+    const at2 = new Date(d0.getFullYear(), d0.getMonth(), d0.getDate(), isNaN(hh) ? 9 : hh, isNaN(mm) ? 0 : mm).toISOString();
+    onSave({ title: t, at: at2, location: loc.trim() || undefined });
+  };
   return (
-    <View style={[{ backgroundColor: '#fff', borderRadius: radius.cardSm, paddingVertical: 14, paddingHorizontal: 16, flexDirection: 'row', gap: 12, alignItems: 'center' }, shadow.card]}>
-      <View style={{ width: 40, height: 40, backgroundColor: tint, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}>
-        <Icon size={18} color={APPT_COLOR} />
+    <View style={[{ backgroundColor: color.canvas, borderRadius: radius.card, padding: 14, gap: 9, borderWidth: 1.5, borderColor: owner?.dot ?? color.primary }]}>
+      <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 0.5, textTransform: 'uppercase', color: owner?.ink ?? color.primary }}>Edit · {sublabel ?? owner?.label ?? 'event'}</Text>
+      <Field label="Title" value={t} onChangeText={setT} autoCapitalize="sentences" />
+      <Field label="Time (HH:MM)" value={tm} onChangeText={setTm} placeholder="09:00" />
+      <Field label="Location (optional)" value={loc} onChangeText={setLoc} placeholder="e.g. City Hospital" autoCapitalize="sentences" />
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        <Pressable onPress={onDelete} style={{ backgroundColor: '#FCE8EC', borderRadius: radius.tile, paddingVertical: 12, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontFamily: font.body700, fontSize: 13, color: '#C0405F' }}>Delete</Text></Pressable>
+        <Button label="Cancel" variant="secondary" onPress={onCancel} style={{ flex: 1 }} />
+        <Button label="Save" onPress={save} style={{ flex: 1 }} />
       </View>
-      <View style={{ flex: 1 }}>
-        <Text style={{ fontFamily: font.body700, fontSize: 14, color: color.ink, marginBottom: 3 }}>{appt.title}</Text>
-        <Text style={{ fontFamily: font.body400, fontSize: 12, color: color.muted }}>{appt.source} · {timeOf(appt.at)}</Text>
-      </View>
-      <View style={{ width: 8, height: 8, backgroundColor: APPT_COLOR, borderRadius: 4 }} />
     </View>
   );
 }

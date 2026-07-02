@@ -52,9 +52,9 @@ function ClockTimeline({ items }: { items: TlItem[] }) {
           const a = angle(h);
           return <Line key={h} x1={cx + (R - 8) * Math.cos(a)} y1={cy + (R - 8) * Math.sin(a)} x2={cx + (R + 8) * Math.cos(a)} y2={cy + (R + 8) * Math.sin(a)} stroke={color.faint} strokeWidth={2} />;
         })}
-        {[0, 6, 12, 18].map((h) => {
+        {([[0, '12'], [6, '3'], [12, '6'], [18, '9']] as const).map(([h, label]) => {
           const a = angle(h);
-          return <SvgText key={h} x={cx + (R - 22) * Math.cos(a)} y={cy + (R - 22) * Math.sin(a) + 4} fontSize={10} fill={color.muted} textAnchor="middle">{h === 0 ? '24' : String(h)}</SvgText>;
+          return <SvgText key={h} x={cx + (R - 22) * Math.cos(a)} y={cy + (R - 22) * Math.sin(a) + 4} fontSize={10} fill={color.muted} textAnchor="middle">{label}</SvgText>;
         })}
         <SvgText x={cx} y={cy - 1} fontSize={26} fontWeight="700" fill={color.ink} textAnchor="middle">{String(items.length)}</SvgText>
         <SvgText x={cx} y={cy + 16} fontSize={11} fill={color.muted} textAnchor="middle">{items.length === 1 ? 'entry' : 'entries'}</SvgText>

@@ -1613,14 +1613,16 @@ const apptDayKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).p
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const WD_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-function AppointmentsCard({ accent, fill, items, allowTests, onAdd, onDelete }: {
+function AppointmentsCard({ accent, fill, items, allowTests, onAdd, onEdit, onDelete }: {
   accent: string; fill: string; items: ApptItem[]; allowTests?: boolean;
   onAdd: (i: { title: string; at: string; location?: string; kind?: 'appointment' | 'test'; result?: string }) => void;
+  onEdit?: (id: string, patch: { title: string; at: string; location?: string; kind?: 'appointment' | 'test'; result?: string }) => void;
   onDelete: (id: string) => void;
 }) {
   const wx = useWeather();
   const [expanded, setExpanded] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
   const [kind, setKind] = useState<'appointment' | 'test'>('appointment');
   const [title, setTitle] = useState('');
   const [date, setDate] = useState(todayISO());
@@ -1645,10 +1647,18 @@ function AppointmentsCard({ accent, fill, items, allowTests, onAdd, onDelete }: 
   const countdown = daysToGo == null ? '' : daysToGo <= 0 ? 'today' : daysToGo === 1 ? 'tomorrow' : `in ${daysToGo} days`;
   const nextWx = next ? wxOf(new Date(next.at)) : null;
 
+  const resetForm = () => { setTitle(''); setLocation(''); setResult(''); setKind('appointment'); setTime('09:00'); setDate(todayISO()); setAddOpen(false); setEditId(null); };
   const submit = () => {
     if (!title.trim()) return;
-    onAdd({ title, at: `${date}T${(time.trim() || '09:00')}:00`, location: location.trim() || undefined, kind: allowTests ? kind : undefined, result: allowTests && kind === 'test' ? result : undefined });
-    setTitle(''); setLocation(''); setResult(''); setAddOpen(false);
+    const payload = { title, at: `${date}T${(time.trim() || '09:00')}:00`, location: location.trim() || undefined, kind: allowTests ? kind : undefined, result: allowTests && kind === 'test' ? result : undefined };
+    if (editId && onEdit) onEdit(editId, payload); else onAdd(payload);
+    resetForm();
+  };
+  const startEdit = (a: ApptItem) => {
+    const d = new Date(a.at);
+    setEditId(a.id); setTitle(a.title); setDate(apptDayKey(d));
+    setTime(`${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`);
+    setLocation(a.location ?? ''); setKind(a.kind ?? 'appointment'); setResult(a.result ?? ''); setAddOpen(true);
   };
 
   // collapsed: the next 7 days
@@ -1759,15 +1769,17 @@ function AppointmentsCard({ accent, fill, items, allowTests, onAdd, onDelete }: 
                 <Text style={{ fontFamily: font.body400, fontSize: 10.5, color: color.muted }}>{timeLabel(a.at)}{a.location ? ` · ${a.location}` : ''}{a.result ? ` · ${a.result}` : ''}</Text>
               </View>
               {a.location ? <Pressable onPress={() => openMaps(a)} hitSlop={6}><Text style={{ fontSize: 14 }}>📍</Text></Pressable> : null}
+              {onEdit ? <Pressable onPress={() => startEdit(a)} hitSlop={8}><Text style={{ fontFamily: font.body700, fontSize: 12, color: accent }}>Edit</Text></Pressable> : null}
               <Pressable onPress={() => onDelete(a.id)} hitSlop={8}><Text style={{ fontFamily: font.body700, fontSize: 17, color: color.faint }}>×</Text></Pressable>
             </View>
           ))}
         </View>
       )}
 
-      {/* add */}
+      {/* add / edit */}
       {addOpen ? (
         <View style={{ gap: 9, borderTopWidth: 1, borderTopColor: color.hairline, paddingTop: 12 }}>
+          {editId ? <PanelLabel>Edit appointment</PanelLabel> : null}
           {allowTests && <SelectChips options={['appointment', 'test']} value={kind} onChange={(v) => setKind(v as 'appointment' | 'test')} />}
           <Field label="Title" value={title} onChangeText={setTitle} placeholder={allowTests && kind === 'test' ? 'e.g. GTT blood test' : 'e.g. 20-week scan'} autoCapitalize="sentences" />
           <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -1778,8 +1790,8 @@ function AppointmentsCard({ accent, fill, items, allowTests, onAdd, onDelete }: 
           {location.trim() ? <Text style={{ fontFamily: font.body400, fontSize: 10.5, color: color.muted, marginTop: -3 }}>📍 Tap the location later to open it in Maps.</Text> : null}
           {allowTests && kind === 'test' && <Field label="Result (optional)" value={result} onChangeText={setResult} placeholder="e.g. Normal" autoCapitalize="sentences" />}
           <View style={{ flexDirection: 'row', gap: 8 }}>
-            <Button label="Cancel" variant="secondary" onPress={() => setAddOpen(false)} style={{ flex: 1 }} />
-            <Button label="Add" onPress={submit} style={{ flex: 1 }} tint={accent} />
+            <Button label="Cancel" variant="secondary" onPress={resetForm} style={{ flex: 1 }} />
+            <Button label={editId ? 'Save' : 'Add'} onPress={submit} style={{ flex: 1 }} tint={accent} />
           </View>
         </View>
       ) : (
@@ -1793,15 +1805,21 @@ function AppointmentsCard({ accent, fill, items, allowTests, onAdd, onDelete }: 
 
 /** Mum&Me variant — pregnancy appointments (with tests), rose theme. */
 function PregnancyAppointments() {
-  const { pregAppts, addPregAppt, deletePregAppt } = useData();
-  return <AppointmentsCard accent={color.roseInk} fill="#FBE0EA" items={pregAppts} allowTests onAdd={(i) => addPregAppt({ title: i.title, at: i.at, kind: i.kind ?? 'appointment', result: i.result, location: i.location })} onDelete={deletePregAppt} />;
+  const { pregAppts, addPregAppt, updatePregAppt, deletePregAppt } = useData();
+  return <AppointmentsCard accent={color.roseInk} fill="#FBE0EA" items={pregAppts} allowTests
+    onAdd={(i) => addPregAppt({ title: i.title, at: i.at, kind: i.kind ?? 'appointment', result: i.result, location: i.location })}
+    onEdit={(id, p) => updatePregAppt(id, { title: p.title, at: p.at, kind: p.kind ?? 'appointment', result: p.result, location: p.location })}
+    onDelete={deletePregAppt} />;
 }
 
 /** Child variant — the child's calendar events, themed to the child's colour. */
 function ChildAppointments({ childId, colorKey }: { childId: string; colorKey: ChildColor }) {
-  const { events, addEvent, deleteEvent } = useData();
+  const { events, addEvent, updateEvent, deleteEvent } = useData();
   const items: ApptItem[] = events.filter((e) => e.childId === childId).map((e) => ({ id: e.id, title: e.title, at: e.at, location: e.location }));
-  return <AppointmentsCard accent={CHILD_INK[colorKey] ?? color.primary} fill={childToken[colorKey].fill} items={items} onAdd={(i) => addEvent({ title: i.title, at: i.at, childId, location: i.location })} onDelete={deleteEvent} />;
+  return <AppointmentsCard accent={CHILD_INK[colorKey] ?? color.primary} fill={childToken[colorKey].fill} items={items}
+    onAdd={(i) => addEvent({ title: i.title, at: i.at, childId, location: i.location })}
+    onEdit={(id, p) => updateEvent(id, { title: p.title, at: p.at, location: p.location })}
+    onDelete={deleteEvent} />;
 }
 
 const labFmt = (ms: number) => { const s = Math.floor(ms / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
