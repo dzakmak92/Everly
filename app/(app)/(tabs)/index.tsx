@@ -611,8 +611,9 @@ function FamilyOverview({
   );
 }
 
-/* Reserved side rail — module avatars on top, a divider, then shortcuts to the
-   main "More" categories, with the mirror (handedness flip) pinned at the bottom. */
+/* Reserved side rail — "More" category shortcuts on top, a divider, then the
+   module avatars (with Mum&Me at the very bottom), and the mirror (handedness
+   flip) pinned below that. */
 const RAIL_ICON = '#6F6E86';
 const RAIL_CATS: { key: string; label: string; to: string; icon: (c: string) => React.ReactNode }[] = [
   { key: 'health', label: 'Health records', to: '/(app)/health', icon: (c) => <HeartPulse size={19} color={c} /> },
@@ -658,18 +659,21 @@ function RailDock({
           contentContainerStyle={{ alignItems: 'center', gap: 9, paddingBottom: 8 }}
           showsVerticalScrollIndicator={false}
         >
-          {/* Mum&Me sits above the children */}
-          {hasJourney && (() => {
-            const youOn = !activeCat && isYou;
-            return (
-              <Pressable onPress={onSelectYou} accessibilityLabel={`Mum and Me, ${youLabel}`}>
-                <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: youOn ? color.rose : '#FBE0EA', alignItems: 'center', justifyContent: 'center', borderWidth: youOn ? 3 : 0, borderColor: '#fff' }}>
-                  <Heart size={17} color={youOn ? '#fff' : color.rose} filled />
-                </View>
-              </Pressable>
-            );
-          })()}
-          {children.map((ch) => {
+          {/* More categories on top (mirrored order) */}
+          {RAIL_CATS.filter((cat) => cat.key !== 'insights').slice().reverse().map((cat) => renderCat(cat, cat.key === activeCat, onNavigate))}
+
+          <View style={{ width: 24, height: 1, backgroundColor: color.hairline, marginVertical: 2 }} />
+
+          {/* Modules below: add, insights, children, then Mum&Me at the very bottom */}
+          <Pressable onPress={onAdd} accessibilityLabel="Add a family member">
+            <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: color.canvas, alignItems: 'center', justifyContent: 'center' }}>
+              <Plus size={17} color={color.muted} />
+            </View>
+          </Pressable>
+
+          {RAIL_CATS.filter((cat) => cat.key === 'insights').map((cat) => renderCat(cat, cat.key === activeCat, onNavigate))}
+
+          {children.slice().reverse().map((ch) => {
             const t = childToken[ch.color];
             const on = !activeCat && !isYou && ch.id === activeId;
             return (
@@ -680,18 +684,16 @@ function RailDock({
               </Pressable>
             );
           })}
-          {/* Insights promoted to sit with the avatars, above the add button */}
-          {RAIL_CATS.filter((cat) => cat.key === 'insights').map((cat) => renderCat(cat, cat.key === activeCat, onNavigate))}
-
-          <Pressable onPress={onAdd} accessibilityLabel="Add a family member">
-            <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: color.canvas, alignItems: 'center', justifyContent: 'center' }}>
-              <Plus size={17} color={color.muted} />
-            </View>
-          </Pressable>
-
-          <View style={{ width: 24, height: 1, backgroundColor: color.hairline, marginVertical: 2 }} />
-
-          {RAIL_CATS.filter((cat) => cat.key !== 'insights').map((cat) => renderCat(cat, cat.key === activeCat, onNavigate))}
+          {hasJourney && (() => {
+            const youOn = !activeCat && isYou;
+            return (
+              <Pressable onPress={onSelectYou} accessibilityLabel={`Mum and Me, ${youLabel}`}>
+                <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: youOn ? color.rose : '#FBE0EA', alignItems: 'center', justifyContent: 'center', borderWidth: youOn ? 3 : 0, borderColor: '#fff' }}>
+                  <Heart size={17} color={youOn ? '#fff' : color.rose} filled />
+                </View>
+              </Pressable>
+            );
+          })()}
         </ScrollView>
 
         <View style={{ width: 24, height: 1, backgroundColor: color.hairline, marginVertical: 8 }} />
