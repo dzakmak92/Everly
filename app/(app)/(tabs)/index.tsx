@@ -1271,7 +1271,7 @@ function GettingReadyPanel() {
 
 function PrepChecklist() {
   const { birthPrep, addBirthPrep, toggleBirthPrep, deleteBirthPrep, prepSections, addPrepSection, renamePrepSection, deletePrepSection } = useData();
-  const { toast, confirm } = useFeedback();
+  const { toast } = useFeedback();
   const extra = Array.from(new Set(birthPrep.map((i) => i.category))).filter((c) => !prepSections.includes(c));
   const sections = [...prepSections, ...extra];
   const total = birthPrep.length;
@@ -1284,26 +1284,27 @@ function PrepChecklist() {
   const [adding, setAdding] = useState(false);
   const [secName, setSecName] = useState('');
 
-  const loadStarter = async () => {
-    const norm = (s: string) => s.trim().toLowerCase();
-    const have = new Set(birthPrep.map((i) => `${norm(i.category)}|${norm(i.label)}`));
-    const fresh = STARTER_PREP.filter((s) => !have.has(`${norm(s.category)}|${norm(s.label)}`));
-    const dupes = STARTER_PREP.length - fresh.length;
-    if (dupes > 0) {
-      const ok = await confirm({
-        title: 'Some items are already on your list',
-        message: fresh.length > 0
-          ? `${dupes} of the ${STARTER_PREP.length} starter items are already there. Add the ${fresh.length} new one${fresh.length === 1 ? '' : 's'} and skip the duplicates?`
-          : `All ${STARTER_PREP.length} starter items are already on your list — nothing new to add.`,
-        confirmLabel: fresh.length > 0 ? 'Add new only' : 'OK',
-        cancelLabel: fresh.length > 0 ? 'Cancel' : 'Close',
-        accent: color.rose,
-      });
-      if (!ok || fresh.length === 0) return;
-    }
-    PREP_CATS.forEach(addPrepSection);
-    fresh.forEach(addBirthPrep);
-    toast(`Loaded ${fresh.length} item${fresh.length === 1 ? '' : 's'}`);
+  // Starter-list picker: choose which of the ten sections to load.
+  const norm = (s: string) => s.trim().toLowerCase();
+  const haveSet = new Set(birthPrep.map((i) => `${norm(i.category)}|${norm(i.label)}`));
+  const catInfo = PREP_CATS.map((cat) => {
+    const its = STARTER_PREP.filter((s) => s.category === cat);
+    return { cat, total: its.length, fresh: its.filter((s) => !haveSet.has(`${norm(s.category)}|${norm(s.label)}`)).length };
+  });
+  const [loadOpen, setLoadOpen] = useState(false);
+  const [sel, setSel] = useState<Set<string>>(new Set());
+  const openLoad = () => { setSel(new Set(catInfo.filter((c) => c.fresh > 0).map((c) => c.cat))); setLoadOpen(true); };
+  const toggleSel = (cat: string) => setSel((s) => { const n = new Set(s); if (n.has(cat)) n.delete(cat); else n.add(cat); return n; });
+  const selFresh = catInfo.filter((c) => sel.has(c.cat)).reduce((a, c) => a + c.fresh, 0);
+  const doLoad = () => {
+    let added = 0;
+    PREP_CATS.forEach((cat) => {
+      if (!sel.has(cat)) return;
+      addPrepSection(cat);
+      STARTER_PREP.filter((s) => s.category === cat && !haveSet.has(`${norm(s.category)}|${norm(s.label)}`)).forEach((s) => { addBirthPrep(s); added++; });
+    });
+    setLoadOpen(false);
+    toast(added > 0 ? `Loaded ${added} item${added === 1 ? '' : 's'}` : 'Nothing new to add');
   };
 
   return (
@@ -1351,7 +1352,51 @@ function PrepChecklist() {
         </Pressable>
       )}
 
-      <Button label="↻ Load starter checklist" variant="secondary" tint={color.rose} onPress={loadStarter} />
+      <Button label="↻ Load starter checklist" variant="secondary" tint={color.rose} onPress={openLoad} />
+
+      {/* Starter-list picker */}
+      <Modal visible={loadOpen} transparent animationType="fade" onRequestClose={() => setLoadOpen(false)}>
+        <Pressable onPress={() => setLoadOpen(false)} style={{ flex: 1, backgroundColor: 'rgba(40,18,50,0.35)', justifyContent: 'center', paddingHorizontal: 24 }}>
+          <Pressable onPress={() => {}} style={[{ backgroundColor: '#fff', borderRadius: 22, padding: 18, maxHeight: '82%' }, shadow.card]}>
+            <Text style={{ fontFamily: font.display700, fontSize: 17, color: color.ink }}>Load starter lists</Text>
+            <Text style={{ fontFamily: font.body400, fontSize: 12.5, color: color.muted, marginTop: 3, marginBottom: 8 }}>Pick the sections to add. Anything already on your list is skipped.</Text>
+
+            {(() => {
+              const withFresh = catInfo.filter((c) => c.fresh > 0).map((c) => c.cat);
+              const allOn = withFresh.length > 0 && withFresh.every((c) => sel.has(c));
+              return (
+                <Pressable onPress={() => setSel(allOn ? new Set() : new Set(withFresh))} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: color.hairline }}>
+                  <View style={{ width: 22, height: 22, borderRadius: 7, borderWidth: 2, borderColor: allOn ? color.rose : '#D8C6D1', backgroundColor: allOn ? color.rose : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
+                    {allOn ? <Text style={{ color: '#fff', fontSize: 12, fontFamily: font.body700 }}>✓</Text> : null}
+                  </View>
+                  <Text style={{ fontFamily: font.body700, fontSize: 13, color: color.roseInk }}>{allOn ? 'Clear all' : 'Select all'}</Text>
+                </Pressable>
+              );
+            })()}
+
+            <ScrollView style={{ maxHeight: 380 }} showsVerticalScrollIndicator={false}>
+              {catInfo.map(({ cat, total: t, fresh }) => {
+                const doneCat = fresh === 0;
+                const on = sel.has(cat);
+                return (
+                  <Pressable key={cat} disabled={doneCat} onPress={() => toggleSel(cat)} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 11, opacity: doneCat ? 0.45 : 1 }}>
+                    <View style={{ width: 22, height: 22, borderRadius: 7, borderWidth: 2, borderColor: on ? color.rose : '#D8C6D1', backgroundColor: on ? color.rose : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
+                      {on ? <Text style={{ color: '#fff', fontSize: 12, fontFamily: font.body700 }}>✓</Text> : null}
+                    </View>
+                    <Text style={{ flex: 1, fontFamily: font.body700, fontSize: 13.5, color: color.ink }} numberOfLines={1}>{cat}</Text>
+                    <Text style={{ fontFamily: font.body500, fontSize: 11, color: color.muted }}>{doneCat ? 'Added' : `${fresh}${fresh < t ? ` of ${t}` : ''} item${fresh === 1 ? '' : 's'}`}</Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
+              <Button label="Cancel" variant="secondary" onPress={() => setLoadOpen(false)} style={{ flex: 1 }} />
+              <Button label={selFresh > 0 ? `Load ${selFresh} item${selFresh === 1 ? '' : 's'}` : 'Load'} tint={color.rose} disabled={selFresh === 0} onPress={doLoad} style={{ flex: 1 }} />
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
