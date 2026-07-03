@@ -26,6 +26,7 @@ import { helplinesFor } from '../../../src/lib/helplines';
 import { youStoryEvents } from '../../../src/lib/story';
 import { childRhythm, nextFeed, napWindow, childNudges, pregnancyNudges, fmtDur, type Nudge, type Prediction, type ChildRhythm } from '../../../src/lib/intelligence';
 import { DayTimeline } from '../../../src/components/DayTimeline';
+import { useFeedback } from '../../../src/components/Feedback';
 import { useWeather, WeatherGlyph, wxLabel, searchCity, type WxLocation } from '../../../src/lib/weather';
 import {
   useData, entriesOn, entryDetail, ENTRY_META, quickLogKinds, MOOD_LABELS, CHILD_COLORS,
@@ -1256,6 +1257,7 @@ function GettingReadyPanel() {
 
 function PrepChecklist() {
   const { birthPrep, addBirthPrep, toggleBirthPrep, deleteBirthPrep, prepSections, addPrepSection, renamePrepSection, deletePrepSection } = useData();
+  const { toast, confirm } = useFeedback();
   const extra = Array.from(new Set(birthPrep.map((i) => i.category))).filter((c) => !prepSections.includes(c));
   const sections = [...prepSections, ...extra];
   const total = birthPrep.length;
@@ -1268,7 +1270,27 @@ function PrepChecklist() {
   const [adding, setAdding] = useState(false);
   const [secName, setSecName] = useState('');
 
-  const loadStarter = () => { PREP_CATS.forEach(addPrepSection); STARTER_PREP.forEach(addBirthPrep); };
+  const loadStarter = async () => {
+    const norm = (s: string) => s.trim().toLowerCase();
+    const have = new Set(birthPrep.map((i) => `${norm(i.category)}|${norm(i.label)}`));
+    const fresh = STARTER_PREP.filter((s) => !have.has(`${norm(s.category)}|${norm(s.label)}`));
+    const dupes = STARTER_PREP.length - fresh.length;
+    if (dupes > 0) {
+      const ok = await confirm({
+        title: 'Some items are already on your list',
+        message: fresh.length > 0
+          ? `${dupes} of the ${STARTER_PREP.length} starter items are already there. Add the ${fresh.length} new one${fresh.length === 1 ? '' : 's'} and skip the duplicates?`
+          : `All ${STARTER_PREP.length} starter items are already on your list — nothing new to add.`,
+        confirmLabel: fresh.length > 0 ? 'Add new only' : 'OK',
+        cancelLabel: fresh.length > 0 ? 'Cancel' : 'Close',
+        accent: color.rose,
+      });
+      if (!ok || fresh.length === 0) return;
+    }
+    PREP_CATS.forEach(addPrepSection);
+    fresh.forEach(addBirthPrep);
+    toast(`Loaded ${fresh.length} item${fresh.length === 1 ? '' : 's'}`);
+  };
 
   return (
     <View style={{ gap: 12 }}>
@@ -1638,6 +1660,7 @@ function AppointmentsCard({ accent, fill, items, allowTests, onAdd, onEdit, onDe
   onEdit?: (id: string, patch: { title: string; at: string; location?: string; kind?: 'appointment' | 'test'; result?: string }) => void;
   onDelete: (id: string) => void;
 }) {
+  const { toast } = useFeedback();
   const wx = useWeather();
   const [expanded, setExpanded] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
@@ -1671,6 +1694,7 @@ function AppointmentsCard({ accent, fill, items, allowTests, onAdd, onEdit, onDe
     if (!title.trim()) return;
     const payload = { title, at: `${date}T${(time.trim() || '09:00')}:00`, location: location.trim() || undefined, kind: allowTests ? kind : undefined, result: allowTests && kind === 'test' ? result : undefined };
     if (editId && onEdit) onEdit(editId, payload); else onAdd(payload);
+    toast(editId ? 'Appointment updated' : 'Appointment added');
     resetForm();
   };
   const startEdit = (a: ApptItem) => {
@@ -2011,6 +2035,7 @@ function PulsingAlert({ children }: { children: React.ReactNode }) {
 
 /** Compact city search to localise the helplines (reuses the weather location). */
 function CityPickerModal({ visible, wx, onClose }: { visible: boolean; wx: ReturnType<typeof useWeather>; onClose: () => void }) {
+  const { toast } = useFeedback();
   const [q, setQ] = useState('');
   const [results, setResults] = useState<WxLocation[]>([]);
   const [busy, setBusy] = useState(false);
@@ -2028,7 +2053,7 @@ function CityPickerModal({ visible, wx, onClose }: { visible: boolean; wx: Retur
           {busy ? <ActivityIndicator color={color.rose} /> : null}
           <ScrollView style={{ maxHeight: 220 }} keyboardShouldPersistTaps="handled"><View style={{ gap: 8 }}>
             {results.map((r, i) => (
-              <Pressable key={`${r.lat},${r.lon},${i}`} onPress={() => { wx.setLocation(r); onClose(); }} style={[{ backgroundColor: '#fff', borderRadius: radius.tile, padding: 12 }, shadow.card]}>
+              <Pressable key={`${r.lat},${r.lon},${i}`} onPress={() => { wx.setLocation(r); onClose(); toast(`City set to ${r.name}`); }} style={[{ backgroundColor: '#fff', borderRadius: radius.tile, padding: 12 }, shadow.card]}>
                 <Text style={{ fontFamily: font.body700, fontSize: 14, color: color.ink }}>{r.name}</Text>
                 <Text style={{ fontFamily: font.body400, fontSize: 12, color: color.muted }}>{[r.admin, r.country].filter(Boolean).join(' · ')}</Text>
               </Pressable>
@@ -2043,6 +2068,7 @@ function CityPickerModal({ visible, wx, onClose }: { visible: boolean; wx: Retur
 
 function CareCheckinCard() {
   const { checkins, addCheckin, deleteCheckin, supportContacts, addSupportContact, deleteSupportContact, dueDate, startWeightKg, setStartWeightKg, heightCm, setHeightCm } = useData();
+  const { toast } = useFeedback();
   const wx = useWeather();
   const now = new Date();
   const gest = gestFromDueDate(dueDate ?? undefined);
@@ -2065,10 +2091,11 @@ function CareCheckinCard() {
   const sVal = sleep ?? 7;
   const toggleMeal = (k: string) => setMeals((m) => (m.includes(k) ? m.filter((x) => x !== k) : [...m, k]));
   const openEdit = (f: 'start' | 'height') => { setEditField(f); setFieldVal((f === 'start' ? startWeightKg : heightCm)?.toString() ?? ''); };
-  const commitEdit = () => { const n = parseFloat(fieldVal.replace(',', '.')); const v = isNaN(n) || n <= 0 ? null : n; if (editField === 'start') setStartWeightKg(v); else if (editField === 'height') setHeightCm(v); setEditField(null); };
+  const commitEdit = () => { const n = parseFloat(fieldVal.replace(',', '.')); const v = isNaN(n) || n <= 0 ? null : n; if (editField === 'start') setStartWeightKg(v); else if (editField === 'height') setHeightCm(v); setEditField(null); toast('Saved'); };
   const save = () => {
     if (todayCheckin) deleteCheckin(todayCheckin.id);
     addCheckin({ mood: mood ?? 2, symptoms: todayCheckin?.symptoms ?? [], weightKg: weight ?? undefined, waterL: water || undefined, sleepH: sleep ?? undefined, meals });
+    toast("Today's check-in saved");
   };
 
   /* ── weight: cumulative gain vs a BMI-based recommended corridor ── */
@@ -2117,7 +2144,7 @@ function CareCheckinCard() {
   const contacts = supportContacts;
   const [adding, setAdding] = useState(false);
   const [nm, setNm] = useState(''); const [role, setRole] = useState(''); const [phone, setPhone] = useState('');
-  const addContact = () => { if (!nm.trim()) return; addSupportContact({ name: nm, role, phone }); setNm(''); setRole(''); setPhone(''); setAdding(false); };
+  const addContact = () => { if (!nm.trim()) return; addSupportContact({ name: nm, role, phone }); setNm(''); setRole(''); setPhone(''); setAdding(false); toast('Contact added'); };
   const helplines = helplinesFor(wx.location?.country);
   const openTel = (tel?: string, detail?: string) => { const n = tel || dialable(detail ?? ''); if (n) Linking.openURL(`tel:${n}`); };
 
