@@ -864,7 +864,6 @@ function MaternityView({
     phase === 'pregnancy'
       ? [
           { key: 'monitor', label: 'Monitoring & calls', bg: '#FBE0EA', icon: <Shield size={20} color="#B04070" /> },
-          { key: 'ready', label: 'Getting ready', bg: '#FBE0EA', icon: <CheckCircle size={20} color="#B04070" /> },
         ]
       : [
           { key: 'epds', label: 'Wellbeing', bg: '#E7E4FB', icon: <Smile size={20} color={color.primary} /> },
@@ -967,6 +966,20 @@ function MaternityView({
               <Text style={{ flex: 1, fontFamily: font.display700, fontSize: 17, color: color.ink }}>Labour &amp; movement</Text>
             </View>
             <LabourPanel />
+          </View>
+        </View>
+      )}
+
+      {/* Getting ready — full-width, always open, below Labour */}
+      {phase === 'pregnancy' && showGrid && (
+        <View style={{ gap: 10 }}>
+          <Label>Getting ready</Label>
+          <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 16, gap: 14, borderWidth: 2, borderColor: color.rose }, shadow.card]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <View style={{ width: 36, height: 36, borderRadius: 11, backgroundColor: '#FBE0EA', alignItems: 'center', justifyContent: 'center' }}><CheckCircle size={20} color={color.rose} /></View>
+              <Text style={{ flex: 1, fontFamily: font.display700, fontSize: 17, color: color.ink }}>Getting ready</Text>
+            </View>
+            <GettingReadyPanel />
           </View>
         </View>
       )}
