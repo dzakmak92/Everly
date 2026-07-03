@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { childToken } from '../../theme/tokens';
 import type { Stage } from '../age';
 import { buildSampleData } from './sampleData';
+import { deleteMedia } from '../mediaStore';
 
 /**
  * On-device data layer (PRD privacy model: child/maternal/health data NEVER
@@ -62,6 +63,9 @@ export type RoutineStep = { id: string; label: string; done: boolean };
 export type Routine = { id: string; childId?: string; name: string; steps: RoutineStep[] };
 export type Chore = { id: string; childId?: string; label: string; points: number; done: boolean };
 export type Milestone = { id: string; childId: string; title: string; date: string; note?: string };
+/** A photo/video attached to a milestone. `thumb` is a small data-URL kept in
+ *  state; the full blob lives in IndexedDB (see mediaStore) under `id`. */
+export type MilestoneMedia = { id: string; kind: 'photo' | 'video'; thumb: string };
 
 export type PregCheckin = { id: string; at: string; mood: number; symptoms: string[]; weightKg?: number; waterL?: number; sleepH?: number; meals?: string[] };
 
@@ -150,6 +154,7 @@ const DEFAULT_PREP_SECTIONS: string[] = [];
 const SUPPORT_KEY = 'everly.supportContacts.v1';
 const START_WEIGHT_KEY = 'everly.startWeightKg.v1';
 const HEIGHT_KEY = 'everly.heightCm.v1';
+const MMEDIA_KEY = 'everly.milestoneMedia.v1';
 
 function newId() {
   return `${Date.now().toString(36)}-${Math.floor(Math.random() * 1e6).toString(36)}`;
@@ -192,8 +197,11 @@ type DataValue = {
   toggleChore: (id: string) => void;
   deleteChore: (id: string) => void;
   milestones: Milestone[];
-  addMilestone: (input: { childId: string; title: string; date: string; note?: string }) => void;
+  addMilestone: (input: { childId: string; title: string; date: string; note?: string }) => string;
   deleteMilestone: (id: string) => void;
+  milestoneMedia: Record<string, MilestoneMedia[]>;
+  addMilestoneMedia: (milestoneId: string, items: MilestoneMedia[]) => void;
+  removeMilestoneMedia: (milestoneId: string, mediaId: string) => void;
   caregivers: Caregiver[];
   addCaregiver: (name: string, role?: string) => void;
   deleteCaregiver: (id: string) => void;
@@ -312,6 +320,7 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
   const [tzContacts, setTzContacts] = useState<TzContact[]>([]);
   const [startWeightKg, setStartWeightKgState] = useState<number | null>(null);
   const [heightCm, setHeightCmState] = useState<number | null>(null);
+  const [milestoneMedia, setMilestoneMedia] = useState<Record<string, MilestoneMedia[]>>({});
   const [savedTips, setSavedTips] = useState<SavedTip[]>([]);
   const [birthPrep, setBirthPrep] = useState<BirthPrepItem[]>([]);
   const [prepSections, setPrepSections] = useState<string[]>(DEFAULT_PREP_SECTIONS);
@@ -589,10 +598,27 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
   const deleteChore = useCallback((id: string) => setChores((prev) => prev.filter((c) => c.id !== id)), []);
 
   const addMilestone = useCallback((input: { childId: string; title: string; date: string; note?: string }) => {
-    setMilestones((prev) => [{ id: newId(), childId: input.childId, title: input.title.trim(), date: input.date, note: input.note?.trim() || undefined }, ...prev]
+    const id = newId();
+    setMilestones((prev) => [{ id, childId: input.childId, title: input.title.trim(), date: input.date, note: input.note?.trim() || undefined }, ...prev]
       .sort((a, b) => b.date.localeCompare(a.date)));
+    return id;
   }, []);
-  const deleteMilestone = useCallback((id: string) => setMilestones((prev) => prev.filter((m) => m.id !== id)), []);
+  const deleteMilestone = useCallback((id: string) => {
+    setMilestones((prev) => prev.filter((m) => m.id !== id));
+    setMilestoneMedia((prev) => { const cur = prev[id]; if (cur) cur.forEach((m) => deleteMedia(m.id)); const { [id]: _drop, ...rest } = prev; return rest; });
+  }, []);
+
+  // Milestone photos/videos — loaded/saved independently (thumbnails only; blobs live in IndexedDB).
+  useEffect(() => { AsyncStorage.getItem(MMEDIA_KEY).then((v) => { if (v) setMilestoneMedia(JSON.parse(v)); }).catch(() => {}); }, []);
+  useEffect(() => { if (!loading) AsyncStorage.setItem(MMEDIA_KEY, JSON.stringify(milestoneMedia)).catch(() => {}); }, [milestoneMedia, loading]);
+  const addMilestoneMedia = useCallback((milestoneId: string, items: MilestoneMedia[]) => {
+    if (!items.length) return;
+    setMilestoneMedia((prev) => ({ ...prev, [milestoneId]: [...(prev[milestoneId] ?? []), ...items] }));
+  }, []);
+  const removeMilestoneMedia = useCallback((milestoneId: string, mediaId: string) => {
+    deleteMedia(mediaId);
+    setMilestoneMedia((prev) => ({ ...prev, [milestoneId]: (prev[milestoneId] ?? []).filter((m) => m.id !== mediaId) }));
+  }, []);
 
   const addCaregiver = useCallback((name: string, role?: string) => setCaregivers((prev) => [...prev, { id: newId(), name: name.trim(), role: role?.trim() || undefined }]), []);
   const deleteCaregiver = useCallback((id: string) => {
@@ -728,6 +754,7 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
       routines, addRoutine, addRoutineStep, toggleStep, resetRoutine, deleteRoutine,
       chores, addChore, toggleChore, deleteChore,
       milestones, addMilestone, deleteMilestone,
+      milestoneMedia, addMilestoneMedia, removeMilestoneMedia,
       caregivers, addCaregiver, deleteCaregiver,
       custody, setCustodyDay,
       expenses, addExpense, toggleExpenseSettled, deleteExpense,
@@ -752,7 +779,7 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
       clearAll,
       demoPremium, setDemoPremium, loadSampleData,
     }),
-    [loading, children, activeChild, setActiveChild, addChild, updateChild, deleteChild, entries, addEntry, deleteEntry, events, addEvent, deleteEvent, updateEvent, vaccines, addVaccine, updateVaccine, deleteVaccine, medications, addMedication, toggleMedication, deleteMedication, growth, addGrowth, deleteGrowth, routines, addRoutine, addRoutineStep, toggleStep, resetRoutine, deleteRoutine, chores, addChore, toggleChore, deleteChore, milestones, addMilestone, deleteMilestone, caregivers, addCaregiver, deleteCaregiver, custody, setCustodyDay, expenses, addExpense, toggleExpenseSettled, deleteExpense, dueDate, setDueDate, checkins, addCheckin, deleteCheckin, pregArchive, closePregnancy, dockSide, setDockSide, maternalBirth, setMaternalBirth, epdsResults, addEpdsResult, deleteEpdsResult, recoveryLogs, addRecoveryLog, deleteRecoveryLog, tzContacts, addTzContact, deleteTzContact, savedTips, saveTip, deleteTip, birthPrep, addBirthPrep, toggleBirthPrep, deleteBirthPrep, prepSections, addPrepSection, renamePrepSection, deletePrepSection, savedNames, saveName, deleteName, supportContacts, addSupportContact, deleteSupportContact, startWeightKg, setStartWeightKg, heightCm, setHeightCm, pregStatus, setPregStatus, pregAppts, addPregAppt, deletePregAppt, updatePregAppt, pregVitals, addPregVital, deletePregVital, lastPeriod, setLastPeriod, cycleLength, setCycleLength, ttcItems, addTtc, toggleTtc, deleteTtc, momCare, addMomCare, deleteMomCare, pelvicLog, addPelvic, matAppts, addMatAppt, deleteMatAppt, updateMatAppt, kickSessions, addKickSession, deleteKickSession, clearKickSessions, contractionSessions, addContraction, deleteContraction, clearContractions, clearAll, demoPremium, setDemoPremium, loadSampleData],
+    [loading, children, activeChild, setActiveChild, addChild, updateChild, deleteChild, entries, addEntry, deleteEntry, events, addEvent, deleteEvent, updateEvent, vaccines, addVaccine, updateVaccine, deleteVaccine, medications, addMedication, toggleMedication, deleteMedication, growth, addGrowth, deleteGrowth, routines, addRoutine, addRoutineStep, toggleStep, resetRoutine, deleteRoutine, chores, addChore, toggleChore, deleteChore, milestones, addMilestone, deleteMilestone, milestoneMedia, addMilestoneMedia, removeMilestoneMedia, caregivers, addCaregiver, deleteCaregiver, custody, setCustodyDay, expenses, addExpense, toggleExpenseSettled, deleteExpense, dueDate, setDueDate, checkins, addCheckin, deleteCheckin, pregArchive, closePregnancy, dockSide, setDockSide, maternalBirth, setMaternalBirth, epdsResults, addEpdsResult, deleteEpdsResult, recoveryLogs, addRecoveryLog, deleteRecoveryLog, tzContacts, addTzContact, deleteTzContact, savedTips, saveTip, deleteTip, birthPrep, addBirthPrep, toggleBirthPrep, deleteBirthPrep, prepSections, addPrepSection, renamePrepSection, deletePrepSection, savedNames, saveName, deleteName, supportContacts, addSupportContact, deleteSupportContact, startWeightKg, setStartWeightKg, heightCm, setHeightCm, pregStatus, setPregStatus, pregAppts, addPregAppt, deletePregAppt, updatePregAppt, pregVitals, addPregVital, deletePregVital, lastPeriod, setLastPeriod, cycleLength, setCycleLength, ttcItems, addTtc, toggleTtc, deleteTtc, momCare, addMomCare, deleteMomCare, pelvicLog, addPelvic, matAppts, addMatAppt, deleteMatAppt, updateMatAppt, kickSessions, addKickSession, deleteKickSession, clearKickSessions, contractionSessions, addContraction, deleteContraction, clearContractions, clearAll, demoPremium, setDemoPremium, loadSampleData],
   );
 
   return <DataContext.Provider value={value}>{node}</DataContext.Provider>;
