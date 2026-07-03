@@ -3,7 +3,7 @@ import { ScrollView, View, Text, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, font, radius, shadow } from '../../../src/theme/tokens';
-import { Heart, Clock, Activity, CheckCircle, User, Calendar, Star, Settings, Shield, Syringe, Camera, ChevronRight } from '../../../src/components/icons';
+import { Heart, Clock, Calendar, Star, Settings, Shield, ChevronRight } from '../../../src/components/icons';
 import { useData } from '../../../src/lib/store';
 
 type Item = { label: string; sub: string; to: string; icon: React.ReactNode; bg: string };
@@ -17,18 +17,8 @@ const SECTIONS: { title: string; items: Item[] }[] = [
     ],
   },
   {
-    title: 'Health & memories',
-    items: [
-      { label: 'Health records', sub: 'Vaccines, medications, growth', to: '/(app)/health', icon: Ic(Syringe, '#B04070'), bg: '#FBE0EA' },
-      { label: 'Timeline', sub: 'Milestones & memories', to: '/(app)/timeline', icon: Ic(Camera, '#B5662E'), bg: '#FCE6D8' },
-      { label: 'Insights', sub: 'Rhythm, patterns, weekly digest', to: '/(app)/insights', icon: Ic(Activity, '#2C8475'), bg: '#D8F0E6' },
-    ],
-  },
-  {
     title: 'Family & home',
     items: [
-      { label: 'Routines & chores', sub: 'Daily routines & chore points', to: '/(app)/routines', icon: Ic(CheckCircle, '#7A5C20'), bg: '#FBF1CE' },
-      { label: 'Co-parent', sub: 'Custody schedule & shared expenses', to: '/(app)/coparent', icon: Ic(User, '#B04070'), bg: '#FBE0EA' },
       { label: 'Family timezones', sub: 'Keep distant family in sync', to: '/(app)/timezones', icon: Ic(Clock, '#2C5F90'), bg: '#DCEBFA' },
       { label: 'Kiosk mode', sub: 'A shared family wall display', to: '/(app)/kiosk', icon: Ic(Calendar, '#B5662E'), bg: '#FCE6D8' },
     ],
