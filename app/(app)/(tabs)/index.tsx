@@ -241,9 +241,16 @@ export default function Today() {
     {activeCat ? (
       <View style={{ flex: 1 }}><CategoryView cat={activeCat} /></View>
     ) : (
+    <View style={{ flex: 1 }}>
+      {/* Pregnancy / Postpartum tabs stay pinned above the scroll in Mum&Me */}
+      {!onOverview && isYou && (
+        <View style={{ paddingTop: 10, paddingBottom: 10, paddingLeft: padStart, paddingRight: padEnd, backgroundColor: color.canvas }}>
+          <PhaseTabs phase={phase} setPhase={setPhase} />
+        </View>
+      )}
     <ScrollView
       style={{ flex: 1, backgroundColor: color.canvas }}
-      contentContainerStyle={{ paddingTop: 10, paddingBottom: 28, paddingLeft: padStart, paddingRight: padEnd, gap: 16 }}
+      contentContainerStyle={{ paddingTop: !onOverview && isYou ? 4 : 10, paddingBottom: 28, paddingLeft: padStart, paddingRight: padEnd, gap: 16 }}
       showsVerticalScrollIndicator={false}
     >
 
@@ -471,6 +478,7 @@ export default function Today() {
         </Pressable>
       </Modal>
     </ScrollView>
+    </View>
     )}
         {showDock && dockSide === 'right' && <RailDock {...railProps} side="right" onMirror={() => setDockSide('left')} />}
       </View>
@@ -827,6 +835,22 @@ type ApptLike = { id: string; title: string; at: string };
 const archWeekOf = (a: { dueDate: string; bornDate: string }) =>
   Math.max(0, Math.floor((280 - Math.round((ppTime(a.dueDate) - ppTime(a.bornDate)) / PP_MS)) / 7));
 
+/** Pregnancy / Postpartum segmented toggle (pinned above the Mum&Me scroll). */
+function PhaseTabs({ phase, setPhase }: { phase: 'pregnancy' | 'postpartum'; setPhase: (p: 'pregnancy' | 'postpartum') => void }) {
+  return (
+    <View style={{ flexDirection: 'row', backgroundColor: '#EFEDF8', borderRadius: radius.pill, padding: 3 }}>
+      {(['pregnancy', 'postpartum'] as const).map((p) => {
+        const on = p === phase;
+        return (
+          <Pressable key={p} onPress={() => setPhase(p)} style={{ flex: 1, paddingVertical: 9, borderRadius: radius.pill, alignItems: 'center', backgroundColor: on ? color.rose : 'transparent' }}>
+            <Text style={{ fontFamily: on ? font.body700 : font.body600, fontSize: 13, color: on ? '#fff' : color.inkSecondary }}>{p === 'pregnancy' ? 'Pregnancy' : 'Postpartum'}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
 function MaternityView({
   phase, setPhase, dueDate, maternalBirth, pregAppts, matAppts, pregArchive, onArrived, onStartPregnancy,
 }: {
@@ -842,6 +866,8 @@ function MaternityView({
 }) {
   // Accordion grid: one card open at a time, panel renders full-width below.
   const [openCard, setOpenCard] = useState<string | null>(null);
+  // Switching phase from the pinned tabs should collapse any open card.
+  React.useEffect(() => { setOpenCard(null); }, [phase]);
   // Full week-by-week opens from the hero (merged on top).
   const [weekOpen, setWeekOpen] = useState(false);
   // Collapse any open card whenever the phase tab changes.
@@ -890,18 +916,6 @@ function MaternityView({
 
   return (
     <View style={{ gap: 16 }}>
-      {/* Phase sub-tabs */}
-      <View style={{ flexDirection: 'row', backgroundColor: '#EFEDF8', borderRadius: radius.pill, padding: 3 }}>
-        {(['pregnancy', 'postpartum'] as const).map((p) => {
-          const on = p === phase;
-          return (
-            <Pressable key={p} onPress={() => { setPhase(p); setOpenCard(null); }} style={{ flex: 1, paddingVertical: 9, borderRadius: radius.pill, alignItems: 'center', backgroundColor: on ? color.rose : 'transparent' }}>
-              <Text style={{ fontFamily: on ? font.body700 : font.body600, fontSize: 13, color: on ? '#fff' : color.inkSecondary }}>{p === 'pregnancy' ? 'Pregnancy' : 'Postpartum'}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
-
       {/* Teal status hero */}
       <View style={[{ backgroundColor: color.rose, borderRadius: radius.card, padding: 20, gap: 14 }, shadow.card]}>
         {phase === 'pregnancy' ? (
