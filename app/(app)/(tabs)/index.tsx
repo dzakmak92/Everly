@@ -2388,6 +2388,30 @@ function CareCheckinCard() {
           </Pressable>
         ))}
       </View>
+
+      {/* Recent check-ins — review & delete past entries */}
+      {label('Your recent check-ins')}
+      {checkins.length === 0 ? (
+        <Text style={{ fontFamily: font.body400, fontSize: 11.5, color: color.muted, paddingHorizontal: 2 }}>No check-ins yet — tap “Save today” to log your first.</Text>
+      ) : (
+        [...checkins].sort((a, b) => ccMs(b.at) - ccMs(a.at)).slice(0, 8).map((c) => {
+          const parts: string[] = [];
+          if (c.weightKg != null) parts.push(`${c.weightKg} kg`);
+          if (c.waterL != null) parts.push(`${c.waterL} L`);
+          if (c.sleepH != null) parts.push(`${c.sleepH} h`);
+          if (c.meals?.length) parts.push(`${c.meals.length} meal${c.meals.length === 1 ? '' : 's'}`);
+          const sub = [parts.join(' · '), c.symptoms?.length ? c.symptoms.join(', ') : ''].filter(Boolean).join(' · ');
+          return (
+            <View key={c.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#FAF3F6', borderRadius: radius.tile, paddingVertical: 9, paddingHorizontal: 11, marginBottom: 7 }}>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.ink }}>{new Date(c.at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</Text>
+                {sub ? <Text numberOfLines={1} style={{ fontFamily: font.body400, fontSize: 10.5, color: color.muted, marginTop: 1 }}>{sub}</Text> : null}
+              </View>
+              <Pressable onPress={() => { deleteCheckin(c.id); toast('Check-in deleted'); }} hitSlop={8}><Text style={{ fontFamily: font.body700, fontSize: 16, color: color.faint }}>×</Text></Pressable>
+            </View>
+          );
+        })
+      )}
       </>)}
 
       <CityPickerModal visible={cityOpen} wx={wx} onClose={() => setCityOpen(false)} />
