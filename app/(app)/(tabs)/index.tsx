@@ -2097,7 +2097,7 @@ function CareCheckinCard() {
   const dayLabels = days7.map((d) => ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'][d.getDay()]);
   const dayAxis = (
     <View style={{ flexDirection: 'row', gap: 4, marginTop: 4 }}>
-      {dayLabels.map((d, i) => <Text key={i} style={{ flex: 1, textAlign: 'center', fontFamily: i === 6 ? font.body700 : font.body500, fontSize: 8.5, color: i === 6 ? color.roseInk : '#a9a0b0' }}>{d}</Text>)}
+      {dayLabels.map((d, i) => <Text key={i} style={{ flex: 1, textAlign: 'center', fontFamily: i === 6 ? font.body700 : font.body500, fontSize: 8.5, color: i === 6 ? color.roseInk : '#a9a0b0' }}>{i === 6 ? 'Today' : d}</Text>)}
     </View>
   );
 
