@@ -447,6 +447,8 @@ const BOOK_CSS = `
   .toolbar{position:fixed;top:0;left:0;right:0;z-index:99;background:rgba(255,255,255,.94);backdrop-filter:blur(8px);
     box-shadow:0 2px 14px rgba(60,40,70,.12);display:flex;align-items:center;justify-content:center;gap:16px;padding:14px 18px;}
   .toolbar .msg{font-family:var(--sans);font-size:13px;color:#6a6080;}
+  .toolbar .opt{font-family:var(--sans);font-size:13px;color:#6a6080;display:inline-flex;align-items:center;gap:6px;cursor:pointer;}
+  .toolbar .opt .hint{color:#a49cbd;font-size:12px;}
   .toolbar button{font-family:var(--sans);font-size:14px;font-weight:700;color:#fff;background:#6B6FC9;border:none;border-radius:10px;padding:11px 20px;cursor:pointer;box-shadow:0 6px 14px rgba(107,111,201,.34);}
   .book{display:flex;flex-direction:column;align-items:center;gap:26px;max-width:560px;margin:0 auto;}
   .page{width:520px;height:520px;background:var(--ivory);border-radius:12px;position:relative;overflow:hidden;
@@ -493,14 +495,19 @@ const BOOK_CSS = `
   .grad-divider{background:linear-gradient(160deg,#F3EAF2,#FBF6EE);}
   .grad-closing{background:radial-gradient(120% 80% at 50% 100%,#F3E7F3,#FBF6EE 60%);}
   .grad-birthday{background:radial-gradient(90% 70% at 50% 30%,#FBEBCF,#F7E1E9);}
-  @page{size:210mm 210mm;margin:0;}
   @media print{
     .toolbar{display:none!important;}
     body{background:#fff;padding:0;}
     .book{gap:0;max-width:none;}
+    /* Default: trim size exactly. Full-bleed art already reaches the page edge. */
     .page{width:210mm;height:210mm;border-radius:0;box-shadow:none;break-after:page;page-break-after:always;}
     .page:last-child{break-after:auto;page-break-after:auto;}
     .page::before{display:none;}
+    /* Bleed on: the sheet grows to 216mm (3mm past trim on every side) so the
+       printer can trim to 210mm with no white slivers. Page numbers pull in to
+       stay inside the trim-safe area; centred/edge art bleeds off naturally. */
+    body.bleed .page{width:216mm;height:216mm;}
+    body.bleed .pnum{bottom:9mm;}
   }
 `;
 
@@ -516,12 +523,22 @@ export function buildBookHTML(
 
 function buildHTML(child: Child, pages: string[]): string {
   return `<!doctype html><html><head><meta charset="utf-8"><title>The Story of ${esc(child.name)}</title>
-<style>${BOOK_CSS}</style></head><body>
+<style>${BOOK_CSS}</style>
+<style id="ps">@page{size:216mm 216mm;margin:0;}</style>
+</head><body class="bleed">
 <div class="toolbar">
-  <span class="msg">To save your book: <b>Print → Save as PDF</b>, paper size <b>210×210&nbsp;mm</b> (or “Square”), margins <b>None</b>.</span>
+  <span class="msg">To save your book: <b>Print → Save as PDF</b>, paper size <b><span id="psize">216×216&nbsp;mm</span></b> (or “Square”), margins <b>None</b>.</span>
+  <label class="opt"><input type="checkbox" id="bleedbox" checked onchange="toggleBleed(this.checked)"> 3&nbsp;mm bleed <span class="hint">(for print shops)</span></label>
   <button onclick="window.print()">Save as PDF / Print</button>
 </div>
 <div class="book">${pages.join('\n')}</div>
+<script>
+  function toggleBleed(on){
+    document.body.classList.toggle('bleed', on);
+    document.getElementById('ps').textContent = '@page{size:' + (on ? '216mm 216mm' : '210mm 210mm') + ';margin:0;}';
+    document.getElementById('psize').innerHTML = on ? '216×216&nbsp;mm' : '210×210&nbsp;mm';
+  }
+</script>
 </body></html>`;
 }
 
