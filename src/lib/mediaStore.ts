@@ -43,6 +43,26 @@ export async function getMediaURL(id: string): Promise<string | null> {
   });
 }
 
+/** Returns the stored blob as a base64 data-URL (for embedding in an exported
+ *  document), or null if missing. Self-contained — safe across windows. */
+export async function getMediaDataURL(id: string): Promise<string | null> {
+  const db = await openDb();
+  if (!db) return null;
+  const blob = await new Promise<Blob | null>((resolve) => {
+    const tx = db.transaction(STORE, 'readonly');
+    const rq = tx.objectStore(STORE).get(id);
+    rq.onsuccess = () => resolve((rq.result as Blob | undefined) ?? null);
+    rq.onerror = () => resolve(null);
+  });
+  if (!blob) return null;
+  return new Promise((resolve) => {
+    const r = new FileReader();
+    r.onload = () => resolve(typeof r.result === 'string' ? r.result : null);
+    r.onerror = () => resolve(null);
+    r.readAsDataURL(blob);
+  });
+}
+
 export async function deleteMedia(id: string): Promise<void> {
   const db = await openDb();
   if (!db) return;
