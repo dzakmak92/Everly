@@ -2192,8 +2192,12 @@ function CareCheckinCard() {
   const days7 = Array.from({ length: 7 }, (_, i) => { const d = new Date(now); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - (6 - i)); return d; });
   const waterFor = (d: Date) => checkins.find((c) => ccSameDay(c.at, d) && c.waterL != null)?.waterL ?? 0;
   const sleepFor = (d: Date) => checkins.find((c) => ccSameDay(c.at, d) && c.sleepH != null)?.sleepH ?? 0;
-  const waterVals = days7.map(waterFor); const wMax = Math.max(2, ...waterVals);
-  const sleepVals = days7.map(sleepFor); const sMax = Math.max(9, ...sleepVals);
+  // Today's bar tracks the live (unsaved) value being edited above, so the chart
+  // updates as you tap +/- — not only after Save.
+  const waterVals = days7.map(waterFor); waterVals[6] = water;
+  const sleepVals = days7.map(sleepFor); if (sleep != null) sleepVals[6] = sleep;
+  const wMax = Math.max(2, ...waterVals);
+  const sMax = Math.max(9, ...sleepVals);
   const dayLabels = days7.map((d) => ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'][d.getDay()]);
   const dayAxis = (
     <View style={{ flexDirection: 'row', gap: 4, marginTop: 4 }}>
