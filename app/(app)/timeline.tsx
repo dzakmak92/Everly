@@ -1,10 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { ScrollView, View, Text, Pressable, Modal, TextInput, Share, Platform } from 'react-native';
+import { ScrollView, View, Text, Pressable, Modal, TextInput, Share, Platform, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { color, font, radius, shadow, childToken } from '../../src/theme/tokens';
 import { useData, type Milestone, type Child } from '../../src/lib/store';
+import { pickMedia, type MediaRef } from '../../src/lib/pickMedia';
+import { getMediaURL } from '../../src/lib/mediaStore';
 import { MILESTONE_TEMPLATE, MILESTONE_STAGES, type MilestoneTemplate } from '../../src/lib/milestones';
 import { ageLabel } from '../../src/lib/age';
 import { BAND_LABEL, type EpdsBand } from '../../src/lib/epds';
@@ -64,6 +66,36 @@ function fmtMonthYear(iso: string) {
   const d = new Date(iso.length <= 10 ? `${iso}T00:00:00` : iso);
   if (isNaN(d.getTime())) return iso;
   return d.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+}
+
+/** Open a stored blob (used for playing a video) in a new browser tab (web). */
+function openBlobTab(id: string) {
+  getMediaURL(id).then((url) => {
+    if (!url || Platform.OS !== 'web' || typeof document === 'undefined') return;
+    const a = document.createElement('a'); a.href = url; a.target = '_blank'; a.rel = 'noopener'; a.click();
+  });
+}
+
+/** A row of photo/video thumbnails with an "add" tile. */
+function MediaStrip({ items, onAdd, onOpen, onRemove }: { items: MediaRef[]; onAdd: () => void; onOpen: (m: MediaRef) => void; onRemove?: (m: MediaRef) => void }) {
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
+      {items.map((m) => (
+        <Pressable key={m.id} onPress={() => onOpen(m)} onLongPress={() => onRemove?.(m)} delayLongPress={400} style={{ width: 62, height: 62, borderRadius: 10, overflow: 'hidden', backgroundColor: '#ECE8F2' }}>
+          {m.thumb ? <Image source={{ uri: m.thumb }} style={{ width: '100%', height: '100%' }} resizeMode="cover" /> : null}
+          {m.kind === 'video' ? (
+            <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.18)' }}>
+              <Text style={{ color: '#fff', fontSize: 18 }}>▶</Text>
+            </View>
+          ) : null}
+        </Pressable>
+      ))}
+      <Pressable onPress={onAdd} accessibilityLabel="Add photo or video" style={{ width: 62, height: 62, borderRadius: 10, borderWidth: 1.5, borderStyle: 'dashed', borderColor: color.faint, alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+        <Camera size={17} color={color.muted} />
+        <Text style={{ fontFamily: font.body700, fontSize: 8.5, color: color.muted }}>Add</Text>
+      </Pressable>
+    </View>
+  );
 }
 
 export default function TimelineTab({ embedded }: { embedded?: boolean }) {
@@ -259,9 +291,10 @@ function ChildStory({
 }: {
   child: Child;
   milestones: Milestone[];
-  addMilestone: (input: { childId: string; title: string; date: string; note?: string }) => void;
+  addMilestone: (input: { childId: string; title: string; date: string; note?: string }) => string;
   deleteMilestone: (id: string) => void;
 }) {
+  const { milestoneMedia, addMilestoneMedia, removeMilestoneMedia } = useData();
   const list = useMemo(() => milestones.filter((m) => m.childId === child.id), [milestones, child.id]);
 
   const headerName = `${child.name}'s story`;
@@ -288,11 +321,14 @@ function ChildStory({
   const [title, setTitle] = useState('');
   const [date, setDate] = useState('');
   const [note, setNote] = useState('');
+  const [pending, setPending] = useState<MediaRef[]>([]);
+  const [viewer, setViewer] = useState<{ ref: MediaRef; url: string | null } | null>(null);
 
   function openAdd(prefill?: { title: string; date: string }) {
     setTitle(prefill?.title ?? '');
     setDate(prefill?.date ?? new Date().toISOString().slice(0, 10));
     setNote('');
+    setPending([]);
     setBrowse(false);
     setOpen(true);
   }
@@ -301,14 +337,20 @@ function ChildStory({
       setOpen(false);
       return;
     }
-    addMilestone({
+    const id = addMilestone({
       childId: child.id,
       title,
       date: date.trim() || new Date().toISOString().slice(0, 10),
       note,
     });
+    if (pending.length) addMilestoneMedia(id, pending);
+    setPending([]);
     setOpen(false);
   }
+  const openMedia = (m: MediaRef) => {
+    if (m.kind === 'video') { openBlobTab(m.id); return; }
+    getMediaURL(m.id).then((url) => setViewer({ ref: m, url: url ?? m.thumb }));
+  };
 
   async function exportStory() {
     const lines = list.map(
@@ -398,6 +440,12 @@ function ChildStory({
                       {m.note}
                     </Text>
                   ) : null}
+                  <MediaStrip
+                    items={milestoneMedia[m.id] ?? []}
+                    onAdd={() => pickMedia().then((picked) => addMilestoneMedia(m.id, picked))}
+                    onOpen={openMedia}
+                    onRemove={(md) => removeMilestoneMedia(m.id, md.id)}
+                  />
                 </View>
               </Pressable>
             );
@@ -502,6 +550,19 @@ function ChildStory({
             <Field label="Milestone" value={title} onChangeText={setTitle} placeholder="e.g. First smile" autoCapitalize="sentences" />
             <DateField label="Date" value={date} onChangeText={setDate} placeholder="Pick a date" />
             <Field label="Note (optional)" value={note} onChangeText={setNote} placeholder="Anything to remember" autoCapitalize="sentences" />
+
+            <View style={{ gap: 6 }}>
+              <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.inkSecondary }}>Photos &amp; video</Text>
+              {pending.length > 0 ? (
+                <MediaStrip items={pending} onAdd={() => pickMedia().then((p) => setPending((cur) => [...cur, ...p]))} onOpen={openMedia} onRemove={(m) => setPending((cur) => cur.filter((x) => x.id !== m.id))} />
+              ) : (
+                <Pressable onPress={() => pickMedia().then((p) => setPending((cur) => [...cur, ...p]))} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderWidth: 1.5, borderColor: '#DAD3E8', borderStyle: 'dashed', borderRadius: 12, paddingVertical: 13 }}>
+                  <Camera size={17} color={color.primary} />
+                  <Text style={{ fontFamily: font.body700, fontSize: 13, color: color.primary }}>Add photos or a video</Text>
+                </Pressable>
+              )}
+            </View>
+
             <Pressable
               onPress={save}
               style={{ backgroundColor: color.primary, paddingVertical: 14, borderRadius: 14, alignItems: 'center', marginTop: 2 }}
@@ -509,6 +570,14 @@ function ChildStory({
               <Text style={{ fontFamily: font.body700, fontSize: 15, color: '#fff' }}>Save moment</Text>
             </Pressable>
           </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Full-screen media viewer (photos) */}
+      <Modal visible={!!viewer} transparent animationType="fade" onRequestClose={() => setViewer(null)}>
+        <Pressable onPress={() => setViewer(null)} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          {viewer?.url ? <Image source={{ uri: viewer.url }} style={{ width: '100%', height: '82%' }} resizeMode="contain" /> : null}
+          <Text style={{ fontFamily: font.body600, fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 14 }}>Tap to close</Text>
         </Pressable>
       </Modal>
 
