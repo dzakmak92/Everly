@@ -7,6 +7,7 @@ import { color, font, radius, shadow, childToken } from '../../src/theme/tokens'
 import { useData, type Milestone, type Child } from '../../src/lib/store';
 import { pickMedia, type MediaRef } from '../../src/lib/pickMedia';
 import { getMediaURL } from '../../src/lib/mediaStore';
+import { openFamilyBook } from '../../src/lib/familyBook';
 import { MILESTONE_TEMPLATE, MILESTONE_STAGES, type MilestoneTemplate } from '../../src/lib/milestones';
 import { ageLabel } from '../../src/lib/age';
 import { BAND_LABEL, type EpdsBand } from '../../src/lib/epds';
@@ -296,6 +297,7 @@ function ChildStory({
 }) {
   const { milestoneMedia, addMilestoneMedia, removeMilestoneMedia } = useData();
   const list = useMemo(() => milestones.filter((m) => m.childId === child.id), [milestones, child.id]);
+  const [building, setBuilding] = useState(false);
 
   const headerName = `${child.name}'s story`;
   const age = child.birthDate ? ageLabel(child.birthDate) : '';
@@ -351,6 +353,19 @@ function ChildStory({
     if (m.kind === 'video') { openBlobTab(m.id); return; }
     getMediaURL(m.id).then((url) => setViewer({ ref: m, url: url ?? m.thumb }));
   };
+
+  async function makeBook() {
+    if (building) return;
+    setBuilding(true);
+    try {
+      const opened = await openFamilyBook(child, milestones, milestoneMedia);
+      if (!opened) await exportStory(); // native: fall back to a text share for now
+    } catch {
+      await exportStory();
+    } finally {
+      setBuilding(false);
+    }
+  }
 
   async function exportStory() {
     const lines = list.map(
@@ -510,7 +525,8 @@ function ChildStory({
 
       {/* keepsake CTA */}
       <Pressable
-        onPress={exportStory}
+        onPress={makeBook}
+        disabled={building}
         style={{
           marginTop: 18,
           borderWidth: 1.5,
@@ -521,11 +537,17 @@ function ChildStory({
           alignItems: 'center',
           justifyContent: 'center',
           gap: 9,
+          opacity: building ? 0.6 : 1,
         }}
       >
         <Archive size={18} color={color.primary} />
-        <Text style={{ fontFamily: font.body700, fontSize: 15, color: color.primary }}>Create Keepsake Book</Text>
+        <Text style={{ fontFamily: font.body700, fontSize: 15, color: color.primary }}>
+          {building ? 'Building your book…' : 'Create Keepsake Book'}
+        </Text>
       </Pressable>
+      <Text style={{ fontFamily: font.body400, fontSize: 11, color: color.faint, textAlign: 'center', marginTop: 8 }}>
+        A printable Storybook — one page per moment, ready to save as a PDF.
+      </Text>
 
       {list.length > 0 ? (
         <Text style={{ fontFamily: font.body400, fontSize: 11, color: color.faint, textAlign: 'center', marginTop: 12 }}>
