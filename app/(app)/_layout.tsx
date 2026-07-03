@@ -6,6 +6,7 @@ import { DataProvider, useData } from '../../src/lib/store';
 import { Splash } from '../../src/components/forms';
 import { Onboarding } from '../../src/components/Onboarding';
 import { UpdateBanner } from '../../src/components/UpdateBanner';
+import { FeedbackProvider } from '../../src/components/Feedback';
 import { color } from '../../src/theme/tokens';
 
 /**
@@ -36,7 +37,9 @@ export default function AppLayout() {
 
   return (
     <DataProvider>
-      <Shell />
+      <FeedbackProvider>
+        <Shell />
+      </FeedbackProvider>
     </DataProvider>
   );
 }
