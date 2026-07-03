@@ -8,6 +8,7 @@ import { ChevronRight, ChevronLeft, Shield, Star, Plus, Check } from '../../src/
 import { Silhouette } from '../../src/components/ui';
 import { useSupabase, signOut } from '../../src/lib/supabase';
 import { useData, CHILD_COLORS, type ChildColor } from '../../src/lib/store';
+import { useFeedback } from '../../src/components/Feedback';
 import { ageLabel, stageFrom, STAGE_LABEL } from '../../src/lib/age';
 
 const PLAN_PILL: Record<string, string> = { free: 'Free', pro: 'Pro', family: 'Family', lifetime: 'Lifetime' };
@@ -33,6 +34,7 @@ export default function SettingsTab() {
   const insets = useSafeAreaInsets();
   const { session, profile } = useSupabase();
   const { children, activeChild, setActiveChild, addChild, clearAll, loadSampleData, demoPremium, setDemoPremium } = useData();
+  const { toast } = useFeedback();
   const [busy, setBusy] = useState(false);
 
   const [addOpen, setAddOpen] = useState(false);
@@ -56,6 +58,7 @@ export default function SettingsTab() {
     if (!name.trim()) { setError("Enter the child's name."); return; }
     addChild({ name, color: colorKey });
     setAddOpen(false);
+    toast('Child added');
   }
 
   const planKey = profile?.plan ?? 'free';
@@ -267,7 +270,7 @@ export default function SettingsTab() {
             <Text style={{ fontFamily: font.body400, fontSize: 13.5, color: color.inkSecondary }}>This replaces what's on this device with a demo family — two children (4 months & 6 years) and an active pregnancy — and turns on premium previews. Great for exploring; you can clear it anytime.</Text>
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <Button label="Cancel" variant="secondary" onPress={() => setConfirmSample(false)} style={{ flex: 1 }} />
-              <Button label="Load" onPress={() => { loadSampleData(); setConfirmSample(false); setMsg('Sample data loaded.'); }} style={{ flex: 1 }} />
+              <Button label="Load" onPress={() => { loadSampleData(); setConfirmSample(false); toast('Sample data loaded'); }} style={{ flex: 1 }} />
             </View>
           </Pressable>
         </Pressable>
@@ -281,7 +284,7 @@ export default function SettingsTab() {
             <Text style={{ fontFamily: font.body400, fontSize: 13.5, color: color.inkSecondary }}>This removes logged entries and events from this device. Children, health records and milestones are kept.</Text>
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <Button label="Cancel" variant="secondary" onPress={() => setConfirmWipe(false)} style={{ flex: 1 }} />
-              <Button label="Clear" onPress={() => { clearAll(); setConfirmWipe(false); setMsg('Activity log cleared.'); }} style={{ flex: 1 }} />
+              <Button label="Clear" onPress={() => { clearAll(); setConfirmWipe(false); toast('Activity log cleared'); }} style={{ flex: 1 }} />
             </View>
           </Pressable>
         </Pressable>

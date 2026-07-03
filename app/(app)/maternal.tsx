@@ -9,6 +9,7 @@ import { MumMeSwitch } from '../../src/components/MumMeSwitch';
 import { ChevronLeft, ChevronRight, Smile, Activity, Heart, Calendar, Camera, Leaf, Phone } from '../../src/components/icons';
 import { useData, type Lochia } from '../../src/lib/store';
 import { BAND_LABEL, CRISIS_RESOURCES, type EpdsBand } from '../../src/lib/epds';
+import { useFeedback } from '../../src/components/Feedback';
 
 const numI = (s: string) => { const v = parseInt(s, 10); return isNaN(v) ? undefined : v; };
 const dateOf = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
@@ -32,6 +33,7 @@ export default function Maternal() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const d = useData();
+  const { toast } = useFeedback();
 
   const [birthOpen, setBirthOpen] = useState(false);
   const [birthIn, setBirthIn] = useState('');
@@ -51,14 +53,14 @@ export default function Maternal() {
   const showSupport = latestEpds?.selfHarmFlag || latestEpds?.band === 'likely';
 
   function openBirth() { setBirthIn(birth ?? ''); setBirthOpen(true); }
-  function saveBirth() { if (birthIn.trim()) d.setMaternalBirth(birthIn.trim()); setBirthIn(''); setBirthOpen(false); }
+  function saveBirth() { if (birthIn.trim()) { d.setMaternalBirth(birthIn.trim()); toast('Saved'); } setBirthIn(''); setBirthOpen(false); }
   function saveRec() {
     const systolic = numI(sys);
     const diastolic = numI(dia);
     const trimmedNote = note.trim();
     // 'light' is the reset default — treat lochia as provided only if the user changed it.
     const hasData = systolic != null || diastolic != null || lochia !== 'light' || trimmedNote.length > 0;
-    if (hasData) d.addRecoveryLog({ systolic, diastolic, lochia, note: trimmedNote });
+    if (hasData) { d.addRecoveryLog({ systolic, diastolic, lochia, note: trimmedNote }); toast('Recovery logged'); }
     setSys(''); setDia(''); setLochia('light'); setNote(''); setRecOpen(false);
   }
 

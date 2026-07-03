@@ -9,6 +9,7 @@ import { ChevronRight } from '../../../src/components/icons';
 import { Silhouette } from '../../../src/components/ui';
 import { useData, CHILD_COLORS, type ChildColor } from '../../../src/lib/store';
 import { ageLabel, stageFrom, STAGE_LABEL } from '../../../src/lib/age';
+import { useFeedback } from '../../../src/components/Feedback';
 
 const ROLES = ['Partner', 'Co-parent', 'Grandparent', 'Carer', 'Other'];
 const ROLE_STYLE: Record<string, { emoji: string; bg: string; fg: string }> = {
@@ -24,6 +25,7 @@ export default function Family() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { children, activeChild, setActiveChild, addChild, caregivers, addCaregiver, deleteCaregiver } = useData();
+  const { toast } = useFeedback();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [birth, setBirth] = useState('');
@@ -41,12 +43,14 @@ export default function Family() {
     if (!name.trim()) { setError("Enter the child's name."); return; }
     addChild({ name, color: colorKey, birthDate: birth });
     setOpen(false);
+    toast('Child added');
   }
   function openMember() { setMName(''); setMRole('Partner'); setMErr(''); setMemberOpen(true); }
   function saveMember() {
     if (!mName.trim()) { setMErr("Enter the person's name."); return; }
     addCaregiver(mName, mRole);
     setMemberOpen(false);
+    toast('Member added');
   }
 
   return (

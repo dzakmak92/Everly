@@ -9,6 +9,7 @@ import { Silhouette } from '../../src/components/ui';
 import { useData } from '../../src/lib/store';
 import type { Routine } from '../../src/lib/store';
 import { ageLabel } from '../../src/lib/age';
+import { useFeedback } from '../../src/components/Feedback';
 
 type Tab = 'morning' | 'evening' | 'chores';
 
@@ -27,6 +28,7 @@ export default function Routines({ embedded }: { embedded?: boolean }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const d = useData();
+  const { toast } = useFeedback();
   const [tab, setTab] = useState<Tab>('morning');
   const [modal, setModal] = useState<null | 'chore' | 'routine' | { stepFor: string }>(null);
   const [label, setLabel] = useState('');
@@ -79,6 +81,7 @@ export default function Routines({ embedded }: { embedded?: boolean }) {
     } else if (modal && 'stepFor' in modal) {
       if (label.trim()) d.addRoutineStep(modal.stepFor, label);
     }
+    if (label.trim()) toast('Saved');
     setLabel('');
     setPoints('10');
     setModal(null);

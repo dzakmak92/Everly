@@ -16,6 +16,7 @@ import {
   useData, entriesOn, entryDetail, ENTRY_META, quickLogKinds, MOOD_LABELS,
   type Entry, type EntryKind, type EntryDetails, type FeedSide, type DiaperType,
 } from '../../../src/lib/store';
+import { useFeedback } from '../../../src/components/Feedback';
 
 /* ── header sun / moon glyphs ────────────────────────────────────────────── */
 function Moon({ size = 20, color: c = '#9C9AB2' }: { size?: number; color?: string }) {
@@ -88,6 +89,7 @@ export default function AddLog() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ night?: string }>();
   const { addEntry, addEvent, entries, activeChild } = useData();
+  const { toast: notify } = useFeedback();
 
   const [night, setNight] = useState(params.night === '1');
   const [kind, setKind] = useState<EntryKind | null>(null);
@@ -145,6 +147,7 @@ export default function AddLog() {
     else addEntry(kind, { note }); // note / meal / medicine / potty
     flash(ENTRY_META[kind].label);
     setKind(null);
+    notify('Saved');
   }
 
   function openAppt() {
@@ -162,6 +165,7 @@ export default function AddLog() {
     addEvent({ title: apTitle.trim(), at: at.toISOString(), childId: cid, location: apLoc.trim() || undefined });
     setApptOpen(false);
     flash('Appointment');
+    notify('Appointment added');
   }
 
   function runCmd() {

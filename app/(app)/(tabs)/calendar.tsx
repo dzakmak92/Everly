@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight, Calendar, Shield, Activity, Heart, X, Search
 import { Button, Field } from '../../../src/components/forms';
 import { useData, ENTRY_META, entryDetail, EntryKind, EventItem, Entry } from '../../../src/lib/store';
 import { useWeather, WeatherGlyph, searchCity, wxColor, type WxLocation, type DayWx } from '../../../src/lib/weather';
+import { useFeedback } from '../../../src/components/Feedback';
 
 /* Calendar — Monday-start month grid, view-mode pills, today-filled cell,
  * per-category dots, and rich selected-day rows. Design parity with A04. */
@@ -56,6 +57,7 @@ export default function CalendarTab() {
     dueDate, maternalBirth,
   } = useData();
   const wx = useWeather();
+  const { toast } = useFeedback();
 
   // Pregnancy + Mum&Me appointments, unified for the calendar.
   const appts: Appt[] = [
@@ -134,6 +136,7 @@ export default function CalendarTab() {
     setTitle('');
     setTime('09:00');
     setAddOpen(false);
+    toast('Event added');
   }
 
   const selDateLabel = new Date(sel.y, sel.m, sel.d)
@@ -269,7 +272,7 @@ export default function CalendarTab() {
           ? <ScheduleEditForm key={ev.id} owner={o} title={ev.title} at={ev.at} location={ev.location}
               onCancel={() => setEditId(null)}
               onDelete={() => { deleteEvent(ev.id); setEditId(null); }}
-              onSave={(p) => { updateEvent(ev.id, p); setEditId(null); }} />
+              onSave={(p) => { updateEvent(ev.id, p); setEditId(null); toast('Saved'); }} />
           : <ScheduleRow key={ev.id} owner={o} title={ev.title} at={ev.at} location={ev.location} onEdit={() => setEditId(ev.id)} />;
       })}
 

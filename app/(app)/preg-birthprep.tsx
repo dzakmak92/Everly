@@ -6,6 +6,7 @@ import { color, font, radius, shadow } from '../../src/theme/tokens';
 import { Button, Field } from '../../src/components/forms';
 import { ChevronLeft, Check } from '../../src/components/icons';
 import { useData } from '../../src/lib/store';
+import { useFeedback } from '../../src/components/Feedback';
 
 const STARTER: { category: string; label: string }[] = [
   { category: 'For Mum', label: 'ID & maternity notes' },
@@ -24,9 +25,31 @@ export default function BirthPrep() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { birthPrep, addBirthPrep, toggleBirthPrep, deleteBirthPrep } = useData();
+  const { toast, confirm } = useFeedback();
   const [open, setOpen] = useState(false);
   const [label, setLabel] = useState('');
   const [category, setCategory] = useState('For Mum');
+
+  const loadStarter = async () => {
+    const norm = (s: string) => s.trim().toLowerCase();
+    const have = new Set(birthPrep.map((i) => `${norm(i.category)}|${norm(i.label)}`));
+    const fresh = STARTER.filter((s) => !have.has(`${norm(s.category)}|${norm(s.label)}`));
+    const dupes = STARTER.length - fresh.length;
+    if (dupes > 0) {
+      const ok = await confirm({
+        title: 'Some items are already on your list',
+        message: fresh.length > 0
+          ? `${dupes} of the ${STARTER.length} starter items are already there. Add the ${fresh.length} new one${fresh.length === 1 ? '' : 's'} and skip the duplicates?`
+          : `All ${STARTER.length} starter items are already on your list — nothing new to add.`,
+        confirmLabel: fresh.length > 0 ? 'Add new only' : 'OK',
+        cancelLabel: fresh.length > 0 ? 'Cancel' : 'Close',
+        accent: color.rose,
+      });
+      if (!ok || fresh.length === 0) return;
+    }
+    fresh.forEach(addBirthPrep);
+    toast(`Loaded ${fresh.length} item${fresh.length === 1 ? '' : 's'}`);
+  };
 
   const cats = Array.from(new Set([...birthPrep.map((i) => i.category)]));
   const done = birthPrep.filter((i) => i.checked).length;
@@ -43,7 +66,7 @@ export default function BirthPrep() {
       {birthPrep.length === 0 ? (
         <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 20, gap: 12 }, shadow.card]}>
           <Text style={{ fontFamily: font.body500, fontSize: 14, color: color.inkSecondary }}>Start with a hospital-bag & birth-plan checklist you can tick off and add to.</Text>
-          <Button label="Load starter checklist" onPress={() => STARTER.forEach((s) => addBirthPrep(s))} />
+          <Button label="Load starter checklist" onPress={loadStarter} />
         </View>
       ) : (
         <>
@@ -79,7 +102,7 @@ export default function BirthPrep() {
             </View>
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <Button label="Cancel" variant="secondary" onPress={() => setOpen(false)} style={{ flex: 1 }} />
-              <Button label="Add" onPress={() => { if (label.trim()) addBirthPrep({ category, label }); setLabel(''); setOpen(false); }} style={{ flex: 1 }} />
+              <Button label="Add" onPress={() => { if (label.trim()) { addBirthPrep({ category, label }); setLabel(''); setOpen(false); toast('Item added'); return; } setLabel(''); setOpen(false); }} style={{ flex: 1 }} />
             </View>
           </Pressable>
         </Pressable>

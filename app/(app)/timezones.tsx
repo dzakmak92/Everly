@@ -6,6 +6,7 @@ import { color, font, radius, shadow } from '../../src/theme/tokens';
 import { Button, Field } from '../../src/components/forms';
 import { ChevronLeft } from '../../src/components/icons';
 import { useData } from '../../src/lib/store';
+import { useFeedback } from '../../src/components/Feedback';
 
 const PRESETS = ['Europe/Dublin', 'Europe/London', 'America/New_York', 'America/Chicago', 'America/Los_Angeles', 'Asia/Tokyo', 'Australia/Sydney'];
 
@@ -23,6 +24,7 @@ export default function Timezones() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { tzContacts, addTzContact, deleteTzContact } = useData();
+  const { toast } = useFeedback();
   const [now, setNow] = useState(new Date());
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
@@ -37,7 +39,7 @@ export default function Timezones() {
   const myTz = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { return 'UTC'; } })();
 
   function save() {
-    if (name.trim() && tz.trim()) addTzContact({ name, tz, location: loc });
+    if (name.trim() && tz.trim()) { addTzContact({ name, tz, location: loc }); toast('Contact added'); }
     setName(''); setTz(''); setLoc(''); setOpen(false);
   }
 
