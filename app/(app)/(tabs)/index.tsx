@@ -1284,6 +1284,12 @@ function PrepChecklist() {
   const [adding, setAdding] = useState(false);
   const [secName, setSecName] = useState('');
 
+  // Collapsed by default ("off"): show only the first 3 categories, with a
+  // toggle to reveal the rest.
+  const [showAll, setShowAll] = useState(false);
+  const visibleSections = showAll ? sections : sections.slice(0, 3);
+  const hiddenCount = sections.length - visibleSections.length;
+
   // Starter-list picker: choose which of the ten sections to load.
   const norm = (s: string) => s.trim().toLowerCase();
   const haveSet = new Set(birthPrep.map((i) => `${norm(i.category)}|${norm(i.label)}`));
@@ -1322,7 +1328,7 @@ function PrepChecklist() {
         )}
       </View>
 
-      {sections.map((sec) => (
+      {visibleSections.map((sec) => (
         <PrepSection
           key={sec}
           name={sec}
@@ -1336,6 +1342,14 @@ function PrepChecklist() {
           onDelete={() => deletePrepSection(sec)}
         />
       ))}
+
+      {sections.length > 3 && (
+        <Pressable onPress={() => setShowAll((v) => !v)} style={({ pressed }) => [{ alignItems: 'center', paddingVertical: 6, opacity: pressed ? 0.6 : 1 }]}>
+          <Text style={{ fontFamily: font.body700, fontSize: 12.5, color: color.roseInk }}>
+            {showAll ? 'Show fewer' : `Show all ${sections.length} categories${hiddenCount ? ` (+${hiddenCount})` : ''}`}
+          </Text>
+        </Pressable>
+      )}
 
       {adding ? (
         <View style={{ borderWidth: 1.5, borderColor: color.rose, borderStyle: 'dashed', borderRadius: radius.card, padding: 12, gap: 10 }}>
@@ -2192,8 +2206,12 @@ function CareCheckinCard() {
   const days7 = Array.from({ length: 7 }, (_, i) => { const d = new Date(now); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - (6 - i)); return d; });
   const waterFor = (d: Date) => checkins.find((c) => ccSameDay(c.at, d) && c.waterL != null)?.waterL ?? 0;
   const sleepFor = (d: Date) => checkins.find((c) => ccSameDay(c.at, d) && c.sleepH != null)?.sleepH ?? 0;
-  const waterVals = days7.map(waterFor); const wMax = Math.max(2, ...waterVals);
-  const sleepVals = days7.map(sleepFor); const sMax = Math.max(9, ...sleepVals);
+  // Today's bar tracks the live (unsaved) value being edited above, so the chart
+  // updates as you tap +/- — not only after Save.
+  const waterVals = days7.map(waterFor); waterVals[6] = water;
+  const sleepVals = days7.map(sleepFor); if (sleep != null) sleepVals[6] = sleep;
+  const wMax = Math.max(2, ...waterVals);
+  const sMax = Math.max(9, ...sleepVals);
   const dayLabels = days7.map((d) => ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'][d.getDay()]);
   const dayAxis = (
     <View style={{ flexDirection: 'row', gap: 4, marginTop: 4 }}>
