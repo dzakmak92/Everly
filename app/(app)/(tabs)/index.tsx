@@ -1284,6 +1284,12 @@ function PrepChecklist() {
   const [adding, setAdding] = useState(false);
   const [secName, setSecName] = useState('');
 
+  // Collapsed by default ("off"): show only the first 3 categories, with a
+  // toggle to reveal the rest.
+  const [showAll, setShowAll] = useState(false);
+  const visibleSections = showAll ? sections : sections.slice(0, 3);
+  const hiddenCount = sections.length - visibleSections.length;
+
   // Starter-list picker: choose which of the ten sections to load.
   const norm = (s: string) => s.trim().toLowerCase();
   const haveSet = new Set(birthPrep.map((i) => `${norm(i.category)}|${norm(i.label)}`));
@@ -1322,7 +1328,7 @@ function PrepChecklist() {
         )}
       </View>
 
-      {sections.map((sec) => (
+      {visibleSections.map((sec) => (
         <PrepSection
           key={sec}
           name={sec}
@@ -1336,6 +1342,14 @@ function PrepChecklist() {
           onDelete={() => deletePrepSection(sec)}
         />
       ))}
+
+      {sections.length > 3 && (
+        <Pressable onPress={() => setShowAll((v) => !v)} style={({ pressed }) => [{ alignItems: 'center', paddingVertical: 6, opacity: pressed ? 0.6 : 1 }]}>
+          <Text style={{ fontFamily: font.body700, fontSize: 12.5, color: color.roseInk }}>
+            {showAll ? 'Show fewer' : `Show all ${sections.length} categories${hiddenCount ? ` (+${hiddenCount})` : ''}`}
+          </Text>
+        </Pressable>
+      )}
 
       {adding ? (
         <View style={{ borderWidth: 1.5, borderColor: color.rose, borderStyle: 'dashed', borderRadius: radius.card, padding: 12, gap: 10 }}>
