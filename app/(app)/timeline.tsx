@@ -5,6 +5,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { color, font, radius, shadow, childToken } from '../../src/theme/tokens';
 import { useData, type Milestone, type Child } from '../../src/lib/store';
+import { MILESTONE_TEMPLATE, MILESTONE_STAGES, type MilestoneTemplate } from '../../src/lib/milestones';
 import { ageLabel } from '../../src/lib/age';
 import { BAND_LABEL, type EpdsBand } from '../../src/lib/epds';
 import { youStoryEvents } from '../../src/lib/story';
@@ -265,17 +266,34 @@ function ChildStory({
 
   const headerName = `${child.name}'s story`;
   const age = child.birthDate ? ageLabel(child.birthDate) : '';
-  const subtitle = [age, `${list.length} moment${list.length === 1 ? '' : 's'}`].filter(Boolean).join(' · ');
+
+  // ── Template suggestions: template moments not yet captured, near this age ──
+  const norm = (s: string) => s.trim().toLowerCase();
+  const captured = useMemo(() => new Set(list.map((m) => norm(m.title))), [list]);
+  const msDay = 86400000;
+  const birthMs = child.birthDate ? new Date(`${child.birthDate}T00:00:00`).getTime() : null;
+  const ageDaysNow = birthMs != null ? Math.floor((Date.now() - birthMs) / msDay) : 0;
+  const suggestedDate = (t: MilestoneTemplate) => (birthMs != null ? new Date(birthMs + t.ageDays * msDay).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10));
+  const uncaptured = useMemo(() => MILESTONE_TEMPLATE.filter((t) => !captured.has(norm(t.title))).sort((a, b) => a.ageDays - b.ageDays), [captured]);
+  // inline suggestions: the moments closest to this child's current age, shown in order.
+  const suggestions = useMemo(() => {
+    const closest = [...uncaptured].sort((a, b) => Math.abs(a.ageDays - ageDaysNow) - Math.abs(b.ageDays - ageDaysNow)).slice(0, 6);
+    return closest.sort((a, b) => a.ageDays - b.ageDays);
+  }, [uncaptured, ageDaysNow]);
+
+  const subtitle = [age, `${list.length} captured`, uncaptured.length ? `${uncaptured.length} to go ✨` : 'complete 🎉'].filter(Boolean).join(' · ');
 
   const [open, setOpen] = useState(false);
+  const [browse, setBrowse] = useState(false);
   const [title, setTitle] = useState('');
   const [date, setDate] = useState('');
   const [note, setNote] = useState('');
 
-  function openAdd() {
-    setTitle('');
-    setDate(new Date().toISOString().slice(0, 10));
+  function openAdd(prefill?: { title: string; date: string }) {
+    setTitle(prefill?.title ?? '');
+    setDate(prefill?.date ?? new Date().toISOString().slice(0, 10));
     setNote('');
+    setBrowse(false);
     setOpen(true);
   }
   function save() {
@@ -340,7 +358,7 @@ function ChildStory({
           />
         )}
 
-        {list.length === 0 ? (
+        {list.length === 0 && suggestions.length === 0 ? (
           <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 22, alignItems: 'center' }, shadow.card]}>
             <Text style={{ fontFamily: font.body500, fontSize: 14, color: color.muted, textAlign: 'center', lineHeight: 20 }}>
               {`No moments captured yet.\nAdd ${child.name}'s first memory below.`}
@@ -386,9 +404,31 @@ function ChildStory({
           })
         )}
 
+        {/* suggested moments from the template (tap to capture) */}
+        {suggestions.map((t) => (
+          <Pressable
+            key={t.key}
+            onPress={() => openAdd({ title: t.title, date: suggestedDate(t) })}
+            style={{ flexDirection: 'row', gap: 14, alignItems: 'center', marginBottom: 12 }}
+          >
+            <View style={{ width: 32, height: 32, borderRadius: 16, borderWidth: 2, borderStyle: 'dashed', borderColor: color.faint, backgroundColor: '#F4F3FB', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
+              <Text style={{ fontSize: 15 }}>{t.emoji}</Text>
+            </View>
+            <View style={{ flex: 1, borderWidth: 1.5, borderColor: '#E4E0EE', borderStyle: 'dashed', borderRadius: 16, paddingVertical: 11, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={{ fontFamily: font.body700, fontSize: 14, color: color.muted }} numberOfLines={1}>{t.title}</Text>
+                <Text style={{ fontFamily: font.body400, fontSize: 11, color: color.faint, marginTop: 1 }}>{t.hint} · tap to capture</Text>
+              </View>
+              <View style={{ backgroundColor: '#EEF0FF', borderRadius: radius.pill, paddingVertical: 5, paddingHorizontal: 11 }}>
+                <Text style={{ fontFamily: font.body700, fontSize: 11.5, color: color.primary }}>＋ Add</Text>
+              </View>
+            </View>
+          </Pressable>
+        ))}
+
         {/* add a memory row (also sits on the spine) */}
         <Pressable
-          onPress={openAdd}
+          onPress={() => openAdd()}
           style={{ flexDirection: 'row', gap: 14, alignItems: 'center', marginTop: 2, marginBottom: 6 }}
         >
           <View
@@ -407,9 +447,18 @@ function ChildStory({
           >
             <Plus size={14} color={color.muted} strokeWidth={2.5} />
           </View>
-          <Text style={{ fontFamily: font.body600, fontSize: 14, color: color.muted }}>Add a memory…</Text>
+          <Text style={{ fontFamily: font.body600, fontSize: 14, color: color.muted }}>Add your own memory…</Text>
         </Pressable>
       </View>
+
+      {/* Browse the full milestone template */}
+      <Pressable
+        onPress={() => setBrowse(true)}
+        style={{ marginTop: 6, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12 }}
+      >
+        <Star size={15} color={color.primary} />
+        <Text style={{ fontFamily: font.body700, fontSize: 13.5, color: color.primary }}>Browse all milestones{uncaptured.length ? ` (${uncaptured.length})` : ''}</Text>
+      </Pressable>
 
       {/* keepsake CTA */}
       <Pressable
@@ -459,6 +508,45 @@ function ChildStory({
             >
               <Text style={{ fontFamily: font.body700, fontSize: 15, color: '#fff' }}>Save moment</Text>
             </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Milestone template picker */}
+      <Modal visible={browse} transparent animationType="fade" onRequestClose={() => setBrowse(false)}>
+        <Pressable onPress={() => setBrowse(false)} style={{ flex: 1, backgroundColor: 'rgba(40,18,50,0.35)', justifyContent: 'center', paddingHorizontal: 22 }}>
+          <Pressable onPress={() => {}} style={[{ backgroundColor: color.canvas, borderRadius: radius.card, padding: 18, maxHeight: '84%' }, shadow.card]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+              <Text style={{ fontFamily: font.display700, fontSize: 18, color: color.ink }}>Add a milestone</Text>
+              <Pressable onPress={() => setBrowse(false)} hitSlop={8}><X size={20} color={color.muted} /></Pressable>
+            </View>
+            <Text style={{ fontFamily: font.body400, fontSize: 12.5, color: color.muted, marginBottom: 8 }}>Pre-filled moments — tap one, then add your date, note and photo.</Text>
+            <ScrollView style={{ maxHeight: '82%' }} showsVerticalScrollIndicator={false}>
+              {MILESTONE_STAGES.map((stage) => {
+                const items = MILESTONE_TEMPLATE.filter((t) => t.stage === stage);
+                return (
+                  <View key={stage} style={{ marginBottom: 6 }}>
+                    <Text style={{ fontFamily: font.body700, fontSize: 10.5, letterSpacing: 0.6, textTransform: 'uppercase', color: color.muted, marginTop: 10, marginBottom: 6, paddingHorizontal: 2 }}>{stage}</Text>
+                    {items.map((t) => {
+                      const done = captured.has(norm(t.title));
+                      return (
+                        <Pressable key={t.key} disabled={done} onPress={() => openAdd({ title: t.title, date: suggestedDate(t) })}
+                          style={{ flexDirection: 'row', alignItems: 'center', gap: 11, backgroundColor: '#fff', borderRadius: 13, paddingVertical: 10, paddingHorizontal: 12, marginBottom: 7, opacity: done ? 0.5 : 1 }}>
+                          <Text style={{ fontSize: 18 }}>{t.emoji}</Text>
+                          <View style={{ flex: 1, minWidth: 0 }}>
+                            <Text style={{ fontFamily: font.body700, fontSize: 13.5, color: color.ink }} numberOfLines={1}>{t.title}</Text>
+                            <Text style={{ fontFamily: font.body400, fontSize: 10.5, color: color.muted }}>{t.hint}</Text>
+                          </View>
+                          {done
+                            ? <Text style={{ fontFamily: font.body700, fontSize: 11, color: color.maternalTeal }}>Added ✓</Text>
+                            : <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: '#EEF0FF', alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontFamily: font.body700, fontSize: 16, color: color.primary }}>＋</Text></View>}
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                );
+              })}
+            </ScrollView>
           </Pressable>
         </Pressable>
       </Modal>
