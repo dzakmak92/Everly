@@ -1872,6 +1872,7 @@ const KICK_TARGET = 10;
 /** Labour & movement — kick counter + contraction timer, matching kick-counter. */
 function LabourPanel() {
   const { kickSessions, addKickSession, deleteKickSession, contractionSessions, addContraction, deleteContraction } = useData();
+  const { toast } = useFeedback();
   const [mode, setMode] = useState<'kicks' | 'contractions'>('kicks');
   const [showKickHist, setShowKickHist] = useState(false);
   const [showConHist, setShowConHist] = useState(false);
@@ -1886,7 +1887,7 @@ function LabourPanel() {
     }
   }, [startedAt, kicks]);
   const recordKick = () => { if (kicks >= KICK_TARGET) return; if (!startedAt) { setStartedAt(Date.now()); setKickNow(Date.now()); } setKicks((k) => k + 1); };
-  const resetKicks = () => { if (kicks > 0 && startedAt) addKickSession({ count: kicks, durationMin: Math.max(1, Math.round((kickNow - startedAt) / 60000)) }); setKicks(0); setStartedAt(null); setKickNow(Date.now()); };
+  const resetKicks = () => { const saved = kicks > 0 && startedAt; if (saved) addKickSession({ count: kicks, durationMin: Math.max(1, Math.round((kickNow - startedAt) / 60000)) }); setKicks(0); setStartedAt(null); setKickNow(Date.now()); if (saved) toast('Session saved'); };
   const elapsed = startedAt ? Math.max(0, kickNow - startedAt) : 0;
   const done = kicks >= KICK_TARGET;
 
@@ -1902,7 +1903,7 @@ function LabourPanel() {
       const prev = contractionSessions[0];
       const prevStart = prev ? new Date(prev.at).getTime() - prev.durationSec * 1000 : null;
       const intervalSec = prevStart != null ? Math.max(0, Math.round((activeStart - prevStart) / 1000)) : undefined;
-      addContraction({ durationSec, intervalSec }); setActiveStart(null);
+      addContraction({ durationSec, intervalSec }); setActiveStart(null); toast('Contraction logged');
     } else { setActiveStart(Date.now()); setConNow(Date.now()); }
   };
 

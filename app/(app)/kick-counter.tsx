@@ -6,6 +6,7 @@ import { color, font, radius, shadow } from '../../src/theme/tokens';
 import { Button } from '../../src/components/forms';
 import { ChevronLeft } from '../../src/components/icons';
 import { useData } from '../../src/lib/store';
+import { useFeedback } from '../../src/components/Feedback';
 
 type Mode = 'kicks' | 'contractions';
 
@@ -46,6 +47,7 @@ export default function LabourAndMovement() {
     addContraction,
     deleteContraction,
   } = useData();
+  const { toast } = useFeedback();
 
   // ── Kick counter state (in-progress is local; completed sessions persist) ──
   const [kicks, setKicks] = useState(0);
@@ -67,12 +69,14 @@ export default function LabourAndMovement() {
   }
   // Save the current session (if any kicks recorded), then clear local state.
   function resetKicks() {
-    if (kicks > 0 && startedAt) {
+    const saved = kicks > 0 && startedAt;
+    if (saved) {
       addKickSession({ count: kicks, durationMin: Math.max(1, Math.round((kickNow - startedAt) / 60000)) });
     }
     setKicks(0);
     setStartedAt(null);
     setKickNow(Date.now());
+    if (saved) toast('Session saved');
   }
 
   const elapsed = startedAt ? kickNow - startedAt : 0;
@@ -110,6 +114,7 @@ export default function LabourAndMovement() {
       const intervalSec = prevStart != null ? Math.max(0, Math.round((activeStart - prevStart) / 1000)) : undefined;
       addContraction({ durationSec, intervalSec });
       setActiveStart(null);
+      toast('Contraction logged');
     } else {
       setActiveStart(Date.now());
       setConNow(Date.now());

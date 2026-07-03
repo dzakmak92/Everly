@@ -6,6 +6,7 @@ import { color, font, radius, shadow } from '../../src/theme/tokens';
 import { Button, Field } from '../../src/components/forms';
 import { ChevronLeft } from '../../src/components/icons';
 import { useData } from '../../src/lib/store';
+import { useFeedback } from '../../src/components/Feedback';
 
 const COMFORT = ['Painful', 'Some pain', 'Okay', 'Comfortable'];
 const isToday = (iso: string) => new Date(iso).toDateString() === new Date().toDateString();
@@ -15,6 +16,7 @@ export default function MatCare() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { momCare, addMomCare, deleteMomCare } = useData();
+  const { toast } = useFeedback();
   const [sleepOpen, setSleepOpen] = useState(false);
   const [hrs, setHrs] = useState('');
 
@@ -38,7 +40,7 @@ export default function MatCare() {
         <Text style={{ fontFamily: font.body700, fontSize: 13, color: color.ink }}>Breastfeeding comfort today</Text>
         <View style={{ flexDirection: 'row', gap: 6 }}>
           {COMFORT.map((c, i) => (
-            <Pressable key={c} onPress={() => addMomCare({ kind: 'comfort', value: i })} style={{ flex: 1, paddingVertical: 10, borderRadius: radius.tile, alignItems: 'center', backgroundColor: lastComfort?.value === i && isToday(lastComfort.at) ? color.maternalTeal : color.canvas }}>
+            <Pressable key={c} onPress={() => { addMomCare({ kind: 'comfort', value: i }); toast('Comfort logged'); }} style={{ flex: 1, paddingVertical: 10, borderRadius: radius.tile, alignItems: 'center', backgroundColor: lastComfort?.value === i && isToday(lastComfort.at) ? color.maternalTeal : color.canvas }}>
               <Text style={{ fontFamily: font.body600, fontSize: 11, color: lastComfort?.value === i && isToday(lastComfort.at) ? '#fff' : color.ink, textAlign: 'center' }}>{c}</Text>
             </Pressable>
           ))}
@@ -76,7 +78,7 @@ export default function MatCare() {
         <Text style={{ fontFamily: font.display700, fontSize: 24, color: color.ink }}>{(todayWater / 1000).toFixed(1)}L <Text style={{ fontFamily: font.body500, fontSize: 13, color: color.muted }}>/ {goalWater / 1000}L goal</Text></Text>
         <View style={{ flexDirection: 'row', gap: 8 }}>
           {[250, 500].map((v) => (
-            <Pressable key={v} onPress={() => addMomCare({ kind: 'water', value: v })} style={{ flex: 1, paddingVertical: 11, borderRadius: radius.tile, alignItems: 'center', backgroundColor: '#DCEBFA' }}>
+            <Pressable key={v} onPress={() => { addMomCare({ kind: 'water', value: v }); toast('Water logged'); }} style={{ flex: 1, paddingVertical: 11, borderRadius: radius.tile, alignItems: 'center', backgroundColor: '#DCEBFA' }}>
               <Text style={{ fontFamily: font.body700, fontSize: 13, color: color.preconceptionSky }}>+{v} ml</Text>
             </Pressable>
           ))}
@@ -96,7 +98,7 @@ export default function MatCare() {
             <Field label="Hours last night" value={hrs} onChangeText={setHrs} placeholder="e.g. 5.5" />
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <Button label="Cancel" variant="secondary" onPress={() => setSleepOpen(false)} style={{ flex: 1 }} />
-              <Button label="Save" onPress={() => { const n = parseFloat(hrs); if (!isNaN(n)) addMomCare({ kind: 'sleep', value: n }); setSleepOpen(false); }} style={{ flex: 1 }} />
+              <Button label="Save" onPress={() => { const n = parseFloat(hrs); if (!isNaN(n)) { addMomCare({ kind: 'sleep', value: n }); toast('Sleep logged'); } setSleepOpen(false); }} style={{ flex: 1 }} />
             </View>
           </Pressable>
         </Pressable>

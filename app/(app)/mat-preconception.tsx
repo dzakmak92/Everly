@@ -7,6 +7,7 @@ import { Button, Field } from '../../src/components/forms';
 import { DateField } from '../../src/components/DateField';
 import { ChevronLeft, ChevronRight, Check } from '../../src/components/icons';
 import { useData } from '../../src/lib/store';
+import { useFeedback } from '../../src/components/Feedback';
 import { useEntitlement } from '../../src/lib/entitlement';
 import { gestFromDueDate } from '../../src/lib/pregnancy';
 import { ageLabel, stageFrom, STAGE_LABEL } from '../../src/lib/age';
@@ -23,6 +24,7 @@ export default function Preconception() {
   const [tab, setTab] = useState<Tab>(params.tab === 'again' ? 'again' : 'ttc');
 
   const { lastPeriod, setLastPeriod, cycleLength, setCycleLength, ttcItems, addTtc, toggleTtc, deleteTtc, dueDate, children } = useData();
+  const { toast, confirm } = useFeedback();
   const { isPremium } = useEntitlement();
 
   const [open, setOpen] = useState(false);
@@ -40,7 +42,28 @@ export default function Preconception() {
   }
   const done = ttcItems.filter((i) => i.checked).length;
 
-  function save() { if (lp.trim()) setLastPeriod(lp.trim()); const n = parseInt(cl, 10); if (!isNaN(n)) setCycleLength(n); setOpen(false); }
+  function save() { if (lp.trim()) setLastPeriod(lp.trim()); const n = parseInt(cl, 10); if (!isNaN(n)) setCycleLength(n); setOpen(false); toast('Saved'); }
+
+  const loadChecklist = async () => {
+    const norm = (s: string) => s.trim().toLowerCase();
+    const have = new Set(ttcItems.map((i) => norm(i.label)));
+    const fresh = STARTER.filter((s) => !have.has(norm(s)));
+    const dupes = STARTER.length - fresh.length;
+    if (dupes > 0) {
+      const ok = await confirm({
+        title: 'Some items are already on your list',
+        message: fresh.length > 0
+          ? `${dupes} of the ${STARTER.length} items are already there. Add the ${fresh.length} new one${fresh.length === 1 ? '' : 's'} and skip duplicates?`
+          : `All ${STARTER.length} items are already on your list — nothing new to add.`,
+        confirmLabel: fresh.length > 0 ? 'Add new only' : 'OK',
+        cancelLabel: fresh.length > 0 ? 'Cancel' : 'Close',
+        accent: color.rose,
+      });
+      if (!ok || fresh.length === 0) return;
+    }
+    fresh.forEach(addTtc);
+    toast(`Loaded ${fresh.length} item${fresh.length === 1 ? '' : 's'}`);
+  };
 
   const gest = gestFromDueDate(dueDate ?? undefined);
 
@@ -88,7 +111,7 @@ export default function Preconception() {
             {ttcItems.length === 0 ? (
               <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 16, gap: 10 }, shadow.card]}>
                 <Text style={{ fontFamily: font.body500, fontSize: 13, color: color.inkSecondary }}>A few evidence-based steps to prepare.</Text>
-                <Button label="Load checklist" variant="secondary" onPress={() => STARTER.forEach(addTtc)} />
+                <Button label="Load checklist" variant="secondary" onPress={loadChecklist} />
               </View>
             ) : ttcItems.map((i) => (
               <View key={i.id} style={[{ backgroundColor: '#fff', borderRadius: radius.cardSm, padding: 13, flexDirection: 'row', alignItems: 'center', gap: 12 }, shadow.card]}>

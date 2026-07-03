@@ -6,6 +6,7 @@ import { color, font, radius, shadow } from '../../src/theme/tokens';
 import { Button, Field } from '../../src/components/forms';
 import { ChevronLeft, Phone } from '../../src/components/icons';
 import { useData } from '../../src/lib/store';
+import { useFeedback } from '../../src/components/Feedback';
 import { RED_FLAGS_CALL_NOW, RED_FLAGS_CALL_SOON } from '../../src/lib/pregnancy';
 
 const numF = (s: string) => { const v = parseFloat(s); return isNaN(v) ? undefined : v; };
@@ -24,6 +25,7 @@ export default function PregVitals() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ tab?: string }>();
   const { pregVitals, addPregVital, deletePregVital } = useData();
+  const { toast } = useFeedback();
   const [tab, setTab] = useState<Tab>(params.tab === 'triage' ? 'triage' : 'monitoring');
   const [open, setOpen] = useState<null | 'glucose' | 'bp'>(null);
   const [g, setG] = useState('');
@@ -38,6 +40,7 @@ export default function PregVitals() {
     if (open === 'glucose') addPregVital({ kind: 'glucose', glucose: numF(g), tag });
     else if (open === 'bp') addPregVital({ kind: 'bp', systolic: numF(sys), diastolic: numF(dia) });
     setG(''); setSys(''); setDia(''); setTag('fasting'); setOpen(null);
+    toast('Reading saved');
   }
 
   return (

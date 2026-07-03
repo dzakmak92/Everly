@@ -12,6 +12,7 @@ import {
   BabyBean, Heart, Calendar, Activity, CheckCircle, Shield, Star, Smile,
 } from '../../src/components/icons';
 import { useData, CHILD_COLORS, type ChildColor } from '../../src/lib/store';
+import { useFeedback } from '../../src/components/Feedback';
 import { childToken } from '../../src/theme/tokens';
 import { gestFromDueDate, weekContent, dueDateFromLmp, PREG_SYMPTOMS, MOODS } from '../../src/lib/pregnancy';
 
@@ -48,6 +49,7 @@ export default function Pregnancy() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { dueDate, setDueDate, setMaternalBirth, addChild, setActiveChild, savedNames, checkins, addCheckin, deleteCheckin, pregArchive, closePregnancy } = useData();
+  const { toast } = useFeedback();
   const archived = !dueDate ? (pregArchive[0] ?? null) : null;
 
   const [dueOpen, setDueOpen] = useState(false);
@@ -99,6 +101,7 @@ export default function Pregnancy() {
     const dd = dueIn.trim() || (lmpIn.trim() ? dueDateFromLmp(lmpIn.trim()) : '');
     if (dd) setDueDate(dd);
     setDueIn(''); setLmpIn(''); setDueOpen(false);
+    if (dd) toast('Due date saved');
   }
   function toggleSymptom(s: string) {
     setSymptoms((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
@@ -106,6 +109,7 @@ export default function Pregnancy() {
   function saveCheckin() {
     addCheckin({ mood, symptoms, weightKg: num(weight) });
     setMood(2); setSymptoms([]); setWeight(''); setCiOpen(false);
+    toast('Check-in saved');
   }
 
   return (

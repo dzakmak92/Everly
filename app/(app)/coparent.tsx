@@ -7,6 +7,7 @@ import { Button, Field } from '../../src/components/forms';
 import { ChevronLeft, Shield, Info, Check } from '../../src/components/icons';
 import { Silhouette } from '../../src/components/ui';
 import { useData } from '../../src/lib/store';
+import { useFeedback } from '../../src/components/Feedback';
 
 const WD = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const WD_FULL = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -23,6 +24,7 @@ export default function CoParent({ embedded }: { embedded?: boolean }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const d = useData();
+  const { toast } = useFeedback();
   const [addCg, setAddCg] = useState(false);
   const [cgName, setCgName] = useState('');
   const [addEx, setAddEx] = useState(false);
@@ -75,10 +77,10 @@ export default function CoParent({ embedded }: { embedded?: boolean }) {
   const gaugeTotal = owedToMe + iOwe;
   const youPct = gaugeTotal > 0 ? (owedToMe / gaugeTotal) * 100 : 50;
 
-  function saveCg() { if (cgName.trim()) d.addCaregiver(cgName); setCgName(''); setAddCg(false); }
+  function saveCg() { if (cgName.trim()) { d.addCaregiver(cgName); toast('Caregiver added'); } setCgName(''); setAddCg(false); }
   function saveEx() {
     const amt = parseFloat(amount);
-    if (label.trim() && !isNaN(amt)) d.addExpense({ label, amount: amt, paidBy, splitPct: parseInt(split, 10) || 50 });
+    if (label.trim() && !isNaN(amt)) { d.addExpense({ label, amount: amt, paidBy, splitPct: parseInt(split, 10) || 50 }); toast('Expense added'); }
     setLabel(''); setAmount(''); setPaidBy('me'); setSplit('50'); setAddEx(false);
   }
   function settleUp() {
@@ -346,7 +348,7 @@ export default function CoParent({ embedded }: { embedded?: boolean }) {
             </Text>
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <Button label="Cancel" variant="secondary" onPress={() => setConfirmRemove(null)} style={{ flex: 1 }} />
-              <Button label="Remove" onPress={() => { if (confirmRemove) d.deleteCaregiver(confirmRemove.id); setConfirmRemove(null); }} style={{ flex: 1 }} />
+              <Button label="Remove" onPress={() => { if (confirmRemove) { d.deleteCaregiver(confirmRemove.id); toast('Removed'); } setConfirmRemove(null); }} style={{ flex: 1 }} />
             </View>
           </Pressable>
         </Pressable>

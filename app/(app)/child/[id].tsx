@@ -16,6 +16,7 @@ import {
   useData, entriesOn, upcomingEvents, entryDetail, ENTRY_META,
   CHILD_COLORS, type ChildColor,
 } from '../../../src/lib/store';
+import { useFeedback } from '../../../src/components/Feedback';
 
 const num = (s: string) => { const v = parseFloat(s); return isNaN(v) ? undefined : v; };
 const dateOf = (iso: string) =>
@@ -48,6 +49,7 @@ export default function ChildProfile() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const d = useData();
+  const { toast } = useFeedback();
   const child = d.children.find((c) => c.id === id);
 
   const [modal, setModal] = useState<null | 'edit' | 'vaccine' | 'med' | 'growth' | 'milestone'>(null);
@@ -107,11 +109,13 @@ export default function ChildProfile() {
     setModal(m);
   }
   function save() {
-    if (modal === 'edit') d.updateChild(child!.id, { name, birthDate: birth, color: colorKey });
-    else if (modal === 'vaccine' && name.trim()) d.addVaccine({ childId: child!.id, name, dueDate: f1 });
-    else if (modal === 'med' && name.trim()) d.addMedication({ childId: child!.id, name, dose: f1, schedule: f2 });
-    else if (modal === 'growth') { const w = num(f1); const h = num(f2); if (w != null || h != null) d.addGrowth({ childId: child!.id, weightKg: w, heightCm: h }); }
-    else if (modal === 'milestone' && name.trim()) d.addMilestone({ childId: child!.id, title: name, date: f1 || new Date().toISOString().slice(0, 10), note: f2 });
+    let ok = false;
+    if (modal === 'edit') { d.updateChild(child!.id, { name, birthDate: birth, color: colorKey }); ok = true; }
+    else if (modal === 'vaccine' && name.trim()) { d.addVaccine({ childId: child!.id, name, dueDate: f1 }); ok = true; }
+    else if (modal === 'med' && name.trim()) { d.addMedication({ childId: child!.id, name, dose: f1, schedule: f2 }); ok = true; }
+    else if (modal === 'growth') { const w = num(f1); const h = num(f2); if (w != null || h != null) { d.addGrowth({ childId: child!.id, weightKg: w, heightCm: h }); ok = true; } }
+    else if (modal === 'milestone' && name.trim()) { d.addMilestone({ childId: child!.id, title: name, date: f1 || new Date().toISOString().slice(0, 10), note: f2 }); ok = true; }
+    if (ok) toast('Saved');
     setModal(null);
   }
   function remove() { d.deleteChild(child!.id); router.back(); }

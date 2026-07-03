@@ -7,6 +7,7 @@ import { Button, Field } from '../../src/components/forms';
 import { DateField } from '../../src/components/DateField';
 import { ChevronLeft } from '../../src/components/icons';
 import { useData } from '../../src/lib/store';
+import { useFeedback } from '../../src/components/Feedback';
 
 const dayLabel = (iso: string) => new Date(iso).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
 const daysTo = (iso: string) => Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000);
@@ -26,6 +27,7 @@ export default function Appointments() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ tab?: string }>();
   const { pregAppts, addPregAppt, deletePregAppt, matAppts, addMatAppt, deleteMatAppt, maternalBirth } = useData();
+  const { toast, confirm } = useFeedback();
 
   const [mode, setMode] = useState<Mode>(params.tab === 'maternal' ? 'maternal' : 'pregnancy');
   const [open, setOpen] = useState(false);
@@ -41,12 +43,20 @@ export default function Appointments() {
     if (title.trim() && date.trim()) {
       if (mode === 'pregnancy') addPregAppt({ title, at: `${date}T09:00:00`, kind: kind === 'test' ? 'test' : 'appointment', result: kind === 'test' ? result : undefined });
       else addMatAppt({ title, at: `${date}T10:00:00`, kind: kind === 'check' ? 'check' : 'appointment', prep });
+      setOpen(false);
+      toast('Appointment added');
+      return;
     }
     setOpen(false);
   }
-  function seed() {
+  async function seed() {
+    if (matAppts.length > 0) {
+      const ok = await confirm({ title: 'You already have appointments', message: 'Add the standard schedule on top of your existing appointments?', confirmLabel: 'Add anyway', accent: color.rose });
+      if (!ok) return;
+    }
     const birth = maternalBirth ? new Date(`${maternalBirth}T00:00:00`) : new Date();
     SEED.forEach((s) => addMatAppt({ title: s.title, at: new Date(birth.getTime() + s.off * 86400000).toISOString(), kind: s.kind, prep: s.prep }));
+    toast('Standard schedule loaded');
   }
 
   const appts = pregAppts.filter((a) => a.kind === 'appointment');
