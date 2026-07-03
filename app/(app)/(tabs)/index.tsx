@@ -2598,18 +2598,77 @@ function CarePanel() {
 }
 
 const STARTER_PREP: { category: string; label: string }[] = [
-  { category: 'For Mum', label: 'ID & maternity notes' },
-  { category: 'For Mum', label: 'Comfortable nightwear' },
-  { category: 'For Mum', label: 'Toiletries & lip balm' },
-  { category: 'For Mum', label: 'Snacks & water bottle' },
-  { category: 'For Baby', label: 'Bodysuits (newborn)' },
-  { category: 'For Baby', label: 'Muslins & blanket' },
-  { category: 'For Baby', label: 'Nappies & wipes' },
-  { category: 'For Baby', label: 'Going-home outfit' },
+  // Hospital bag — Mum
+  { category: 'Hospital bag — Mum', label: 'ID & maternity notes' },
+  { category: 'Hospital bag — Mum', label: 'Birth plan (printed copy)' },
+  { category: 'Hospital bag — Mum', label: 'Nightwear & dressing gown' },
+  { category: 'Hospital bag — Mum', label: 'Nursing bras & breast pads' },
+  { category: 'Hospital bag — Mum', label: 'Maternity / postnatal pads' },
+  { category: 'Hospital bag — Mum', label: 'Toiletries, lip balm & hair ties' },
+  { category: 'Hospital bag — Mum', label: 'Loose going-home outfit' },
+  { category: 'Hospital bag — Mum', label: 'Snacks & water bottle' },
+  { category: 'Hospital bag — Mum', label: 'Phone & long charger' },
+  // Hospital bag — Baby
+  { category: 'Hospital bag — Baby', label: 'Bodysuits & sleepsuits (newborn)' },
+  { category: 'Hospital bag — Baby', label: 'Muslin squares' },
+  { category: 'Hospital bag — Baby', label: 'Cellular blanket' },
+  { category: 'Hospital bag — Baby', label: 'Newborn nappies & cotton wool' },
+  { category: 'Hospital bag — Baby', label: 'Hat, mittens & socks' },
+  { category: 'Hospital bag — Baby', label: 'Going-home outfit' },
+  // Hospital bag — Partner
+  { category: 'Hospital bag — Partner', label: 'Snacks & drinks' },
+  { category: 'Hospital bag — Partner', label: 'Change of clothes' },
+  { category: 'Hospital bag — Partner', label: 'Charger & camera' },
+  { category: 'Hospital bag — Partner', label: 'Cash / coins for parking' },
+  // Feeding
+  { category: 'Feeding', label: 'Bottles & steriliser' },
+  { category: 'Feeding', label: 'First-infant formula (if bottle-feeding)' },
+  { category: 'Feeding', label: 'Breast pump & storage bags' },
+  { category: 'Feeding', label: 'Nursing pillow' },
+  { category: 'Feeding', label: 'Bibs & muslins' },
+  // Nappies & changing
+  { category: 'Nappies & changing', label: 'Changing mat' },
+  { category: 'Nappies & changing', label: 'Newborn nappies (stock up)' },
+  { category: 'Nappies & changing', label: 'Water wipes / cotton wool' },
+  { category: 'Nappies & changing', label: 'Barrier cream' },
+  { category: 'Nappies & changing', label: 'Nappy bags or bin' },
+  // Sleep & nursery
+  { category: 'Sleep & nursery', label: 'Moses basket or crib' },
+  { category: 'Sleep & nursery', label: 'Firm, flat mattress + fitted sheets' },
+  { category: 'Sleep & nursery', label: 'Baby sleeping bags / swaddles' },
+  { category: 'Sleep & nursery', label: 'Room thermometer (16–20°C)' },
+  { category: 'Sleep & nursery', label: 'Baby monitor' },
+  { category: 'Sleep & nursery', label: 'Blackout blind' },
+  // Clothing & bathing
+  { category: 'Clothing & bathing', label: 'Sleepsuits ×6' },
+  { category: 'Clothing & bathing', label: 'Vests / bodysuits ×6' },
+  { category: 'Clothing & bathing', label: 'Cardigan & pram suit' },
+  { category: 'Clothing & bathing', label: 'Hooded towels' },
+  { category: 'Clothing & bathing', label: 'Baby bath or bath support' },
+  { category: 'Clothing & bathing', label: 'Soft brush & baby nail file' },
+  // Out & about
+  { category: 'Out & about', label: 'Rear-facing car seat (fitted & practised)' },
+  { category: 'Out & about', label: 'Pram with lie-flat newborn mode' },
+  { category: 'Out & about', label: 'Changing bag' },
+  { category: 'Out & about', label: 'Rain cover & sunshade' },
+  // Home & admin
+  { category: 'Home & admin', label: 'Wash baby clothes (non-bio) first' },
+  { category: 'Home & admin', label: 'Pack hospital bag by ~36 weeks' },
+  { category: 'Home & admin', label: 'Fit & inspect the car seat' },
+  { category: 'Home & admin', label: 'Register with a GP / paediatrician' },
+  { category: 'Home & admin', label: 'Register the birth' },
+  { category: 'Home & admin', label: 'Sort parental leave / pay' },
+  { category: 'Home & admin', label: 'Batch-cook & freeze meals' },
+  // Birth plan
   { category: 'Birth plan', label: 'Pain-relief preferences' },
   { category: 'Birth plan', label: 'Birth environment wishes' },
+  { category: 'Birth plan', label: 'Your birth partner' },
+  { category: 'Birth plan', label: 'Feeding intention (breast / bottle)' },
+  { category: 'Birth plan', label: 'Skin-to-skin & delayed cord clamping' },
+  { category: 'Birth plan', label: 'Vitamin K for baby' },
+  { category: 'Birth plan', label: 'Postnatal ward preferences' },
 ];
-const PREP_CATS = ['For Mum', 'For Baby', 'Birth plan'];
+const PREP_CATS = ['Hospital bag — Mum', 'Hospital bag — Baby', 'Hospital bag — Partner', 'Feeding', 'Nappies & changing', 'Sleep & nursery', 'Clothing & bathing', 'Out & about', 'Home & admin', 'Birth plan'];
 
 function BirthPrepPanel() {
   const { birthPrep, addBirthPrep, toggleBirthPrep, deleteBirthPrep } = useData();
