@@ -1673,6 +1673,11 @@ function VitalsMonitoring() {
       <Stepper accent={roseInk} onDec={onDec} onInc={onInc} />
     </View>
   );
+  const saveBtn = (onPress: () => void) => (
+    <Pressable onPress={onPress} style={({ pressed }) => [{ alignSelf: 'flex-end', backgroundColor: color.rose, borderRadius: radius.pill, paddingVertical: 6, paddingHorizontal: 18, marginTop: 9, opacity: pressed ? 0.85 : 1 }]}>
+      <Text style={{ fontFamily: font.body700, fontSize: 12, color: '#fff' }}>Save</Text>
+    </Pressable>
+  );
   return (
     <>
       {/* Blood glucose */}
@@ -1697,7 +1702,7 @@ function VitalsMonitoring() {
             </Svg>
           );
         })() : <Text style={hint}>Log a reading to see your trend.</Text>}
-        <Button label="Log reading" onPress={logGlucose} tint={color.rose} style={{ marginTop: 8 }} />
+        {saveBtn(logGlucose)}
       </View>
 
       {/* Blood pressure */}
@@ -1730,7 +1735,7 @@ function VitalsMonitoring() {
             <ChartKey sw="#6B6FC9" t="Systolic" /><ChartKey sw="#A9A6E4" t="Diastolic" /><ChartKey sw="#D8505A" t="140/90 limit" />
           </View>
         )}
-        <Button label="Log reading" onPress={logBp} tint={color.rose} style={{ marginTop: 10 }} />
+        {saveBtn(logBp)}
       </View>
     </>
   );
@@ -1921,7 +1926,9 @@ function AppointmentsCard({ accent, fill, items, allowTests, standard, onAdd, on
   const sorted = [...items].sort((a, b) => a.at.localeCompare(b.at));
   const upcoming = sorted.filter((a) => new Date(a.at).getTime() >= now);
   const next = upcoming.find((a) => (a.kind ?? 'appointment') === 'appointment') ?? upcoming[0] ?? null;
+  const nextThree = upcoming.slice(0, 3);
   const apptDays = new Set(items.map((a) => apptDayKey(new Date(a.at))));
+  const todayKey = apptDayKey(new Date());
   const wxOf = (d: Date) => wx.wxForDate(d);
 
   const openMaps = (a: ApptItem) => {
@@ -1980,14 +1987,15 @@ function AppointmentsCard({ accent, fill, items, allowTests, standard, onAdd, on
           <View style={{ flexDirection: 'row', gap: 4 }}>
             {week.map((d) => {
               const has = apptDays.has(apptDayKey(d));
+              const isToday = apptDayKey(d) === todayKey;
               const w = wxOf(d);
               return (
-                <View key={d.toISOString()} style={{ flex: 1, alignItems: 'center', paddingVertical: 6, borderRadius: 11, backgroundColor: has ? fill : color.canvas }}>
-                  <Text style={{ fontFamily: font.body700, fontSize: 8, color: color.faint }}>{WD_SHORT[d.getDay()].toUpperCase()}</Text>
-                  <Text style={{ fontFamily: font.display700, fontSize: 13, color: has ? accent : color.ink, marginTop: 1 }}>{d.getDate()}</Text>
+                <View key={d.toISOString()} style={{ flex: 1, alignItems: 'center', paddingVertical: 6, borderRadius: 11, backgroundColor: isToday ? accent : has ? fill : color.canvas }}>
+                  <Text style={{ fontFamily: font.body700, fontSize: 8, color: isToday ? 'rgba(255,255,255,0.85)' : color.faint }}>{isToday ? 'TODAY' : WD_SHORT[d.getDay()].toUpperCase()}</Text>
+                  <Text style={{ fontFamily: font.display700, fontSize: 13, color: isToday ? '#fff' : has ? accent : color.ink, marginTop: 1 }}>{d.getDate()}</Text>
                   {w ? <View style={{ marginTop: 3 }}><WeatherGlyph code={w.code} size={15} /></View> : null}
-                  {w ? <Text style={{ fontFamily: font.body700, fontSize: 8, color: color.muted, marginTop: 1 }}>{w.tMax}°</Text> : null}
-                  <View style={{ width: 4, height: 4, borderRadius: 2, marginTop: 3, backgroundColor: has ? accent : 'transparent' }} />
+                  {w ? <Text style={{ fontFamily: font.body700, fontSize: 8, color: isToday ? 'rgba(255,255,255,0.9)' : color.muted, marginTop: 1 }}>{w.tMax}°</Text> : null}
+                  <View style={{ width: 4, height: 4, borderRadius: 2, marginTop: 3, backgroundColor: isToday ? '#fff' : has ? accent : 'transparent' }} />
                 </View>
               );
             })}
@@ -2009,10 +2017,11 @@ function AppointmentsCard({ accent, fill, items, allowTests, standard, onAdd, on
               const out = d.getMonth() !== month.m;
               const has = apptDays.has(k);
               const sel = k === selectedKey;
+              const isToday = k === todayKey;
               return (
                 <Pressable key={k} onPress={() => { setSelKey(k); setDate(k); }} style={{ width: `${100 / 7}%`, aspectRatio: 1, alignItems: 'center', justifyContent: 'center' }}>
-                  <View style={{ width: 30, height: 30, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: sel ? accent : has ? fill : 'transparent' }}>
-                    <Text style={{ fontFamily: font.display700, fontSize: 12, color: sel ? '#fff' : out ? color.faint : color.inkSecondary }}>{d.getDate()}</Text>
+                  <View style={{ width: 30, height: 30, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: sel ? accent : has ? fill : 'transparent', borderWidth: isToday && !sel ? 1.5 : 0, borderColor: accent }}>
+                    <Text style={{ fontFamily: isToday ? font.display700 : font.display700, fontSize: 12, color: sel ? '#fff' : isToday ? accent : out ? color.faint : color.inkSecondary }}>{d.getDate()}</Text>
                   </View>
                   <View style={{ width: 4, height: 4, borderRadius: 2, marginTop: 2, backgroundColor: has && !sel ? accent : 'transparent' }} />
                 </Pressable>
@@ -2022,25 +2031,37 @@ function AppointmentsCard({ accent, fill, items, allowTests, standard, onAdd, on
         </>
       )}
 
-      {/* next appointment banner */}
-      {next && (
-        <View style={{ backgroundColor: fill, borderRadius: radius.tile, padding: 13, gap: 3 }}>
-          <Text style={{ fontFamily: font.body700, fontSize: 9.5, letterSpacing: 0.6, color: accent }}>NEXT · {countdown}</Text>
-          <Text style={{ fontFamily: font.display700, fontSize: 16, color: accent }}>{next.title}</Text>
-          <Text style={{ fontFamily: font.body500, fontSize: 11.5, color: color.inkSecondary }}>{apptDateLabel(next.at)}</Text>
-          {nextWx ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-              <WeatherGlyph code={nextWx.code} size={15} />
-              <Text style={{ fontFamily: font.body500, fontSize: 11, color: color.inkSecondary }}>{wxLabel(nextWx.code)}, {nextWx.tMax}° that day</Text>
-            </View>
-          ) : null}
-          {next.location ? (
-            <Pressable onPress={() => openMaps(next)} accessibilityLabel="Open location in Maps" style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.65)', borderRadius: 10, padding: 9, marginTop: 6 }}>
-              <Text style={{ fontSize: 15 }}>📍</Text>
-              <View style={{ flex: 1, minWidth: 0 }}><Text style={{ fontFamily: font.body700, fontSize: 11.5, color: accent }} numberOfLines={1}>{next.location}</Text></View>
-              <Text style={{ fontFamily: font.body700, fontSize: 10.5, color: accent }}>Open in Maps ›</Text>
-            </Pressable>
-          ) : null}
+      {/* next appointments — the soonest 3 */}
+      {nextThree.length > 0 && (
+        <View style={{ gap: 8 }}>
+          <Text style={{ fontFamily: font.body700, fontSize: 10, letterSpacing: 0.6, color: color.muted, paddingHorizontal: 2 }}>NEXT · {countdown}</Text>
+          {nextThree.map((a, i) => {
+            const d = Math.round((new Date(a.at).getTime() - now) / 86400000);
+            const when = d <= 0 ? 'today' : d === 1 ? 'tomorrow' : `in ${d} days`;
+            const w = i === 0 ? nextWx : null;
+            return (
+              <View key={a.id} style={{ backgroundColor: fill, borderRadius: radius.tile, padding: 12, gap: 2 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Text style={{ flex: 1, fontFamily: font.display700, fontSize: i === 0 ? 16 : 14, color: accent }} numberOfLines={1}>{a.title}</Text>
+                  <View style={{ backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: radius.pill, paddingVertical: 2, paddingHorizontal: 8 }}><Text style={{ fontFamily: font.body700, fontSize: 9.5, color: accent }}>{when}</Text></View>
+                </View>
+                <Text style={{ fontFamily: font.body500, fontSize: 11, color: color.inkSecondary }}>{apptDateLabel(a.at)}{a.kind === 'test' ? ' · scan' : ''}</Text>
+                {w ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                    <WeatherGlyph code={w.code} size={14} />
+                    <Text style={{ fontFamily: font.body500, fontSize: 10.5, color: color.inkSecondary }}>{wxLabel(w.code)}, {w.tMax}° that day</Text>
+                  </View>
+                ) : null}
+                {a.location ? (
+                  <Pressable onPress={() => openMaps(a)} accessibilityLabel="Open location in Maps" style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.65)', borderRadius: 10, padding: 8, marginTop: 4 }}>
+                    <Text style={{ fontSize: 14 }}>📍</Text>
+                    <View style={{ flex: 1, minWidth: 0 }}><Text style={{ fontFamily: font.body700, fontSize: 11, color: accent }} numberOfLines={1}>{a.location}</Text></View>
+                    <Text style={{ fontFamily: font.body700, fontSize: 10, color: accent }}>Maps ›</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+            );
+          })}
         </View>
       )}
 
@@ -2355,19 +2376,16 @@ function CityPickerModal({ visible, wx, onClose }: { visible: boolean; wx: Retur
 }
 
 function CareCheckinCard() {
-  const { checkins, addCheckin, deleteCheckin, dueDate, startWeightKg, setStartWeightKg, heightCm, setHeightCm } = useData();
+  const { checkins, upsertTodayCheckin, dueDate, startWeightKg, setStartWeightKg, heightCm, setHeightCm } = useData();
   const { toast } = useFeedback();
   const now = new Date();
   const gest = gestFromDueDate(dueDate ?? undefined);
   const week = gest?.week ?? null;
 
   const todayCheckin = checkins.find((c) => ccSameDay(c.at, now)) ?? null;
-  const [mood, setMood] = useState<number | null>(todayCheckin?.mood ?? null);
   const [weight, setWeight] = useState<number | null>(todayCheckin?.weightKg ?? null);
   const [water, setWater] = useState<number>(todayCheckin?.waterL ?? 0);
   const [sleep, setSleep] = useState<number | null>(todayCheckin?.sleepH ?? null);
-  const [meals, setMeals] = useState<string[]>(todayCheckin?.meals ?? []);
-  const [expanded, setExpanded] = useState(false);
   const [editField, setEditField] = useState<null | 'start' | 'height'>(null);
   const [fieldVal, setFieldVal] = useState('');
 
@@ -2375,14 +2393,12 @@ function CareCheckinCard() {
   const lastWeight = checkins.filter((c) => c.weightKg != null).sort((a, b) => ccMs(b.at) - ccMs(a.at))[0]?.weightKg ?? 65;
   const wVal = weight ?? Math.round(lastWeight * 10) / 10;
   const sVal = sleep ?? 7;
-  const toggleMeal = (k: string) => setMeals((m) => (m.includes(k) ? m.filter((x) => x !== k) : [...m, k]));
   const openEdit = (f: 'start' | 'height') => { setEditField(f); setFieldVal((f === 'start' ? startWeightKg : heightCm)?.toString() ?? ''); };
   const commitEdit = () => { const n = parseFloat(fieldVal.replace(',', '.')); const v = isNaN(n) || n <= 0 ? null : n; if (editField === 'start') setStartWeightKg(v); else if (editField === 'height') setHeightCm(v); setEditField(null); toast('Saved'); };
-  const save = () => {
-    if (todayCheckin) deleteCheckin(todayCheckin.id);
-    addCheckin({ mood: mood ?? 2, symptoms: todayCheckin?.symptoms ?? [], weightKg: weight ?? undefined, waterL: water || undefined, sleepH: sleep ?? undefined, meals });
-    toast("Today's check-in saved");
-  };
+  // Each chart saves its own metric into today's check-in.
+  const saveWeight = () => { upsertTodayCheckin({ weightKg: wVal }); toast('Weight saved'); };
+  const saveWater = () => { upsertTodayCheckin({ waterL: water || undefined }); toast('Water saved'); };
+  const saveSleep = () => { upsertTodayCheckin({ sleepH: sVal }); toast('Sleep saved'); };
 
   /* ── weight: cumulative gain vs a BMI-based recommended corridor ── */
   const wSeries = checkins.filter((c) => c.weightKg != null).sort((a, b) => ccMs(a.at) - ccMs(b.at))
@@ -2457,6 +2473,12 @@ function CareCheckinCard() {
       {status ? <View style={{ backgroundColor: statusOk ? '#E4F3EC' : '#FBE7D8', borderRadius: radius.pill, paddingVertical: 2, paddingHorizontal: 7 }}><Text style={{ fontFamily: font.body700, fontSize: 9, color: statusOk ? '#1E6C50' : '#B5662E' }}>{status}</Text></View> : null}
       <Stepper accent={roseInk} onDec={onDec} onInc={onInc} />
     </View>
+  );
+  // A small right-aligned Save button, sat under each chart.
+  const saveBtn = (onPress: () => void) => (
+    <Pressable onPress={onPress} style={({ pressed }) => [{ alignSelf: 'flex-end', backgroundColor: rose, borderRadius: radius.pill, paddingVertical: 6, paddingHorizontal: 18, marginTop: 9, opacity: pressed ? 0.85 : 1 }]}>
+      <Text style={{ fontFamily: font.body700, fontSize: 12, color: '#fff' }}>Save</Text>
+    </Pressable>
   );
 
   return (
@@ -2563,6 +2585,7 @@ function CareCheckinCard() {
         ) : (
           <Text style={{ fontFamily: font.body400, fontSize: 11.5, color: color.muted, paddingVertical: 6 }}>Set your start weight above, then log today to see your gain against the recommended range.</Text>
         )}
+        {saveBtn(saveWeight)}
       </View>
 
       {/* Water */}
@@ -2575,6 +2598,7 @@ function CareCheckinCard() {
         </View>
         {dayAxis}
         <Text style={{ fontFamily: font.body700, fontSize: 8, color: '#9AB0C9', textAlign: 'right', marginTop: 2 }}>– – 2L goal</Text>
+        {saveBtn(saveWater)}
       </View>
 
       {/* Sleep */}
@@ -2587,61 +2611,12 @@ function CareCheckinCard() {
         </View>
         {dayAxis}
         <View style={{ flexDirection: 'row', gap: 11, marginTop: 6 }}><ChartKey sw="#B8A6E0" t="Hours slept" /><ChartKey sw="#DCEFE3" t="7–9h recommended" /></View>
+        {saveBtn(saveSleep)}
       </View>
 
       {/* Monitoring — blood glucose & pressure trend charts, below sleep */}
       {label('Monitoring')}
       <VitalsMonitoring />
-
-      {/* Meals */}
-      {label('Meals')}
-      <View style={{ flexDirection: 'row', gap: 7 }}>
-        {MEAL_OPTS.map((m) => {
-          const on = meals.includes(m.key);
-          return (
-            <Pressable key={m.key} onPress={() => toggleMeal(m.key)} style={{ flex: 1, backgroundColor: on ? '#FBE0EA' : '#FAF3F6', borderRadius: radius.tile, paddingVertical: 9, alignItems: 'center' }}>
-              <Text style={{ fontSize: 15 }}>{m.emoji}</Text>
-              <Text style={{ fontFamily: font.body700, fontSize: 10, color: on ? roseInk : color.muted, marginTop: 2 }}>{m.label}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
-
-      <Button label="Save today" onPress={save} tint={rose} style={{ marginTop: 16 }} />
-
-      {/* Expand / collapse — recent check-ins hidden by default */}
-      <Pressable onPress={() => setExpanded((v) => !v)} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 12, marginTop: 4 }}>
-        <Text style={{ fontFamily: font.body700, fontSize: 12, color: roseInk }}>{expanded ? 'Show less' : 'Recent check-ins'}</Text>
-        <Text style={{ fontFamily: font.body700, fontSize: 11, color: roseInk }}>{expanded ? '▴' : '▾'}</Text>
-      </Pressable>
-
-      {expanded && (<>
-      <View style={{ height: 1, backgroundColor: color.hairline, marginBottom: 4 }} />
-
-      {/* Recent check-ins — review & delete past entries */}
-      {label('Your recent check-ins')}
-      {checkins.length === 0 ? (
-        <Text style={{ fontFamily: font.body400, fontSize: 11.5, color: color.muted, paddingHorizontal: 2 }}>No check-ins yet — tap “Save today” to log your first.</Text>
-      ) : (
-        [...checkins].sort((a, b) => ccMs(b.at) - ccMs(a.at)).slice(0, 8).map((c) => {
-          const parts: string[] = [];
-          if (c.weightKg != null) parts.push(`${c.weightKg} kg`);
-          if (c.waterL != null) parts.push(`${c.waterL} L`);
-          if (c.sleepH != null) parts.push(`${c.sleepH} h`);
-          if (c.meals?.length) parts.push(`${c.meals.length} meal${c.meals.length === 1 ? '' : 's'}`);
-          const sub = [parts.join(' · '), c.symptoms?.length ? c.symptoms.join(', ') : ''].filter(Boolean).join(' · ');
-          return (
-            <View key={c.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#FAF3F6', borderRadius: radius.tile, paddingVertical: 9, paddingHorizontal: 11, marginBottom: 7 }}>
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.ink }}>{new Date(c.at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</Text>
-                {sub ? <Text numberOfLines={1} style={{ fontFamily: font.body400, fontSize: 10.5, color: color.muted, marginTop: 1 }}>{sub}</Text> : null}
-              </View>
-              <Pressable onPress={() => { deleteCheckin(c.id); toast('Check-in deleted'); }} hitSlop={8}><Text style={{ fontFamily: font.body700, fontSize: 16, color: color.faint }}>×</Text></Pressable>
-            </View>
-          );
-        })
-      )}
-      </>)}
     </View>
   );
 }
