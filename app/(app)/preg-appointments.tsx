@@ -8,6 +8,7 @@ import { DateField } from '../../src/components/DateField';
 import { ChevronLeft } from '../../src/components/icons';
 import { useData } from '../../src/lib/store';
 import { useFeedback } from '../../src/components/Feedback';
+import { PREG_ANTENATAL, lmpFrom } from '../../src/lib/antenatal';
 
 const dayLabel = (iso: string) => new Date(iso).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
 const daysTo = (iso: string) => Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000);
@@ -31,22 +32,6 @@ const SEED = [
   { title: '6-week GP check', kind: 'appointment' as const, off: 42, prep: 'Contraception, mental health, physical recovery, return to work' },
 ];
 
-/** Standard antenatal schedule (gestational week from LMP). Dates are computed
- *  from the user's last period / due date. Some checks are first-baby-only. */
-const PREG_ANTENATAL: { title: string; kind: 'appointment' | 'test'; week: number; detail: string }[] = [
-  { title: 'Booking appointment', kind: 'appointment', week: 8, detail: 'Midwife booking — history, bloods & urine' },
-  { title: 'Dating scan (12-week)', kind: 'test', week: 12, detail: 'Ultrasound + combined screening' },
-  { title: '16-week midwife check', kind: 'appointment', week: 16, detail: 'Blood pressure, urine; discuss results' },
-  { title: '20-week anomaly scan', kind: 'test', week: 20, detail: 'Detailed anatomy ultrasound' },
-  { title: '25-week check (1st baby)', kind: 'appointment', week: 25, detail: 'BP, urine, fundal height' },
-  { title: '28-week check', kind: 'appointment', week: 28, detail: 'Bloods, glucose, anti-D if needed' },
-  { title: '31-week check (1st baby)', kind: 'appointment', week: 31, detail: 'BP, urine, fundal height' },
-  { title: '34-week check', kind: 'appointment', week: 34, detail: 'BP, urine; talk through your birth plan' },
-  { title: '36-week check', kind: 'appointment', week: 36, detail: 'Baby’s position; feeding chat' },
-  { title: '38-week check', kind: 'appointment', week: 38, detail: 'BP, urine, fundal height' },
-  { title: '40-week check (1st baby)', kind: 'appointment', week: 40, detail: 'BP, urine; discuss going overdue' },
-  { title: '41-week check', kind: 'appointment', week: 41, detail: 'Membrane sweep offer; induction chat' },
-];
 
 /** Unified appointments — Pregnancy (appts + tests) and Mum&Me (postpartum). */
 export default function Appointments() {
@@ -109,11 +94,7 @@ export default function Appointments() {
   // ── Standard antenatal schedule loader (pregnancy) ──
   // Base the dates on the last period, else back-calculate from the due date
   // (due date = LMP + 280 days).
-  const lmp = lastPeriod
-    ? new Date(`${lastPeriod}T00:00:00`)
-    : dueDate
-      ? new Date(new Date(`${dueDate}T00:00:00`).getTime() - 280 * 86400000)
-      : null;
+  const lmp = lmpFrom(lastPeriod, dueDate);
   const normT = (s: string) => s.trim().toLowerCase();
   const havePreg = new Set(pregAppts.map((a) => normT(a.title)));
   const antenatal = lmp

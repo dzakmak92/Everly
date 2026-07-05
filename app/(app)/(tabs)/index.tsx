@@ -23,6 +23,7 @@ import {
 } from '../../../src/lib/pregnancy';
 import { EPDS_QUESTIONS, scoreEpds, BAND_LABEL, CRISIS_RESOURCES } from '../../../src/lib/epds';
 import { helplinesFor } from '../../../src/lib/helplines';
+import { lmpFrom, datedAntenatal, type DatedAntenatal } from '../../../src/lib/antenatal';
 import { youStoryEvents } from '../../../src/lib/story';
 import { childRhythm, nextFeed, napWindow, childNudges, pregnancyNudges, fmtDur, type Nudge, type Prediction, type ChildRhythm } from '../../../src/lib/intelligence';
 import { DayTimeline } from '../../../src/components/DayTimeline';
@@ -1727,8 +1728,9 @@ const apptDayKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).p
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const WD_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-function AppointmentsCard({ accent, fill, items, allowTests, onAdd, onEdit, onDelete }: {
+function AppointmentsCard({ accent, fill, items, allowTests, standard, onAdd, onEdit, onDelete }: {
   accent: string; fill: string; items: ApptItem[]; allowTests?: boolean;
+  standard?: DatedAntenatal[];
   onAdd: (i: { title: string; at: string; location?: string; kind?: 'appointment' | 'test'; result?: string }) => void;
   onEdit?: (id: string, patch: { title: string; at: string; location?: string; kind?: 'appointment' | 'test'; result?: string }) => void;
   onDelete: (id: string) => void;
@@ -1737,6 +1739,22 @@ function AppointmentsCard({ accent, fill, items, allowTests, onAdd, onEdit, onDe
   const wx = useWeather();
   const [expanded, setExpanded] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+  // Standard-schedule loader (pregnancy only — `standard` provided).
+  const normTitle = (s: string) => s.trim().toLowerCase();
+  const haveTitles = new Set(items.map((i) => normTitle(i.title)));
+  const startOfToday2 = new Date(); startOfToday2.setHours(0, 0, 0, 0);
+  const stdList = (standard ?? []).map((s) => ({ ...s, have: haveTitles.has(normTitle(s.title)), past: new Date(`${s.iso}T00:00:00`).getTime() < startOfToday2.getTime() }));
+  const [loadOpen, setLoadOpen] = useState(false);
+  const [sel, setSel] = useState<Set<string>>(new Set());
+  const openLoad = () => { setSel(new Set(stdList.filter((s) => !s.have && !s.past).map((s) => s.title))); setLoadOpen(true); };
+  const toggleSel = (t: string) => setSel((s) => { const n = new Set(s); if (n.has(t)) n.delete(t); else n.add(t); return n; });
+  const selCount = stdList.filter((s) => sel.has(s.title) && !s.have).length;
+  const doLoad = () => {
+    let added = 0;
+    stdList.forEach((s) => { if (!sel.has(s.title) || s.have) return; onAdd({ title: s.title, at: `${s.iso}T09:00:00`, kind: allowTests ? s.kind : undefined }); added++; });
+    setLoadOpen(false);
+    toast(added > 0 ? `Added ${added} appointment${added === 1 ? '' : 's'}` : 'Nothing new to add');
+  };
   const [editId, setEditId] = useState<string | null>(null);
   const [kind, setKind] = useState<'appointment' | 'test'>('appointment');
   const [title, setTitle] = useState('');
@@ -1911,18 +1929,78 @@ function AppointmentsCard({ accent, fill, items, allowTests, onAdd, onEdit, onDe
           </View>
         </View>
       ) : (
-        <Pressable onPress={() => setAddOpen(true)} style={{ borderWidth: 1.4, borderColor: fill, borderStyle: 'dashed', borderRadius: radius.tile, paddingVertical: 11, alignItems: 'center' }}>
-          <Text style={{ fontFamily: font.body700, fontSize: 12.5, color: accent }}>＋ Add appointment</Text>
-        </Pressable>
+        <View style={{ gap: 8 }}>
+          {stdList.length > 0 && (
+            <Pressable onPress={openLoad} style={{ borderWidth: 1.4, borderColor: accent, borderRadius: radius.tile, paddingVertical: 11, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 7 }}>
+              <Text style={{ fontFamily: font.body700, fontSize: 12.5, color: accent }}>↻ Load standard appointments</Text>
+            </Pressable>
+          )}
+          <Pressable onPress={() => setAddOpen(true)} style={{ borderWidth: 1.4, borderColor: fill, borderStyle: 'dashed', borderRadius: radius.tile, paddingVertical: 11, alignItems: 'center' }}>
+            <Text style={{ fontFamily: font.body700, fontSize: 12.5, color: accent }}>＋ Add appointment</Text>
+          </Pressable>
+        </View>
       )}
+
+      {/* Standard antenatal schedule picker */}
+      <Modal visible={loadOpen} transparent animationType="fade" onRequestClose={() => setLoadOpen(false)}>
+        <Pressable onPress={() => setLoadOpen(false)} style={{ flex: 1, backgroundColor: 'rgba(40,18,50,0.35)', justifyContent: 'center', paddingHorizontal: 24 }}>
+          <Pressable onPress={() => {}} style={[{ backgroundColor: '#fff', borderRadius: 22, padding: 18, maxHeight: '84%' }, shadow.card]}>
+            <Text style={{ fontFamily: font.display700, fontSize: 17, color: color.ink }}>Standard antenatal schedule</Text>
+            <Text style={{ fontFamily: font.body400, fontSize: 12.5, color: color.muted, marginTop: 3, marginBottom: 8 }}>Dates are estimated from your due date — tap any appointment afterwards to set its exact date, time & location. Anything already booked is skipped.</Text>
+
+            {(() => {
+              const pickable = stdList.filter((a) => !a.have);
+              const allOn = pickable.length > 0 && pickable.every((a) => sel.has(a.title));
+              return (
+                <Pressable onPress={() => setSel(allOn ? new Set() : new Set(pickable.map((a) => a.title)))} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: color.hairline }}>
+                  <View style={{ width: 22, height: 22, borderRadius: 7, borderWidth: 2, borderColor: allOn ? accent : '#CFC9E4', backgroundColor: allOn ? accent : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
+                    {allOn ? <Text style={{ color: '#fff', fontSize: 12, fontFamily: font.body700 }}>✓</Text> : null}
+                  </View>
+                  <Text style={{ fontFamily: font.body700, fontSize: 13, color: accent }}>{allOn ? 'Clear all' : 'Select all'}</Text>
+                </Pressable>
+              );
+            })()}
+
+            <ScrollView style={{ maxHeight: 400 }} showsVerticalScrollIndicator={false}>
+              {stdList.map((a) => {
+                const on = sel.has(a.title);
+                return (
+                  <Pressable key={a.title} disabled={a.have} onPress={() => toggleSel(a.title)} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingVertical: 11, opacity: a.have ? 0.45 : 1 }}>
+                    <View style={{ width: 22, height: 22, borderRadius: 7, borderWidth: 2, marginTop: 1, borderColor: on && !a.have ? accent : '#CFC9E4', backgroundColor: on && !a.have ? accent : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
+                      {on && !a.have ? <Text style={{ color: '#fff', fontSize: 12, fontFamily: font.body700 }}>✓</Text> : null}
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Text style={{ flex: 1, fontFamily: font.body700, fontSize: 13.5, color: color.ink }} numberOfLines={1}>{a.title}</Text>
+                        {a.kind === 'test' && <Text style={{ fontFamily: font.body700, fontSize: 9, color: accent, backgroundColor: fill, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}>SCAN</Text>}
+                      </View>
+                      <Text style={{ fontFamily: font.body400, fontSize: 11.5, color: color.muted, marginTop: 1 }}>{a.detail}</Text>
+                      <Text style={{ fontFamily: font.body500, fontSize: 11, color: a.have ? color.muted : a.past ? color.faint : accent, marginTop: 2 }}>
+                        Week {a.week} · {apptDateLabel(`${a.iso}T09:00:00`)}{a.have ? ' · already booked' : a.past ? ' · past' : ''}
+                      </Text>
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
+              <Button label="Cancel" variant="secondary" onPress={() => setLoadOpen(false)} style={{ flex: 1 }} />
+              <Button label={selCount > 0 ? `Add ${selCount}` : 'Add'} disabled={selCount === 0} onPress={doLoad} style={{ flex: 1 }} tint={accent} />
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
 
 /** Mum&Me variant — pregnancy appointments (with tests), rose theme. */
 function PregnancyAppointments() {
-  const { pregAppts, addPregAppt, updatePregAppt, deletePregAppt } = useData();
+  const { pregAppts, addPregAppt, updatePregAppt, deletePregAppt, lastPeriod, dueDate } = useData();
+  const lmp = lmpFrom(lastPeriod, dueDate);
   return <AppointmentsCard accent={color.roseInk} fill="#FBE0EA" items={pregAppts} allowTests
+    standard={lmp ? datedAntenatal(lmp) : undefined}
     onAdd={(i) => addPregAppt({ title: i.title, at: i.at, kind: i.kind ?? 'appointment', result: i.result, location: i.location })}
     onEdit={(id, p) => updatePregAppt(id, { title: p.title, at: p.at, kind: p.kind ?? 'appointment', result: p.result, location: p.location })}
     onDelete={deletePregAppt} />;
