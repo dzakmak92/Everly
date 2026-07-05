@@ -89,6 +89,8 @@ export type MatAppt = { id: string; title: string; at: string; kind: 'appointmen
 
 export type KickSession = { id: string; at: string; count: number; durationMin?: number };
 export type ContractionSession = { id: string; at: string; durationSec: number; intervalSec?: number };
+/** The live (unsaved) kick count in progress. `startedAt` is an epoch ms. */
+export type KickDraft = { count: number; startedAt: number | null };
 
 export type TzContact = { id: string; name: string; tz: string; location?: string };
 export type SavedTip = { id: string; at: string; text: string };
@@ -155,6 +157,10 @@ const SUPPORT_KEY = 'everly.supportContacts.v1';
 const START_WEIGHT_KEY = 'everly.startWeightKg.v1';
 const HEIGHT_KEY = 'everly.heightCm.v1';
 const MMEDIA_KEY = 'everly.milestoneMedia.v1';
+// Live, in-progress labour trackers — persisted so an active kick count or a
+// running contraction survives navigation and app restarts.
+const KICKDRAFT_KEY = 'everly.kickDraft.v1';
+const CONTRACTIONSTART_KEY = 'everly.contractionStart.v1';
 
 function newId() {
   return `${Date.now().toString(36)}-${Math.floor(Math.random() * 1e6).toString(36)}`;
@@ -286,6 +292,12 @@ type DataValue = {
   addContraction: (input: { durationSec: number; intervalSec?: number }) => void;
   deleteContraction: (id: string) => void;
   clearContractions: () => void;
+  /** Live kick count in progress (persisted so it survives navigation). */
+  kickDraft: KickDraft;
+  setKickDraft: (d: KickDraft) => void;
+  /** Start time (epoch ms) of a contraction currently being timed, or null. */
+  contractionStart: number | null;
+  setContractionStart: (n: number | null) => void;
   clearAll: () => void;
   /** Demo helpers: load a rich sample dataset and preview premium features. */
   demoPremium: boolean;
@@ -337,6 +349,8 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
   const [matAppts, setMatAppts] = useState<MatAppt[]>([]);
   const [kickSessions, setKickSessions] = useState<KickSession[]>([]);
   const [contractionSessions, setContractionSessions] = useState<ContractionSession[]>([]);
+  const [kickDraft, setKickDraftState] = useState<KickDraft>({ count: 0, startedAt: null });
+  const [contractionStart, setContractionStartState] = useState<number | null>(null);
   const [demoPremium, setDemoPremiumState] = useState(false);
 
   // Demo-premium flag is loaded/saved independently of the main hydration chain.
@@ -365,6 +379,15 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
   }, []);
   const setStartWeightKg = useCallback((v: number | null) => { setStartWeightKgState(v); AsyncStorage.setItem(START_WEIGHT_KEY, JSON.stringify(v)).catch(() => {}); }, []);
   const setHeightCm = useCallback((v: number | null) => { setHeightCmState(v); AsyncStorage.setItem(HEIGHT_KEY, JSON.stringify(v)).catch(() => {}); }, []);
+
+  // Live labour trackers (kick count / running contraction) — loaded & saved
+  // independently so an in-progress count survives navigation and app restarts.
+  useEffect(() => {
+    AsyncStorage.getItem(KICKDRAFT_KEY).then((v) => { if (v) setKickDraftState(JSON.parse(v)); }).catch(() => {});
+    AsyncStorage.getItem(CONTRACTIONSTART_KEY).then((v) => { if (v) setContractionStartState(JSON.parse(v)); }).catch(() => {});
+  }, []);
+  const setKickDraft = useCallback((d: KickDraft) => { setKickDraftState(d); AsyncStorage.setItem(KICKDRAFT_KEY, JSON.stringify(d)).catch(() => {}); }, []);
+  const setContractionStart = useCallback((n: number | null) => { setContractionStartState(n); AsyncStorage.setItem(CONTRACTIONSTART_KEY, JSON.stringify(n)).catch(() => {}); }, []);
   const addPrepSection = useCallback((name: string) => {
     const n = name.trim(); if (!n) return;
     setPrepSections((prev) => (prev.includes(n) ? prev : saveSections([...prev, n])));
@@ -776,10 +799,11 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
       matAppts, addMatAppt, deleteMatAppt, updateMatAppt,
       kickSessions, addKickSession, deleteKickSession, clearKickSessions,
       contractionSessions, addContraction, deleteContraction, clearContractions,
+      kickDraft, setKickDraft, contractionStart, setContractionStart,
       clearAll,
       demoPremium, setDemoPremium, loadSampleData,
     }),
-    [loading, children, activeChild, setActiveChild, addChild, updateChild, deleteChild, entries, addEntry, deleteEntry, events, addEvent, deleteEvent, updateEvent, vaccines, addVaccine, updateVaccine, deleteVaccine, medications, addMedication, toggleMedication, deleteMedication, growth, addGrowth, deleteGrowth, routines, addRoutine, addRoutineStep, toggleStep, resetRoutine, deleteRoutine, chores, addChore, toggleChore, deleteChore, milestones, addMilestone, deleteMilestone, milestoneMedia, addMilestoneMedia, removeMilestoneMedia, caregivers, addCaregiver, deleteCaregiver, custody, setCustodyDay, expenses, addExpense, toggleExpenseSettled, deleteExpense, dueDate, setDueDate, checkins, addCheckin, deleteCheckin, pregArchive, closePregnancy, dockSide, setDockSide, maternalBirth, setMaternalBirth, epdsResults, addEpdsResult, deleteEpdsResult, recoveryLogs, addRecoveryLog, deleteRecoveryLog, tzContacts, addTzContact, deleteTzContact, savedTips, saveTip, deleteTip, birthPrep, addBirthPrep, toggleBirthPrep, deleteBirthPrep, prepSections, addPrepSection, renamePrepSection, deletePrepSection, savedNames, saveName, deleteName, supportContacts, addSupportContact, deleteSupportContact, startWeightKg, setStartWeightKg, heightCm, setHeightCm, pregStatus, setPregStatus, pregAppts, addPregAppt, deletePregAppt, updatePregAppt, pregVitals, addPregVital, deletePregVital, lastPeriod, setLastPeriod, cycleLength, setCycleLength, ttcItems, addTtc, toggleTtc, deleteTtc, momCare, addMomCare, deleteMomCare, pelvicLog, addPelvic, matAppts, addMatAppt, deleteMatAppt, updateMatAppt, kickSessions, addKickSession, deleteKickSession, clearKickSessions, contractionSessions, addContraction, deleteContraction, clearContractions, clearAll, demoPremium, setDemoPremium, loadSampleData],
+    [loading, children, activeChild, setActiveChild, addChild, updateChild, deleteChild, entries, addEntry, deleteEntry, events, addEvent, deleteEvent, updateEvent, vaccines, addVaccine, updateVaccine, deleteVaccine, medications, addMedication, toggleMedication, deleteMedication, growth, addGrowth, deleteGrowth, routines, addRoutine, addRoutineStep, toggleStep, resetRoutine, deleteRoutine, chores, addChore, toggleChore, deleteChore, milestones, addMilestone, deleteMilestone, milestoneMedia, addMilestoneMedia, removeMilestoneMedia, caregivers, addCaregiver, deleteCaregiver, custody, setCustodyDay, expenses, addExpense, toggleExpenseSettled, deleteExpense, dueDate, setDueDate, checkins, addCheckin, deleteCheckin, pregArchive, closePregnancy, dockSide, setDockSide, maternalBirth, setMaternalBirth, epdsResults, addEpdsResult, deleteEpdsResult, recoveryLogs, addRecoveryLog, deleteRecoveryLog, tzContacts, addTzContact, deleteTzContact, savedTips, saveTip, deleteTip, birthPrep, addBirthPrep, toggleBirthPrep, deleteBirthPrep, prepSections, addPrepSection, renamePrepSection, deletePrepSection, savedNames, saveName, deleteName, supportContacts, addSupportContact, deleteSupportContact, startWeightKg, setStartWeightKg, heightCm, setHeightCm, pregStatus, setPregStatus, pregAppts, addPregAppt, deletePregAppt, updatePregAppt, pregVitals, addPregVital, deletePregVital, lastPeriod, setLastPeriod, cycleLength, setCycleLength, ttcItems, addTtc, toggleTtc, deleteTtc, momCare, addMomCare, deleteMomCare, pelvicLog, addPelvic, matAppts, addMatAppt, deleteMatAppt, updateMatAppt, kickSessions, addKickSession, deleteKickSession, clearKickSessions, contractionSessions, addContraction, deleteContraction, clearContractions, kickDraft, setKickDraft, contractionStart, setContractionStart, clearAll, demoPremium, setDemoPremium, loadSampleData],
   );
 
   return <DataContext.Provider value={value}>{node}</DataContext.Provider>;

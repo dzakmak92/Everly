@@ -18,11 +18,12 @@ import { DurationField } from '../../../src/components/DurationField';
 import { useSupabase } from '../../../src/lib/supabase';
 import { ageLabel, stageFrom } from '../../../src/lib/age';
 import {
-  gestFromDueDate, weekContent, MOODS, PREG_SYMPTOMS, RED_FLAGS_CALL_NOW, RED_FLAGS_CALL_SOON, RED_FLAGS_SHORT, expectedSymptoms, dueDateFromLmp, TRIMESTER_TIPS, BABY_NAMES,
+  gestFromDueDate, weekContent, MOODS, PREG_SYMPTOMS, RED_FLAGS_CALL_NOW, RED_FLAGS_CALL_SOON, expectedSymptoms, dueDateFromLmp, TRIMESTER_TIPS, BABY_NAMES,
   bmiFrom, gainGoal, recommendedGain,
 } from '../../../src/lib/pregnancy';
 import { EPDS_QUESTIONS, scoreEpds, BAND_LABEL, CRISIS_RESOURCES } from '../../../src/lib/epds';
 import { helplinesFor } from '../../../src/lib/helplines';
+import { lmpFrom, datedAntenatal, type DatedAntenatal } from '../../../src/lib/antenatal';
 import { youStoryEvents } from '../../../src/lib/story';
 import { childRhythm, nextFeed, napWindow, childNudges, pregnancyNudges, fmtDur, type Nudge, type Prediction, type ChildRhythm } from '../../../src/lib/intelligence';
 import { DayTimeline } from '../../../src/components/DayTimeline';
@@ -887,11 +888,11 @@ function MaternityView({
   const showGrid = phase === 'postpartum' || (phase === 'pregnancy' && pregLive);
 
   // Feature tiles per phase (2-column grid). `key` is the panel selector.
-  const tiles =
+  // Pregnancy's Monitoring & calls is rendered as its own full-width card
+  // (below), so the grid is postpartum-only.
+  const tiles: { key: string; label: string; bg: string; icon: React.ReactNode }[] =
     phase === 'pregnancy'
-      ? [
-          { key: 'monitor', label: 'Monitoring & calls', bg: '#FBE0EA', icon: <Shield size={20} color="#B04070" /> },
-        ]
+      ? []
       : [
           { key: 'epds', label: 'Wellbeing', bg: '#E7E4FB', icon: <Smile size={20} color={color.primary} /> },
           { key: 'recovery', label: 'Recovery', bg: '#D8F0E6', icon: <Shield size={20} color="#2C8475" /> },
@@ -1016,8 +1017,22 @@ function MaternityView({
         </View>
       )}
 
+      {/* Monitoring & calls — one full-width card (pregnancy) */}
+      {showGrid && phase === 'pregnancy' && (
+        <View style={{ gap: 10 }}>
+          <Label>More for you</Label>
+          <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 16, gap: 14, borderWidth: 2, borderColor: color.rose }, shadow.card]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <View style={{ width: 36, height: 36, borderRadius: 11, backgroundColor: '#FBE0EA', alignItems: 'center', justifyContent: 'center' }}><Shield size={20} color="#B04070" /></View>
+              <Text style={{ flex: 1, fontFamily: font.display700, fontSize: 17, color: color.ink }}>Monitoring &amp; calls</Text>
+            </View>
+            <MonitorPanel />
+          </View>
+        </View>
+      )}
+
       {/* Feature grid — tapping a card expands it inline, directly under its row */}
-      {showGrid && (
+      {showGrid && tiles.length > 0 && (
       <View style={{ gap: 10 }}>
         <Label>{phase === 'pregnancy' ? 'More for you' : 'Looking after you'}</Label>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
@@ -1630,87 +1645,225 @@ function PregApptsPanel() {
   );
 }
 
-function TriagePanel() {
-  return (
-    <View style={{ gap: 14 }}>
-      <View style={{ gap: 8 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <View style={{ backgroundColor: '#FBE0EA', borderRadius: radius.pill, paddingVertical: 4, paddingHorizontal: 11 }}>
-            <Text style={{ fontFamily: font.body700, fontSize: 11, color: color.roseInk }}>Call now</Text>
-          </View>
-        </View>
-        {RED_FLAGS_CALL_NOW.map((f, i) => (
-          <View key={i} style={{ flexDirection: 'row', gap: 8 }}>
-            <Text style={{ color: color.roseInk, fontFamily: font.body700 }}>•</Text>
-            <Text style={{ flex: 1, fontFamily: font.body500, fontSize: 13, color: color.ink }}>{f}</Text>
-          </View>
-        ))}
-      </View>
-      <View style={{ gap: 8 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <View style={{ backgroundColor: '#FBF1CE', borderRadius: radius.pill, paddingVertical: 4, paddingHorizontal: 11 }}>
-            <Text style={{ fontFamily: font.body700, fontSize: 11, color: color.goldInk }}>Call soon</Text>
-          </View>
-        </View>
-        {RED_FLAGS_CALL_SOON.map((f, i) => (
-          <View key={i} style={{ flexDirection: 'row', gap: 8 }}>
-            <Text style={{ color: color.goldInk, fontFamily: font.body700 }}>•</Text>
-            <Text style={{ flex: 1, fontFamily: font.body500, fontSize: 13, color: color.ink }}>{f}</Text>
-          </View>
-        ))}
-      </View>
+/** Blood glucose + blood pressure — trend charts (banded like the weight chart)
+ *  with −/+ stepper inputs matching the water/sleep rows. Lives in the Care card
+ *  below the sleep chart. */
+function VitalsMonitoring() {
+  const { pregVitals, addPregVital } = useData();
+  const { toast } = useFeedback();
+  const [tag, setTag] = useState('fasting');
+  const [gVal, setGVal] = useState(5.2);          // glucose draft (mmol/L)
+  const [sysV, setSysV] = useState(118);           // systolic draft
+  const [diaV, setDiaV] = useState(74);            // diastolic draft
+  const gluSeries = pregVitals.filter((v) => v.kind === 'glucose' && v.glucose != null).slice(0, 10).reverse();
+  const bpSeries = pregVitals.filter((v) => v.kind === 'bp' && (v.systolic != null || v.diastolic != null)).slice(0, 10).reverse();
+  const logGlucose = () => { addPregVital({ kind: 'glucose', glucose: gVal, tag }); toast('Glucose logged'); };
+  const logBp = () => { addPregVital({ kind: 'bp', systolic: sysV, diastolic: diaV }); toast('Blood pressure logged'); };
+  const gHigh = tag.includes('fasting') ? gVal >= 5.3 : gVal > 7.8;
+  const bpHigh = sysV >= 140 || diaV >= 90;
+  const roseInk = color.roseInk, teal = color.maternalTeal;
+  const hint = { fontFamily: font.body400, fontSize: 11.5, color: color.muted, paddingVertical: 8, textAlign: 'center' as const };
+  const block = { backgroundColor: '#FAF3F6', borderRadius: radius.tile, padding: 12 } as const;
+  const stepRow = (emoji: string, name: string, val: string, unit: string, status: string, ok: boolean, onDec: () => void, onInc: () => void) => (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+      <Text style={{ fontSize: 16 }}>{emoji}</Text>
+      <Text numberOfLines={1} style={{ flex: 1, minWidth: 0, fontFamily: font.body700, fontSize: 12, color: '#7d7a90' }}>{name}</Text>
+      <Text style={{ fontFamily: font.display700, fontSize: 17, color: color.ink }}>{val}<Text style={{ fontFamily: font.body500, fontSize: 10, color: color.muted }}>{unit}</Text></Text>
+      {status ? <View style={{ backgroundColor: ok ? '#E4F3EC' : '#FBE7D8', borderRadius: radius.pill, paddingVertical: 2, paddingHorizontal: 7 }}><Text style={{ fontFamily: font.body700, fontSize: 9, color: ok ? '#1E6C50' : '#B5662E' }}>{status}</Text></View> : null}
+      <Stepper accent={roseInk} onDec={onDec} onInc={onInc} />
     </View>
+  );
+  return (
+    <>
+      {/* Blood glucose */}
+      <View style={[block, { marginBottom: 8 }]}>
+        <PanelLabel>Blood glucose</PanelLabel>
+        <View style={{ marginTop: 6, marginBottom: 8 }}><SelectChips options={['fasting', 'post-meal']} value={tag} onChange={setTag} /></View>
+        {stepRow('💉', 'Glucose', gVal.toFixed(1), ' mmol/L', gHigh ? 'High' : 'In range', !gHigh, () => setGVal(Math.max(0, Math.round((gVal - 0.1) * 10) / 10)), () => setGVal(Math.round((gVal + 0.1) * 10) / 10))}
+        {gluSeries.length >= 1 ? (() => {
+          const n = gluSeries.length, W = 300, H = 116, xL = 18, top = 10, bot = 90;
+          const vals = gluSeries.map((s) => s.glucose as number);
+          const yMin = Math.min(4.5, ...vals) - 0.3, yMax = Math.max(6, ...vals) + 0.3;
+          const gx = (i: number) => xL + (n <= 1 ? 0.5 : i / (n - 1)) * (W - xL - 8);
+          const gy = (v: number) => top + (1 - (v - yMin) / ((yMax - yMin) || 1)) * (bot - top);
+          return (
+            <Svg width="100%" height={104} viewBox={`0 0 ${W} ${H}`}>
+              <Rect x={xL} y={gy(5.3)} width={W - xL - 8} height={Math.max(0, bot - gy(5.3))} fill="#DCEFE3" />
+              <SvgLine x1={xL} y1={gy(5.3)} x2={W - 8} y2={gy(5.3)} stroke="#5aa78c" strokeWidth={1} strokeDasharray="3 3" />
+              <SvgText x={W - 8} y={gy(5.3) - 3} fontSize={7.5} fill="#3a8a6e" textAnchor="end">5.3 fasting</SvgText>
+              {n > 1 && <Polyline points={gluSeries.map((s, i) => `${gx(i)},${gy(s.glucose as number)}`).join(' ')} fill="none" stroke={teal} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />}
+              {gluSeries.map((s, i) => { const r = s.glucose as number; const fasting = (s.tag ?? '').includes('fasting'); const hi = fasting ? r >= 5.3 : r > 7.8; return <Circle key={i} cx={gx(i)} cy={gy(r)} r={3.2} fill={hi ? '#D8505A' : teal} stroke="#fff" strokeWidth={1.3} />; })}
+              <SvgText x={W / 2} y={H - 2} fontSize={7.5} fill="#b0a6ae" textAnchor="middle">last {n} reading{n === 1 ? '' : 's'}</SvgText>
+            </Svg>
+          );
+        })() : <Text style={hint}>Log a reading to see your trend.</Text>}
+        <Button label="Log reading" onPress={logGlucose} tint={color.rose} style={{ marginTop: 8 }} />
+      </View>
+
+      {/* Blood pressure */}
+      <View style={block}>
+        <PanelLabel>Blood pressure</PanelLabel>
+        <View style={{ marginTop: 6 }}>
+          {stepRow('🩺', 'Systolic', String(sysV), ' mmHg', bpHigh ? 'High' : 'Normal', !bpHigh, () => setSysV(Math.max(0, sysV - 1)), () => setSysV(sysV + 1))}
+          {stepRow('💓', 'Diastolic', String(diaV), ' mmHg', '', true, () => setDiaV(Math.max(0, diaV - 1)), () => setDiaV(diaV + 1))}
+        </View>
+        {bpSeries.length >= 1 ? (() => {
+          const n = bpSeries.length, W = 300, H = 116, xL = 22, top = 10, bot = 90;
+          const sysVals = bpSeries.map((s) => s.systolic ?? 0), diaVals = bpSeries.map((s) => s.diastolic ?? 0);
+          const yMin = Math.min(65, ...diaVals) - 5, yMax = Math.max(145, ...sysVals) + 5;
+          const gx = (i: number) => xL + (n <= 1 ? 0.5 : i / (n - 1)) * (W - xL - 8);
+          const gy = (v: number) => top + (1 - (v - yMin) / ((yMax - yMin) || 1)) * (bot - top);
+          return (
+            <Svg width="100%" height={104} viewBox={`0 0 ${W} ${H}`}>
+              <SvgLine x1={xL} y1={gy(140)} x2={W - 8} y2={gy(140)} stroke="#D8505A" strokeWidth={1} strokeDasharray="3 3" opacity={0.6} />
+              <SvgLine x1={xL} y1={gy(90)} x2={W - 8} y2={gy(90)} stroke="#D8505A" strokeWidth={1} strokeDasharray="3 3" opacity={0.4} />
+              <SvgText x={W - 8} y={gy(140) - 3} fontSize={7.5} fill="#c0505a" textAnchor="end">140/90 limit</SvgText>
+              {n > 1 && <Polyline points={bpSeries.map((s, i) => `${gx(i)},${gy(s.systolic ?? 0)}`).join(' ')} fill="none" stroke="#6B6FC9" strokeWidth={2.4} strokeLinejoin="round" />}
+              {n > 1 && <Polyline points={bpSeries.map((s, i) => `${gx(i)},${gy(s.diastolic ?? 0)}`).join(' ')} fill="none" stroke="#A9A6E4" strokeWidth={2.2} strokeLinejoin="round" />}
+              {bpSeries.map((s, i) => <Circle key={`s${i}`} cx={gx(i)} cy={gy(s.systolic ?? 0)} r={2.9} fill="#6B6FC9" />)}
+              {bpSeries.map((s, i) => <Circle key={`d${i}`} cx={gx(i)} cy={gy(s.diastolic ?? 0)} r={2.7} fill="#A9A6E4" />)}
+            </Svg>
+          );
+        })() : <Text style={hint}>Log a reading to see your trend.</Text>}
+        {bpSeries.length >= 1 && (
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 4 }}>
+            <ChartKey sw="#6B6FC9" t="Systolic" /><ChartKey sw="#A9A6E4" t="Diastolic" /><ChartKey sw="#D8505A" t="140/90 limit" />
+          </View>
+        )}
+        <Button label="Log reading" onPress={logBp} tint={color.rose} style={{ marginTop: 10 }} />
+      </View>
+    </>
   );
 }
 
-/** Monitoring (glucose + BP) and the when-to-call triage, matching preg-vitals. */
+/** Monitoring & calls — what to expect, the when-to-call triage, your support
+ *  circle and helplines. (Vitals monitoring lives in the Care card.) */
 function MonitorPanel() {
-  const { pregVitals, addPregVital, deletePregVital } = useData();
-  const [tab, setTab] = useState<'monitoring' | 'triage'>('monitoring');
-  const [g, setG] = useState(''); const [tag, setTag] = useState('fasting');
-  const [sys, setSys] = useState(''); const [dia, setDia] = useState('');
-  const glucose = pregVitals.filter((v) => v.kind === 'glucose').slice(0, 4);
-  const bp = pregVitals.filter((v) => v.kind === 'bp').slice(0, 4);
-  const addG = () => { const v = numOrUndef(g); if (v == null) return; addPregVital({ kind: 'glucose', glucose: v, tag }); setG(''); };
-  const addBp = () => { const s = numOrUndef(sys), d = numOrUndef(dia); if (s == null && d == null) return; addPregVital({ kind: 'bp', systolic: s, diastolic: d }); setSys(''); setDia(''); };
+  const { dueDate, supportContacts, addSupportContact, deleteSupportContact } = useData();
+  const { toast } = useFeedback();
+  const wx = useWeather();
+  const [expanded, setExpanded] = useState(false);
+  const [cityOpen, setCityOpen] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [nm, setNm] = useState(''); const [role, setRole] = useState(''); const [phone, setPhone] = useState('');
+  const addContact = () => { if (!nm.trim()) return; addSupportContact({ name: nm, role, phone }); setNm(''); setRole(''); setPhone(''); setAdding(false); toast('Contact added'); };
+  const week = gestFromDueDate(dueDate ?? undefined)?.week ?? null;
+  const helplines = helplinesFor(wx.location?.country);
+  const openTel = (tel?: string, detail?: string) => { const n = tel || dialable(detail ?? ''); if (n) Linking.openURL(`tel:${n}`); };
+  const callTriage = () => {
+    const c = supportContacts.find((c) => c.phone);
+    if (c?.phone) { Linking.openURL(`tel:${c.phone}`); return; }
+    const h = helplines.find((h) => h.tel || dialable(h.detail));
+    const n = h ? (h.tel || dialable(h.detail)) : null;
+    if (n) Linking.openURL(`tel:${n}`); else toast('Add your midwife’s number in Your circle below');
+  };
+  const secLbl = { fontFamily: font.body700, fontSize: 10, letterSpacing: 0.6, textTransform: 'uppercase' as const, color: '#B7889F', marginBottom: 8, paddingHorizontal: 2 };
+  const dotRow = { flexDirection: 'row' as const, gap: 9, alignItems: 'flex-start' as const, paddingVertical: 4 };
+  const dot = { width: 7, height: 7, borderRadius: 4, marginTop: 6 };
+  const dotTx = { flex: 1, fontFamily: font.body500, fontSize: 13, color: color.ink, lineHeight: 18 };
+
   return (
     <View style={{ gap: 14 }}>
-      <View style={{ flexDirection: 'row', backgroundColor: color.canvas, borderRadius: radius.pill, padding: 3 }}>
-        {([['monitoring', 'Monitoring'], ['triage', 'When to call']] as [typeof tab, string][]).map(([k, l]) => {
-          const on = tab === k;
-          return <Pressable key={k} onPress={() => setTab(k)} style={{ flex: 1, paddingVertical: 8, borderRadius: radius.pill, alignItems: 'center', backgroundColor: on ? color.maternalTeal : 'transparent' }}><Text style={{ fontFamily: font.body700, fontSize: 12.5, color: on ? '#fff' : color.muted }}>{l}</Text></Pressable>;
-        })}
+      {/* What to expect this week — always visible (the collapsed preview) */}
+      {week != null && (() => {
+        const items = expectedSymptoms(week);
+        return (
+          <View>
+            <Text style={secLbl}>What to expect · week {week}</Text>
+            <View style={{ backgroundColor: '#EAF6EE', borderWidth: 1, borderColor: '#CDE7D5', borderRadius: 16, padding: 13 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                <Text style={{ fontSize: 15 }}>🌱</Text>
+                <Text style={{ fontFamily: font.body700, fontSize: 13, color: '#1E6C50' }}>Common now — usually normal</Text>
+              </View>
+              <Text style={{ fontFamily: font.body400, fontSize: 11, color: '#5e8a72', marginBottom: 4 }}>Around this week many mums notice:</Text>
+              {items.map((s, i) => (
+                <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 7, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: 'rgba(46,125,91,0.12)' }}>
+                  <View style={{ width: 30, height: 30, borderRadius: 9, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 15 }}>{s.emoji}</Text></View>
+                  <Text style={{ flex: 1, fontFamily: font.body600, fontSize: 13, color: color.ink }}>{s.label}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        );
+      })()}
+
+      {/* Expand — reveal monitoring, when to call & support */}
+      <Pressable onPress={() => setExpanded((v) => !v)} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 8 }}>
+        <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.roseInk }}>{expanded ? 'Show less' : 'Monitoring, when to call & support'}</Text>
+        <Text style={{ fontFamily: font.body700, fontSize: 11, color: color.roseInk }}>{expanded ? '▴' : '▾'}</Text>
+      </Pressable>
+
+      {expanded && (<>
+      {/* When to call — severity list */}
+      <View>
+        <Text style={secLbl}>When to call</Text>
+        <View style={{ borderWidth: 1.5, borderColor: '#F3C4CB', borderRadius: 16, overflow: 'hidden' }}>
+          <View style={{ backgroundColor: '#FCE7E9', paddingVertical: 11, paddingHorizontal: 13, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Text style={{ fontSize: 15 }}>📞</Text>
+            <Text style={{ fontFamily: font.body700, fontSize: 13, color: '#B5303B' }}>Get help if you notice…</Text>
+          </View>
+          <View style={{ paddingHorizontal: 13, paddingBottom: 12, paddingTop: 2 }}>
+            <Text style={{ fontFamily: font.body700, fontSize: 10, letterSpacing: 0.4, textTransform: 'uppercase', color: '#B5303B', marginTop: 10, marginBottom: 2 }}>Call your midwife now</Text>
+            {RED_FLAGS_CALL_NOW.map((f, i) => (<View key={i} style={dotRow}><View style={[dot, { backgroundColor: '#B5303B' }]} /><Text style={dotTx}>{f}</Text></View>))}
+            <Text style={{ fontFamily: font.body700, fontSize: 10, letterSpacing: 0.4, textTransform: 'uppercase', color: color.goldInk, marginTop: 10, marginBottom: 2 }}>Call soon / same day</Text>
+            {RED_FLAGS_CALL_SOON.map((f, i) => (<View key={i} style={dotRow}><View style={[dot, { backgroundColor: color.goldInk }]} /><Text style={dotTx}>{f}</Text></View>))}
+            <Pressable onPress={callTriage} accessibilityLabel="Call maternity triage" style={{ marginTop: 11, backgroundColor: '#8E1F2C', borderRadius: 12, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              <Text style={{ fontSize: 14 }}>📞</Text><Text style={{ fontFamily: font.body700, fontSize: 13.5, color: '#fff' }}>Call maternity triage</Text>
+            </Pressable>
+          </View>
+        </View>
       </View>
-      {tab === 'monitoring' ? (
-        <>
-          <View style={{ gap: 8 }}>
-            <PanelLabel>Blood glucose</PanelLabel>
-            {glucose.map((v) => {
-              const r = v.glucose ?? 0; const fasting = (v.tag ?? '').includes('fasting'); const high = fasting ? r >= 5.3 : r > 7.8;
-              return <PanelRow key={v.id} title={`${v.glucose} mmol/L${high ? ' ⚠' : ''}`} sub={`${v.tag || ''} · ${dayTimeOf(v.at)}`} onDelete={() => deletePregVital(v.id)} />;
-            })}
-            <SelectChips options={['fasting', 'post-meal']} value={tag} onChange={setTag} />
-            <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-end' }}>
-              <View style={{ flex: 1 }}><Field label="Glucose (mmol/L)" value={g} onChangeText={setG} placeholder="e.g. 5.2" /></View>
-              <Button label="Log" onPress={addG} style={{ paddingHorizontal: 16 }} />
+
+      {/* Your support circle */}
+      <View>
+        <Text style={secLbl}>Your support circle</Text>
+        {supportContacts.map((c) => (
+          <View key={c.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#FAF3F6', borderRadius: radius.tile, paddingVertical: 9, paddingHorizontal: 11, marginBottom: 7 }}>
+            <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: '#FBE0EA', alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontFamily: font.display700, fontSize: 13, color: color.roseInk }}>{c.name.charAt(0).toUpperCase()}</Text></View>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.ink }}>{c.name}</Text>
+              {c.role ? <Text style={{ fontFamily: font.body400, fontSize: 10, color: color.muted }}>{c.role}</Text> : null}
             </View>
+            {c.phone ? <Pressable onPress={() => Linking.openURL(`tel:${c.phone}`)} style={{ backgroundColor: color.rose, borderRadius: radius.pill, paddingVertical: 6, paddingHorizontal: 12 }}><Text style={{ fontFamily: font.body700, fontSize: 10.5, color: '#fff' }}>Call</Text></Pressable> : null}
+            <Pressable onPress={() => deleteSupportContact(c.id)} hitSlop={8}><Text style={{ fontFamily: font.body700, fontSize: 16, color: color.faint }}>×</Text></Pressable>
           </View>
-          <View style={{ gap: 8 }}>
-            <PanelLabel>Blood pressure</PanelLabel>
-            {bp.map((v) => {
-              const high = (v.systolic ?? 0) >= 140 || (v.diastolic ?? 0) >= 90;
-              return <PanelRow key={v.id} title={`${v.systolic}/${v.diastolic} mmHg${high ? ' ⚠' : ''}`} sub={dayTimeOf(v.at)} onDelete={() => deletePregVital(v.id)} />;
-            })}
-            <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-end' }}>
-              <View style={{ flex: 1 }}><Field label="Systolic" value={sys} onChangeText={setSys} placeholder="118" /></View>
-              <View style={{ flex: 1 }}><Field label="Diastolic" value={dia} onChangeText={setDia} placeholder="74" /></View>
-              <Button label="Log" onPress={addBp} style={{ paddingHorizontal: 16 }} />
-            </View>
+        ))}
+        {adding ? (
+          <View style={{ gap: 8, backgroundColor: '#FAF3F6', borderRadius: radius.tile, padding: 12 }}>
+            <Field label="Name" value={nm} onChangeText={setNm} placeholder="e.g. Sarah" autoCapitalize="words" />
+            <Field label="Role (optional)" value={role} onChangeText={setRole} placeholder="Midwife, partner, doula…" autoCapitalize="sentences" />
+            <Field label="Phone (optional)" value={phone} onChangeText={setPhone} placeholder="e.g. 07123 456789" />
+            <View style={{ flexDirection: 'row', gap: 8 }}><Button label="Cancel" variant="secondary" onPress={() => setAdding(false)} style={{ flex: 1 }} /><Button label="Add" onPress={addContact} style={{ flex: 1 }} tint={color.rose} /></View>
           </View>
-        </>
-      ) : (
-        <TriagePanel />
-      )}
+        ) : (
+          <Pressable onPress={() => setAdding(true)} style={{ borderWidth: 1.4, borderColor: '#E0C2D2', borderStyle: 'dashed', borderRadius: radius.tile, paddingVertical: 10, alignItems: 'center' }}><Text style={{ fontFamily: font.body700, fontSize: 12, color: color.roseInk }}>＋ Add someone</Text></Pressable>
+        )}
+      </View>
+
+      {/* Helplines (city-linked) */}
+      <View>
+        <Text style={secLbl}>Helplines</Text>
+        <View style={{ backgroundColor: '#FBE0EA', borderRadius: radius.tile, padding: 13 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+            <Text style={{ flex: 1, fontFamily: font.body700, fontSize: 12.5, color: '#8A2F58' }}>Support, any time</Text>
+            <Pressable onPress={() => setCityOpen(true)} style={{ backgroundColor: '#fff', borderRadius: radius.pill, paddingVertical: 3, paddingHorizontal: 9 }}>
+              <Text style={{ fontFamily: font.body700, fontSize: 10, color: color.roseInk }}>📍 {wx.location ? `${wx.location.name} · Change` : 'Add your city'}</Text>
+            </Pressable>
+          </View>
+          {helplines.map((h, i) => (
+            <Pressable key={i} onPress={() => openTel(h.tel, h.detail)} accessibilityLabel={`Call ${h.name}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 9, paddingVertical: 7, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: 'rgba(176,64,112,0.14)' }}>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.ink }}>{h.name}</Text>
+                <Text style={{ fontFamily: font.body400, fontSize: 11, color: '#7d6a74' }}>{h.detail}</Text>
+              </View>
+              <Text style={{ fontSize: 14 }}>📞</Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
+      </>)}
+
+      <CityPickerModal visible={cityOpen} wx={wx} onClose={() => setCityOpen(false)} />
     </View>
   );
 }
@@ -1727,8 +1880,9 @@ const apptDayKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).p
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const WD_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-function AppointmentsCard({ accent, fill, items, allowTests, onAdd, onEdit, onDelete }: {
+function AppointmentsCard({ accent, fill, items, allowTests, standard, onAdd, onEdit, onDelete }: {
   accent: string; fill: string; items: ApptItem[]; allowTests?: boolean;
+  standard?: DatedAntenatal[];
   onAdd: (i: { title: string; at: string; location?: string; kind?: 'appointment' | 'test'; result?: string }) => void;
   onEdit?: (id: string, patch: { title: string; at: string; location?: string; kind?: 'appointment' | 'test'; result?: string }) => void;
   onDelete: (id: string) => void;
@@ -1737,6 +1891,22 @@ function AppointmentsCard({ accent, fill, items, allowTests, onAdd, onEdit, onDe
   const wx = useWeather();
   const [expanded, setExpanded] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+  // Standard-schedule loader (pregnancy only — `standard` provided).
+  const normTitle = (s: string) => s.trim().toLowerCase();
+  const haveTitles = new Set(items.map((i) => normTitle(i.title)));
+  const startOfToday2 = new Date(); startOfToday2.setHours(0, 0, 0, 0);
+  const stdList = (standard ?? []).map((s) => ({ ...s, have: haveTitles.has(normTitle(s.title)), past: new Date(`${s.iso}T00:00:00`).getTime() < startOfToday2.getTime() }));
+  const [loadOpen, setLoadOpen] = useState(false);
+  const [sel, setSel] = useState<Set<string>>(new Set());
+  const openLoad = () => { setSel(new Set(stdList.filter((s) => !s.have && !s.past).map((s) => s.title))); setLoadOpen(true); };
+  const toggleSel = (t: string) => setSel((s) => { const n = new Set(s); if (n.has(t)) n.delete(t); else n.add(t); return n; });
+  const selCount = stdList.filter((s) => sel.has(s.title) && !s.have).length;
+  const doLoad = () => {
+    let added = 0;
+    stdList.forEach((s) => { if (!sel.has(s.title) || s.have) return; onAdd({ title: s.title, at: `${s.iso}T09:00:00`, kind: allowTests ? s.kind : undefined }); added++; });
+    setLoadOpen(false);
+    toast(added > 0 ? `Added ${added} appointment${added === 1 ? '' : 's'}` : 'Nothing new to add');
+  };
   const [editId, setEditId] = useState<string | null>(null);
   const [kind, setKind] = useState<'appointment' | 'test'>('appointment');
   const [title, setTitle] = useState('');
@@ -1911,18 +2081,78 @@ function AppointmentsCard({ accent, fill, items, allowTests, onAdd, onEdit, onDe
           </View>
         </View>
       ) : (
-        <Pressable onPress={() => setAddOpen(true)} style={{ borderWidth: 1.4, borderColor: fill, borderStyle: 'dashed', borderRadius: radius.tile, paddingVertical: 11, alignItems: 'center' }}>
-          <Text style={{ fontFamily: font.body700, fontSize: 12.5, color: accent }}>＋ Add appointment</Text>
-        </Pressable>
+        <View style={{ gap: 8 }}>
+          {stdList.length > 0 && (
+            <Pressable onPress={openLoad} style={{ borderWidth: 1.4, borderColor: accent, borderRadius: radius.tile, paddingVertical: 11, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 7 }}>
+              <Text style={{ fontFamily: font.body700, fontSize: 12.5, color: accent }}>↻ Load standard appointments</Text>
+            </Pressable>
+          )}
+          <Pressable onPress={() => setAddOpen(true)} style={{ borderWidth: 1.4, borderColor: fill, borderStyle: 'dashed', borderRadius: radius.tile, paddingVertical: 11, alignItems: 'center' }}>
+            <Text style={{ fontFamily: font.body700, fontSize: 12.5, color: accent }}>＋ Add appointment</Text>
+          </Pressable>
+        </View>
       )}
+
+      {/* Standard antenatal schedule picker */}
+      <Modal visible={loadOpen} transparent animationType="fade" onRequestClose={() => setLoadOpen(false)}>
+        <Pressable onPress={() => setLoadOpen(false)} style={{ flex: 1, backgroundColor: 'rgba(40,18,50,0.35)', justifyContent: 'center', paddingHorizontal: 24 }}>
+          <Pressable onPress={() => {}} style={[{ backgroundColor: '#fff', borderRadius: 22, padding: 18, maxHeight: '84%' }, shadow.card]}>
+            <Text style={{ fontFamily: font.display700, fontSize: 17, color: color.ink }}>Standard antenatal schedule</Text>
+            <Text style={{ fontFamily: font.body400, fontSize: 12.5, color: color.muted, marginTop: 3, marginBottom: 8 }}>Dates are estimated from your due date — tap any appointment afterwards to set its exact date, time & location. Anything already booked is skipped.</Text>
+
+            {(() => {
+              const pickable = stdList.filter((a) => !a.have);
+              const allOn = pickable.length > 0 && pickable.every((a) => sel.has(a.title));
+              return (
+                <Pressable onPress={() => setSel(allOn ? new Set() : new Set(pickable.map((a) => a.title)))} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: color.hairline }}>
+                  <View style={{ width: 22, height: 22, borderRadius: 7, borderWidth: 2, borderColor: allOn ? accent : '#CFC9E4', backgroundColor: allOn ? accent : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
+                    {allOn ? <Text style={{ color: '#fff', fontSize: 12, fontFamily: font.body700 }}>✓</Text> : null}
+                  </View>
+                  <Text style={{ fontFamily: font.body700, fontSize: 13, color: accent }}>{allOn ? 'Clear all' : 'Select all'}</Text>
+                </Pressable>
+              );
+            })()}
+
+            <ScrollView style={{ maxHeight: 400 }} showsVerticalScrollIndicator={false}>
+              {stdList.map((a) => {
+                const on = sel.has(a.title);
+                return (
+                  <Pressable key={a.title} disabled={a.have} onPress={() => toggleSel(a.title)} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingVertical: 11, opacity: a.have ? 0.45 : 1 }}>
+                    <View style={{ width: 22, height: 22, borderRadius: 7, borderWidth: 2, marginTop: 1, borderColor: on && !a.have ? accent : '#CFC9E4', backgroundColor: on && !a.have ? accent : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
+                      {on && !a.have ? <Text style={{ color: '#fff', fontSize: 12, fontFamily: font.body700 }}>✓</Text> : null}
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Text style={{ flex: 1, fontFamily: font.body700, fontSize: 13.5, color: color.ink }} numberOfLines={1}>{a.title}</Text>
+                        {a.kind === 'test' && <Text style={{ fontFamily: font.body700, fontSize: 9, color: accent, backgroundColor: fill, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}>SCAN</Text>}
+                      </View>
+                      <Text style={{ fontFamily: font.body400, fontSize: 11.5, color: color.muted, marginTop: 1 }}>{a.detail}</Text>
+                      <Text style={{ fontFamily: font.body500, fontSize: 11, color: a.have ? color.muted : a.past ? color.faint : accent, marginTop: 2 }}>
+                        Week {a.week} · {apptDateLabel(`${a.iso}T09:00:00`)}{a.have ? ' · already booked' : a.past ? ' · past' : ''}
+                      </Text>
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
+              <Button label="Cancel" variant="secondary" onPress={() => setLoadOpen(false)} style={{ flex: 1 }} />
+              <Button label={selCount > 0 ? `Add ${selCount}` : 'Add'} disabled={selCount === 0} onPress={doLoad} style={{ flex: 1 }} tint={accent} />
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
 
 /** Mum&Me variant — pregnancy appointments (with tests), rose theme. */
 function PregnancyAppointments() {
-  const { pregAppts, addPregAppt, updatePregAppt, deletePregAppt } = useData();
+  const { pregAppts, addPregAppt, updatePregAppt, deletePregAppt, lastPeriod, dueDate } = useData();
+  const lmp = lmpFrom(lastPeriod, dueDate);
   return <AppointmentsCard accent={color.roseInk} fill="#FBE0EA" items={pregAppts} allowTests
+    standard={lmp ? datedAntenatal(lmp) : undefined}
     onAdd={(i) => addPregAppt({ title: i.title, at: i.at, kind: i.kind ?? 'appointment', result: i.result, location: i.location })}
     onEdit={(id, p) => updatePregAppt(id, { title: p.title, at: p.at, kind: p.kind ?? 'appointment', result: p.result, location: p.location })}
     onDelete={deletePregAppt} />;
@@ -1944,13 +2174,15 @@ const KICK_TARGET = 10;
 
 /** Labour & movement — kick counter + contraction timer, matching kick-counter. */
 function LabourPanel() {
-  const { kickSessions, addKickSession, deleteKickSession, contractionSessions, addContraction, deleteContraction } = useData();
+  const { kickSessions, addKickSession, deleteKickSession, contractionSessions, addContraction, deleteContraction, kickDraft, setKickDraft, contractionStart, setContractionStart } = useData();
   const { toast } = useFeedback();
   const [mode, setMode] = useState<'kicks' | 'contractions'>('kicks');
   const [showKickHist, setShowKickHist] = useState(false);
   const [showConHist, setShowConHist] = useState(false);
-  const [kicks, setKicks] = useState(0);
-  const [startedAt, setStartedAt] = useState<number | null>(null);
+  // Live count + timer start come from the store, so they survive navigation
+  // and app restarts (only the ticking "now" clock is local, view-only).
+  const kicks = kickDraft.count;
+  const startedAt = kickDraft.startedAt;
   const [kickNow, setKickNow] = useState(Date.now());
   const kickTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   React.useEffect(() => {
@@ -1959,12 +2191,12 @@ function LabourPanel() {
       return () => { if (kickTimer.current) clearInterval(kickTimer.current); };
     }
   }, [startedAt, kicks]);
-  const recordKick = () => { if (kicks >= KICK_TARGET) return; if (!startedAt) { setStartedAt(Date.now()); setKickNow(Date.now()); } setKicks((k) => k + 1); };
-  const resetKicks = () => { const saved = kicks > 0 && startedAt; if (saved) addKickSession({ count: kicks, durationMin: Math.max(1, Math.round((kickNow - startedAt) / 60000)) }); setKicks(0); setStartedAt(null); setKickNow(Date.now()); if (saved) toast('Session saved'); };
+  const recordKick = () => { if (kicks >= KICK_TARGET) return; const started = startedAt ?? Date.now(); if (!startedAt) setKickNow(Date.now()); setKickDraft({ count: kicks + 1, startedAt: started }); };
+  const resetKicks = () => { const saved = kicks > 0 && startedAt; if (saved) addKickSession({ count: kicks, durationMin: Math.max(1, Math.round((kickNow - startedAt) / 60000)) }); setKickDraft({ count: 0, startedAt: null }); setKickNow(Date.now()); if (saved) toast('Session saved'); };
   const elapsed = startedAt ? Math.max(0, kickNow - startedAt) : 0;
   const done = kicks >= KICK_TARGET;
 
-  const [activeStart, setActiveStart] = useState<number | null>(null);
+  const activeStart = contractionStart;
   const [conNow, setConNow] = useState(Date.now());
   const conTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   React.useEffect(() => {
@@ -1976,8 +2208,8 @@ function LabourPanel() {
       const prev = contractionSessions[0];
       const prevStart = prev ? new Date(prev.at).getTime() - prev.durationSec * 1000 : null;
       const intervalSec = prevStart != null ? Math.max(0, Math.round((activeStart - prevStart) / 1000)) : undefined;
-      addContraction({ durationSec, intervalSec }); setActiveStart(null); toast('Contraction logged');
-    } else { setActiveStart(Date.now()); setConNow(Date.now()); }
+      addContraction({ durationSec, intervalSec }); setContractionStart(null); toast('Contraction logged');
+    } else { setContractionStart(Date.now()); setConNow(Date.now()); }
   };
 
   return (
@@ -2089,24 +2321,6 @@ function Stepper({ onDec, onInc, accent }: { onDec: () => void; onInc: () => voi
 }
 
 /** A block that gently pulses a red glow to draw the eye (the "when to call"). */
-function PulsingAlert({ children }: { children: React.ReactNode }) {
-  const pulse = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    const anim = Animated.loop(Animated.sequence([
-      Animated.timing(pulse, { toValue: 1, duration: 950, easing: Easing.inOut(Easing.ease), useNativeDriver: false }),
-      Animated.timing(pulse, { toValue: 0, duration: 950, easing: Easing.inOut(Easing.ease), useNativeDriver: false }),
-    ]));
-    anim.start();
-    return () => anim.stop();
-  }, [pulse]);
-  const borderColor = pulse.interpolate({ inputRange: [0, 1], outputRange: ['#F3C4CB', '#E0808D'] });
-  return (
-    <Animated.View style={{ backgroundColor: '#FCE7E9', borderWidth: 1.5, borderColor, borderRadius: radius.tile, padding: 13 }}>
-      {children}
-    </Animated.View>
-  );
-}
-
 /** Compact city search to localise the helplines (reuses the weather location). */
 function CityPickerModal({ visible, wx, onClose }: { visible: boolean; wx: ReturnType<typeof useWeather>; onClose: () => void }) {
   const { toast } = useFeedback();
@@ -2141,9 +2355,8 @@ function CityPickerModal({ visible, wx, onClose }: { visible: boolean; wx: Retur
 }
 
 function CareCheckinCard() {
-  const { checkins, addCheckin, deleteCheckin, supportContacts, addSupportContact, deleteSupportContact, dueDate, startWeightKg, setStartWeightKg, heightCm, setHeightCm } = useData();
+  const { checkins, addCheckin, deleteCheckin, dueDate, startWeightKg, setStartWeightKg, heightCm, setHeightCm } = useData();
   const { toast } = useFeedback();
-  const wx = useWeather();
   const now = new Date();
   const gest = gestFromDueDate(dueDate ?? undefined);
   const week = gest?.week ?? null;
@@ -2154,7 +2367,6 @@ function CareCheckinCard() {
   const [water, setWater] = useState<number>(todayCheckin?.waterL ?? 0);
   const [sleep, setSleep] = useState<number | null>(todayCheckin?.sleepH ?? null);
   const [meals, setMeals] = useState<string[]>(todayCheckin?.meals ?? []);
-  const [cityOpen, setCityOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [editField, setEditField] = useState<null | 'start' | 'height'>(null);
   const [fieldVal, setFieldVal] = useState('');
@@ -2201,6 +2413,15 @@ function CareCheckinCard() {
   const gx = (wk: number) => xL + ((wk - axMinWk) / ((axMaxWk - axMinWk) || 1)) * (WW - xL - 8);
   const gy = (v: number) => wpad + (1 - (v - gMin) / ((gMax - gMin) || 1)) * (plotBot - wpad);
   const wStatusOk = wStatus === 'On track';
+  // Carry-forward: if the current week has no fresh weigh-in, extend the line
+  // flat from the last recorded value to today so there's no empty gap.
+  const lastWk = gainPts.length ? gainPts[gainPts.length - 1].wk : null;
+  const linePts = gainPts.length && lastGain != null && curWeek > (lastWk ?? 0)
+    ? [...gainPts, { wk: curWeek, gain: lastGain, kg: lastKg ?? 0 }]
+    : gainPts;
+  // Whether there's a logged-weight trend to overlay. The corridor chart itself
+  // shows whenever a due date is set, so the chart is never "missing".
+  const hasWeightData = gainPts.length >= 1 && lastGain != null && startKg != null;
 
   /* ── water & sleep (last 7 days from check-ins) ── */
   const days7 = Array.from({ length: 7 }, (_, i) => { const d = new Date(now); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - (6 - i)); return d; });
@@ -2219,12 +2440,6 @@ function CareCheckinCard() {
     </View>
   );
 
-  const contacts = supportContacts;
-  const [adding, setAdding] = useState(false);
-  const [nm, setNm] = useState(''); const [role, setRole] = useState(''); const [phone, setPhone] = useState('');
-  const addContact = () => { if (!nm.trim()) return; addSupportContact({ name: nm, role, phone }); setNm(''); setRole(''); setPhone(''); setAdding(false); toast('Contact added'); };
-  const helplines = helplinesFor(wx.location?.country);
-  const openTel = (tel?: string, detail?: string) => { const n = tel || dialable(detail ?? ''); if (n) Linking.openURL(`tel:${n}`); };
 
   const rose = color.rose, roseInk = color.roseInk;
   const label = (t: string, right?: React.ReactNode) => (
@@ -2254,6 +2469,49 @@ function CareCheckinCard() {
 
       {/* Weight */}
       {label('Weight')}
+
+      {/* Starting point — its own card, above the chart (anchors the chart & BMI) */}
+      <View style={[blockStyle, { marginBottom: 10 }]}>
+        <Text style={{ fontFamily: font.body700, fontSize: 9.5, letterSpacing: 0.5, textTransform: 'uppercase', color: '#B7889F', marginBottom: 8 }}>Starting point</Text>
+        {editField ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <TextInput value={fieldVal} onChangeText={setFieldVal} keyboardType="decimal-pad" autoFocus placeholder={editField === 'start' ? 'kg' : 'cm'} placeholderTextColor={color.faint}
+              style={{ flex: 1, backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#E0C2D2', borderRadius: 11, paddingVertical: 8, paddingHorizontal: 11, fontFamily: font.body700, fontSize: 15, color: color.ink }} />
+            <Pressable onPress={commitEdit} style={{ backgroundColor: rose, borderRadius: 11, paddingVertical: 9, paddingHorizontal: 14 }}><Text style={{ fontFamily: font.body700, fontSize: 12, color: '#fff' }}>Save</Text></Pressable>
+            <Pressable onPress={() => setEditField(null)} hitSlop={8}><Text style={{ fontFamily: font.body700, fontSize: 12, color: color.muted }}>Cancel</Text></Pressable>
+          </View>
+        ) : (
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {/* left: the two edit tiles, stacked */}
+            <View style={{ flex: 1.3, gap: 8 }}>
+              {([['start', 'Start weight', startWeightKg, 'kg'], ['height', 'Height', heightCm, 'cm']] as const).map(([f, k, val, unit]) => (
+                <Pressable key={f} onPress={() => openEdit(f)} style={{ backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#EBD9E3', borderRadius: 12, paddingVertical: 8, paddingHorizontal: 11, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <View>
+                    <Text style={{ fontFamily: font.body700, fontSize: 8.5, letterSpacing: 0.3, textTransform: 'uppercase', color: '#B7889F' }}>{k}</Text>
+                    <Text style={{ fontFamily: font.display700, fontSize: 15, color: val != null ? color.ink : color.faint, marginTop: 2 }}>{val != null ? (f === 'start' ? val.toFixed(1) : String(val)) : '—'}<Text style={{ fontFamily: font.body500, fontSize: 10, color: color.muted }}> {unit}</Text></Text>
+                  </View>
+                  <Text style={{ fontFamily: font.body700, fontSize: 11, color: roseInk }}>{val != null ? 'Edit' : 'Add'}</Text>
+                </Pressable>
+              ))}
+            </View>
+            {/* right: BMI spotlight (or a prompt to add height) */}
+            {bmi != null ? (
+              <View style={{ flex: 1, backgroundColor: '#EEF6F1', borderWidth: 1, borderColor: '#CFE7D8', borderRadius: 12, padding: 11, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ fontFamily: font.body700, fontSize: 8.5, letterSpacing: 0.3, textTransform: 'uppercase', color: '#3a6a52' }}>Pre-preg BMI</Text>
+                <Text style={{ fontFamily: font.display700, fontSize: 25, color: '#3a6a52', lineHeight: 29 }}>{bmi.toFixed(1)}</Text>
+                <Text style={{ fontFamily: font.body700, fontSize: 9.5, color: '#1E6C50', marginTop: 1 }}>{goal.category}</Text>
+                <Text style={{ fontFamily: font.body500, fontSize: 9, color: '#3a6a52', marginTop: 2, textAlign: 'center' }}>goal {goal.lo}–{goal.hi} kg</Text>
+              </View>
+            ) : (
+              <View style={{ flex: 1, backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#EBD9E3', borderRadius: 12, padding: 11, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ fontFamily: font.body400, fontSize: 10, color: color.muted, textAlign: 'center', lineHeight: 14 }}>Add height for a personalised BMI range — using 11.5–16 kg for now.</Text>
+              </View>
+            )}
+          </View>
+        )}
+      </View>
+
+      {/* Chart card */}
       <View style={blockStyle}>
         {/* Title row — current weight (log today via steppers) */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
@@ -2263,23 +2521,27 @@ function CareCheckinCard() {
           <View style={{ marginLeft: 'auto' }}><Stepper accent={roseInk} onDec={() => setWeight(Math.round((wVal - 0.1) * 10) / 10)} onInc={() => setWeight(Math.round((wVal + 0.1) * 10) / 10)} /></View>
         </View>
 
-        {gainPts.length >= 1 && lastGain != null && startKg != null ? (
+        {week != null ? (
           <>
-            <Text style={{ fontFamily: font.body400, fontSize: 10.5, color: color.muted, marginTop: 6, marginBottom: 4, paddingHorizontal: 2 }}>since {startKg.toFixed(1)} kg start · <Text style={{ fontFamily: font.body700, color: roseInk }}>{lastGain >= 0 ? '+' : ''}{lastGain.toFixed(1)} kg gained</Text> · goal {goal.lo}–{goal.hi} kg by birth</Text>
+            <Text style={{ fontFamily: font.body400, fontSize: 10.5, color: color.muted, marginTop: 6, marginBottom: 4, paddingHorizontal: 2 }}>
+              {hasWeightData
+                ? <>since {startKg!.toFixed(1)} kg start · <Text style={{ fontFamily: font.body700, color: roseInk }}>{lastGain! >= 0 ? '+' : ''}{lastGain!.toFixed(1)} kg gained</Text> · goal {goal.lo}–{goal.hi} kg by birth</>
+                : <>Log today’s weight to track your gain · goal {goal.lo}–{goal.hi} kg by birth</>}
+            </Text>
 
-            {/* cumulative-gain corridor chart */}
+            {/* cumulative-gain corridor chart — always shown when pregnant */}
             <Svg width="100%" height={128} viewBox={`0 0 ${WW} ${WH}`}>
               {weekTicks.map((w, i) => <SvgLine key={`g${i}`} x1={gx(w)} y1={16} x2={gx(w)} y2={plotBot} stroke="#EBDCE4" strokeWidth={1} />)}
               <SvgLine x1={xL} y1={gy(0)} x2={WW - 8} y2={gy(0)} stroke="#D8C6D1" strokeWidth={1} strokeDasharray="3 3" />
               <SvgText x={xL - 3} y={gy(0) + 3} fontSize={7.5} fill="#b6acb4" textAnchor="end">0</SvgText>
               <Polygon points={[...corridor.map((c) => `${gx(c.wk)},${gy(c.hi)}`), ...corridor.map((c) => `${gx(c.wk)},${gy(c.lo)}`).reverse()].join(' ')} fill="#DCEFE3" />
               <SvgLine x1={gx(curWeek)} y1={16} x2={gx(curWeek)} y2={plotBot} stroke={rose} strokeWidth={1.4} strokeDasharray="3 3" opacity={0.55} />
-              {projected != null && <SvgLine x1={gx(curWeek)} y1={gy(lastGain)} x2={gx(40)} y2={gy(projected)} stroke={rose} strokeWidth={2} strokeDasharray="4 4" opacity={0.45} />}
-              {gainPts.length > 1 && <Polyline points={gainPts.map((p) => `${gx(p.wk)},${gy(p.gain)}`).join(' ')} fill="none" stroke={rose} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" />}
-              {gainPts.map((p, i) => { const r = recommendedGain(p.wk, goal); const bad = p.gain > r.hi + 0.4 || p.gain < r.lo - 0.4; return bad ? <Circle key={i} cx={gx(p.wk)} cy={gy(p.gain)} r={3.5} fill="#D8505A" stroke="#fff" strokeWidth={1.5} /> : null; })}
-              <Circle cx={gx(curWeek)} cy={gy(lastGain)} r={4.5} fill={rose} stroke="#fff" strokeWidth={2} />
-              {projected != null && <Circle cx={gx(40)} cy={gy(projected)} r={4} fill="#fff" stroke={rose} strokeWidth={2} />}
-              {projected != null && <SvgText x={gx(40)} y={gy(projected) - 6} fontSize={7.5} fill={roseInk} textAnchor="end" fontWeight="700">≈{projected >= 0 ? '+' : ''}{projected.toFixed(0)} by 40w</SvgText>}
+              {hasWeightData && projected != null && <SvgLine x1={gx(curWeek)} y1={gy(lastGain!)} x2={gx(40)} y2={gy(projected)} stroke={rose} strokeWidth={2} strokeDasharray="4 4" opacity={0.45} />}
+              {hasWeightData && linePts.length > 1 && <Polyline points={linePts.map((p) => `${gx(p.wk)},${gy(p.gain)}`).join(' ')} fill="none" stroke={rose} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" />}
+              {hasWeightData && gainPts.map((p, i) => { const r = recommendedGain(p.wk, goal); const bad = p.gain > r.hi + 0.4 || p.gain < r.lo - 0.4; return bad ? <Circle key={i} cx={gx(p.wk)} cy={gy(p.gain)} r={3.5} fill="#D8505A" stroke="#fff" strokeWidth={1.5} /> : null; })}
+              {hasWeightData && <Circle cx={gx(curWeek)} cy={gy(lastGain!)} r={4.5} fill={rose} stroke="#fff" strokeWidth={2} />}
+              {hasWeightData && projected != null && <Circle cx={gx(40)} cy={gy(projected)} r={4} fill="#fff" stroke={rose} strokeWidth={2} />}
+              {hasWeightData && projected != null && <SvgText x={gx(40)} y={gy(projected) - 6} fontSize={7.5} fill={roseInk} textAnchor="end" fontWeight="700">≈{projected >= 0 ? '+' : ''}{projected.toFixed(0)} by 40w</SvgText>}
               {weekTicks.map((w, i) => <SvgText key={`t${i}`} x={gx(w)} y={WH - 16} fontSize={9.5} fill="#7d6a74" textAnchor="middle" fontWeight="700">{w}</SvgText>)}
               <SvgText x={gx((axMinWk + 40) / 2)} y={WH - 3} fontSize={8} fill="#b0a6ae" textAnchor="middle" fontWeight="700">weeks</SvgText>
             </Svg>
@@ -2289,49 +2551,18 @@ function CareCheckinCard() {
               <ChartKey sw={rose} t="Projected" />
             </View>
 
-            {/* insight stats */}
-            <View style={{ flexDirection: 'row', gap: 7, marginTop: 10 }}>
-              <MiniStat v={pace != null ? `${pace >= 0 ? '+' : ''}${pace.toFixed(2)}` : '—'} k="kg / week" badge={pace != null ? (paceOk ? 'Good pace' : pace > 0.7 ? 'Fast' : 'Slow') : ''} ok={paceOk} />
-              <MiniStat v={`${lastGain >= 0 ? '+' : ''}${lastGain.toFixed(1)}`} k="total gain" badge={wStatus === 'On track' ? 'In range' : wStatus === 'Above range' ? 'High' : wStatus === 'Below range' ? 'Low' : ''} ok={wStatusOk} />
-              <MiniStat v={projected != null ? `≈${projected.toFixed(0)}` : '—'} k="at birth" badge={projected != null ? (projected >= goal.lo && projected <= goal.hi ? 'On target' : projected > goal.hi ? 'Over' : 'Under') : ''} ok={projected != null && projected >= goal.lo && projected <= goal.hi} />
-            </View>
+            {/* insight stats — once there's a logged trend */}
+            {hasWeightData && (
+              <View style={{ flexDirection: 'row', gap: 7, marginTop: 10 }}>
+                <MiniStat v={pace != null ? `${pace >= 0 ? '+' : ''}${pace.toFixed(2)}` : '—'} k="kg / week" badge={pace != null ? (paceOk ? 'Good pace' : pace > 0.7 ? 'Fast' : 'Slow') : ''} ok={paceOk} />
+                <MiniStat v={`${lastGain! >= 0 ? '+' : ''}${lastGain!.toFixed(1)}`} k="total gain" badge={wStatus === 'On track' ? 'In range' : wStatus === 'Above range' ? 'High' : wStatus === 'Below range' ? 'Low' : ''} ok={wStatusOk} />
+                <MiniStat v={projected != null ? `≈${projected.toFixed(0)}` : '—'} k="at birth" badge={projected != null ? (projected >= goal.lo && projected <= goal.hi ? 'On target' : projected > goal.hi ? 'Over' : 'Under') : ''} ok={projected != null && projected >= goal.lo && projected <= goal.hi} />
+              </View>
+            )}
           </>
         ) : (
-          <Text style={{ fontFamily: font.body400, fontSize: 11.5, color: color.muted, paddingVertical: 6 }}>Set your start weight below, then log today to see your gain against the recommended range.</Text>
+          <Text style={{ fontFamily: font.body400, fontSize: 11.5, color: color.muted, paddingVertical: 6 }}>Set your start weight above, then log today to see your gain against the recommended range.</Text>
         )}
-
-        {/* Starting point — anchors the chart & BMI */}
-        <View style={{ borderTopWidth: 1, borderTopColor: '#EFE0E9', marginTop: 12, paddingTop: 11 }}>
-          <Text style={{ fontFamily: font.body700, fontSize: 9.5, letterSpacing: 0.5, textTransform: 'uppercase', color: '#B7889F', marginBottom: 8 }}>Starting point</Text>
-          {editField ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <TextInput value={fieldVal} onChangeText={setFieldVal} keyboardType="decimal-pad" autoFocus placeholder={editField === 'start' ? 'kg' : 'cm'} placeholderTextColor={color.faint}
-                style={{ flex: 1, backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#E0C2D2', borderRadius: 11, paddingVertical: 8, paddingHorizontal: 11, fontFamily: font.body700, fontSize: 15, color: color.ink }} />
-              <Pressable onPress={commitEdit} style={{ backgroundColor: rose, borderRadius: 11, paddingVertical: 9, paddingHorizontal: 14 }}><Text style={{ fontFamily: font.body700, fontSize: 12, color: '#fff' }}>Save</Text></Pressable>
-              <Pressable onPress={() => setEditField(null)} hitSlop={8}><Text style={{ fontFamily: font.body700, fontSize: 12, color: color.muted }}>Cancel</Text></Pressable>
-            </View>
-          ) : (
-            <View style={{ flexDirection: 'row', gap: 8 }}>
-              {([['start', 'Start weight', startWeightKg, 'kg'], ['height', 'Height', heightCm, 'cm']] as const).map(([f, k, val, unit]) => (
-                <Pressable key={f} onPress={() => openEdit(f)} style={{ flex: 1, backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#EBD9E3', borderRadius: 12, paddingVertical: 8, paddingHorizontal: 11 }}>
-                  <Text style={{ fontFamily: font.body700, fontSize: 8.5, letterSpacing: 0.3, textTransform: 'uppercase', color: '#B7889F' }}>{k}</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 3 }}>
-                    <Text style={{ fontFamily: font.display700, fontSize: 15, color: val != null ? color.ink : color.faint }}>{val != null ? (f === 'start' ? val.toFixed(1) : String(val)) : '—'}<Text style={{ fontFamily: font.body500, fontSize: 10, color: color.muted }}> {unit}</Text></Text>
-                    <Text style={{ fontFamily: font.body700, fontSize: 11, color: roseInk }}>{val != null ? 'Edit' : 'Add'}</Text>
-                  </View>
-                </Pressable>
-              ))}
-            </View>
-          )}
-          {bmi != null ? (
-            <View style={{ marginTop: 9, backgroundColor: '#EEF6F1', borderWidth: 1, borderColor: '#CFE7D8', borderRadius: 11, paddingVertical: 8, paddingHorizontal: 11, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Text style={{ fontFamily: font.body700, fontSize: 11, color: '#3a6a52' }}>Pre-pregnancy BMI {bmi.toFixed(1)}</Text>
-              <View style={{ backgroundColor: '#fff', borderRadius: radius.pill, paddingVertical: 2, paddingHorizontal: 9 }}><Text style={{ fontFamily: font.body700, fontSize: 10, color: '#1E6C50' }}>{goal.category} · {goal.lo}–{goal.hi} kg</Text></View>
-            </View>
-          ) : (
-            <Text style={{ fontFamily: font.body400, fontSize: 10, color: color.muted, marginTop: 7, paddingHorizontal: 2 }}>Add height to personalise your range — using a general 11.5–16 kg goal for now.</Text>
-          )}
-        </View>
       </View>
 
       {/* Water */}
@@ -2358,6 +2589,10 @@ function CareCheckinCard() {
         <View style={{ flexDirection: 'row', gap: 11, marginTop: 6 }}><ChartKey sw="#B8A6E0" t="Hours slept" /><ChartKey sw="#DCEFE3" t="7–9h recommended" /></View>
       </View>
 
+      {/* Monitoring — blood glucose & pressure trend charts, below sleep */}
+      {label('Monitoring')}
+      <VitalsMonitoring />
+
       {/* Meals */}
       {label('Meals')}
       <View style={{ flexDirection: 'row', gap: 7 }}>
@@ -2374,83 +2609,14 @@ function CareCheckinCard() {
 
       <Button label="Save today" onPress={save} tint={rose} style={{ marginTop: 16 }} />
 
-      {/* Expand / collapse — guidance & support hidden by default */}
+      {/* Expand / collapse — recent check-ins hidden by default */}
       <Pressable onPress={() => setExpanded((v) => !v)} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 12, marginTop: 4 }}>
-        <Text style={{ fontFamily: font.body700, fontSize: 12, color: roseInk }}>{expanded ? 'Show less' : 'Guidance & support'}</Text>
+        <Text style={{ fontFamily: font.body700, fontSize: 12, color: roseInk }}>{expanded ? 'Show less' : 'Recent check-ins'}</Text>
         <Text style={{ fontFamily: font.body700, fontSize: 11, color: roseInk }}>{expanded ? '▴' : '▾'}</Text>
       </Pressable>
 
       {expanded && (<>
-      <View style={{ height: 1, backgroundColor: color.hairline }} />
-
-      {/* What to expect this week */}
-      {week != null && (() => {
-        const items = expectedSymptoms(week);
-        return (
-          <>
-            {label('What to expect', <Text style={{ fontFamily: font.body700, fontSize: 10, color: '#C99' }}>Week {week}</Text>)}
-            <View style={{ backgroundColor: '#E7F4EC', borderWidth: 1, borderColor: '#CDE7D5', borderRadius: radius.tile, padding: 13 }}>
-              <Text style={{ fontFamily: font.body700, fontSize: 12, color: '#1E6C50', marginBottom: 3 }}>Common right now — usually normal</Text>
-              <Text style={{ fontFamily: font.body400, fontSize: 11, color: '#5e8a72', marginBottom: 9 }}>Around this week many mums notice:</Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-                {items.map((s, i) => <View key={i} style={{ backgroundColor: '#fff', borderWidth: 1, borderColor: '#CDE7D5', borderRadius: radius.pill, paddingVertical: 5, paddingHorizontal: 10 }}><Text style={{ fontFamily: font.body700, fontSize: 11, color: '#3a6a52' }}>{s.emoji} {s.label}</Text></View>)}
-              </View>
-            </View>
-          </>
-        );
-      })()}
-
-      {/* When to call (pulsing red) */}
-      {label('When to call')}
-      <PulsingAlert>
-        <Text style={{ fontFamily: font.body700, fontSize: 12, color: '#B5303B', marginBottom: 8 }}>📞 Call your midwife now if you notice</Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-          {RED_FLAGS_SHORT.map((s, i) => <View key={i} style={{ backgroundColor: '#fff', borderWidth: 1, borderColor: '#F3C4CB', borderRadius: radius.pill, paddingVertical: 5, paddingHorizontal: 10 }}><Text style={{ fontFamily: font.body700, fontSize: 11, color: '#B5303B' }}>{s.emoji} {s.label}</Text></View>)}
-        </View>
-      </PulsingAlert>
-
-      {/* Support circle */}
-      {label('Your support circle')}
-      {contacts.map((c) => (
-        <View key={c.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#FAF3F6', borderRadius: radius.tile, paddingVertical: 9, paddingHorizontal: 11, marginBottom: 7 }}>
-          <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: '#FBE0EA', alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontFamily: font.display700, fontSize: 13, color: roseInk }}>{c.name.charAt(0).toUpperCase()}</Text></View>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.ink }}>{c.name}</Text>
-            {c.role ? <Text style={{ fontFamily: font.body400, fontSize: 10, color: color.muted }}>{c.role}</Text> : null}
-          </View>
-          {c.phone ? <Pressable onPress={() => Linking.openURL(`tel:${c.phone}`)} style={{ backgroundColor: rose, borderRadius: radius.pill, paddingVertical: 6, paddingHorizontal: 12 }}><Text style={{ fontFamily: font.body700, fontSize: 10.5, color: '#fff' }}>Call</Text></Pressable> : null}
-          <Pressable onPress={() => deleteSupportContact(c.id)} hitSlop={8}><Text style={{ fontFamily: font.body700, fontSize: 16, color: color.faint }}>×</Text></Pressable>
-        </View>
-      ))}
-      {adding ? (
-        <View style={{ gap: 8, backgroundColor: '#FAF3F6', borderRadius: radius.tile, padding: 12 }}>
-          <Field label="Name" value={nm} onChangeText={setNm} placeholder="e.g. Sarah" autoCapitalize="words" />
-          <Field label="Role (optional)" value={role} onChangeText={setRole} placeholder="Midwife, partner, doula…" autoCapitalize="sentences" />
-          <Field label="Phone (optional)" value={phone} onChangeText={setPhone} placeholder="e.g. 07123 456789" />
-          <View style={{ flexDirection: 'row', gap: 8 }}><Button label="Cancel" variant="secondary" onPress={() => setAdding(false)} style={{ flex: 1 }} /><Button label="Add" onPress={addContact} style={{ flex: 1 }} tint={rose} /></View>
-        </View>
-      ) : (
-        <Pressable onPress={() => setAdding(true)} style={{ borderWidth: 1.4, borderColor: '#E0C2D2', borderStyle: 'dashed', borderRadius: radius.tile, paddingVertical: 10, alignItems: 'center' }}><Text style={{ fontFamily: font.body700, fontSize: 12, color: roseInk }}>＋ Add someone</Text></Pressable>
-      )}
-
-      {/* Helplines (city-linked) */}
-      <View style={{ backgroundColor: '#FBE0EA', borderRadius: radius.tile, padding: 13, marginTop: 12 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
-          <Text style={{ flex: 1, fontFamily: font.body700, fontSize: 12.5, color: '#8A2F58' }}>Support, any time</Text>
-          <Pressable onPress={() => setCityOpen(true)} style={{ backgroundColor: '#fff', borderRadius: radius.pill, paddingVertical: 3, paddingHorizontal: 9 }}>
-            <Text style={{ fontFamily: font.body700, fontSize: 10, color: roseInk }}>📍 {wx.location ? `${wx.location.name} · Change` : 'Add your city'}</Text>
-          </Pressable>
-        </View>
-        {helplines.map((h, i) => (
-          <Pressable key={i} onPress={() => openTel(h.tel, h.detail)} accessibilityLabel={`Call ${h.name}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 9, paddingVertical: 7, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: 'rgba(176,64,112,0.14)' }}>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.ink }}>{h.name}</Text>
-              <Text style={{ fontFamily: font.body400, fontSize: 11, color: '#7d6a74' }}>{h.detail}</Text>
-            </View>
-            <Text style={{ fontSize: 14 }}>📞</Text>
-          </Pressable>
-        ))}
-      </View>
+      <View style={{ height: 1, backgroundColor: color.hairline, marginBottom: 4 }} />
 
       {/* Recent check-ins — review & delete past entries */}
       {label('Your recent check-ins')}
@@ -2476,8 +2642,6 @@ function CareCheckinCard() {
         })
       )}
       </>)}
-
-      <CityPickerModal visible={cityOpen} wx={wx} onClose={() => setCityOpen(false)} />
     </View>
   );
 }
