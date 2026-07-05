@@ -2022,13 +2022,15 @@ const KICK_TARGET = 10;
 
 /** Labour & movement — kick counter + contraction timer, matching kick-counter. */
 function LabourPanel() {
-  const { kickSessions, addKickSession, deleteKickSession, contractionSessions, addContraction, deleteContraction } = useData();
+  const { kickSessions, addKickSession, deleteKickSession, contractionSessions, addContraction, deleteContraction, kickDraft, setKickDraft, contractionStart, setContractionStart } = useData();
   const { toast } = useFeedback();
   const [mode, setMode] = useState<'kicks' | 'contractions'>('kicks');
   const [showKickHist, setShowKickHist] = useState(false);
   const [showConHist, setShowConHist] = useState(false);
-  const [kicks, setKicks] = useState(0);
-  const [startedAt, setStartedAt] = useState<number | null>(null);
+  // Live count + timer start come from the store, so they survive navigation
+  // and app restarts (only the ticking "now" clock is local, view-only).
+  const kicks = kickDraft.count;
+  const startedAt = kickDraft.startedAt;
   const [kickNow, setKickNow] = useState(Date.now());
   const kickTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   React.useEffect(() => {
@@ -2037,12 +2039,12 @@ function LabourPanel() {
       return () => { if (kickTimer.current) clearInterval(kickTimer.current); };
     }
   }, [startedAt, kicks]);
-  const recordKick = () => { if (kicks >= KICK_TARGET) return; if (!startedAt) { setStartedAt(Date.now()); setKickNow(Date.now()); } setKicks((k) => k + 1); };
-  const resetKicks = () => { const saved = kicks > 0 && startedAt; if (saved) addKickSession({ count: kicks, durationMin: Math.max(1, Math.round((kickNow - startedAt) / 60000)) }); setKicks(0); setStartedAt(null); setKickNow(Date.now()); if (saved) toast('Session saved'); };
+  const recordKick = () => { if (kicks >= KICK_TARGET) return; const started = startedAt ?? Date.now(); if (!startedAt) setKickNow(Date.now()); setKickDraft({ count: kicks + 1, startedAt: started }); };
+  const resetKicks = () => { const saved = kicks > 0 && startedAt; if (saved) addKickSession({ count: kicks, durationMin: Math.max(1, Math.round((kickNow - startedAt) / 60000)) }); setKickDraft({ count: 0, startedAt: null }); setKickNow(Date.now()); if (saved) toast('Session saved'); };
   const elapsed = startedAt ? Math.max(0, kickNow - startedAt) : 0;
   const done = kicks >= KICK_TARGET;
 
-  const [activeStart, setActiveStart] = useState<number | null>(null);
+  const activeStart = contractionStart;
   const [conNow, setConNow] = useState(Date.now());
   const conTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   React.useEffect(() => {
@@ -2054,8 +2056,8 @@ function LabourPanel() {
       const prev = contractionSessions[0];
       const prevStart = prev ? new Date(prev.at).getTime() - prev.durationSec * 1000 : null;
       const intervalSec = prevStart != null ? Math.max(0, Math.round((activeStart - prevStart) / 1000)) : undefined;
-      addContraction({ durationSec, intervalSec }); setActiveStart(null); toast('Contraction logged');
-    } else { setActiveStart(Date.now()); setConNow(Date.now()); }
+      addContraction({ durationSec, intervalSec }); setContractionStart(null); toast('Contraction logged');
+    } else { setContractionStart(Date.now()); setConNow(Date.now()); }
   };
 
   return (
@@ -2279,6 +2281,12 @@ function CareCheckinCard() {
   const gx = (wk: number) => xL + ((wk - axMinWk) / ((axMaxWk - axMinWk) || 1)) * (WW - xL - 8);
   const gy = (v: number) => wpad + (1 - (v - gMin) / ((gMax - gMin) || 1)) * (plotBot - wpad);
   const wStatusOk = wStatus === 'On track';
+  // Carry-forward: if the current week has no fresh weigh-in, extend the line
+  // flat from the last recorded value to today so there's no empty gap.
+  const lastWk = gainPts.length ? gainPts[gainPts.length - 1].wk : null;
+  const linePts = gainPts.length && lastGain != null && curWeek > (lastWk ?? 0)
+    ? [...gainPts, { wk: curWeek, gain: lastGain, kg: lastKg ?? 0 }]
+    : gainPts;
 
   /* ── water & sleep (last 7 days from check-ins) ── */
   const days7 = Array.from({ length: 7 }, (_, i) => { const d = new Date(now); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - (6 - i)); return d; });
@@ -2332,6 +2340,49 @@ function CareCheckinCard() {
 
       {/* Weight */}
       {label('Weight')}
+
+      {/* Starting point — its own card, above the chart (anchors the chart & BMI) */}
+      <View style={[blockStyle, { marginBottom: 10 }]}>
+        <Text style={{ fontFamily: font.body700, fontSize: 9.5, letterSpacing: 0.5, textTransform: 'uppercase', color: '#B7889F', marginBottom: 8 }}>Starting point</Text>
+        {editField ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <TextInput value={fieldVal} onChangeText={setFieldVal} keyboardType="decimal-pad" autoFocus placeholder={editField === 'start' ? 'kg' : 'cm'} placeholderTextColor={color.faint}
+              style={{ flex: 1, backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#E0C2D2', borderRadius: 11, paddingVertical: 8, paddingHorizontal: 11, fontFamily: font.body700, fontSize: 15, color: color.ink }} />
+            <Pressable onPress={commitEdit} style={{ backgroundColor: rose, borderRadius: 11, paddingVertical: 9, paddingHorizontal: 14 }}><Text style={{ fontFamily: font.body700, fontSize: 12, color: '#fff' }}>Save</Text></Pressable>
+            <Pressable onPress={() => setEditField(null)} hitSlop={8}><Text style={{ fontFamily: font.body700, fontSize: 12, color: color.muted }}>Cancel</Text></Pressable>
+          </View>
+        ) : (
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {/* left: the two edit tiles, stacked */}
+            <View style={{ flex: 1.3, gap: 8 }}>
+              {([['start', 'Start weight', startWeightKg, 'kg'], ['height', 'Height', heightCm, 'cm']] as const).map(([f, k, val, unit]) => (
+                <Pressable key={f} onPress={() => openEdit(f)} style={{ backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#EBD9E3', borderRadius: 12, paddingVertical: 8, paddingHorizontal: 11, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <View>
+                    <Text style={{ fontFamily: font.body700, fontSize: 8.5, letterSpacing: 0.3, textTransform: 'uppercase', color: '#B7889F' }}>{k}</Text>
+                    <Text style={{ fontFamily: font.display700, fontSize: 15, color: val != null ? color.ink : color.faint, marginTop: 2 }}>{val != null ? (f === 'start' ? val.toFixed(1) : String(val)) : '—'}<Text style={{ fontFamily: font.body500, fontSize: 10, color: color.muted }}> {unit}</Text></Text>
+                  </View>
+                  <Text style={{ fontFamily: font.body700, fontSize: 11, color: roseInk }}>{val != null ? 'Edit' : 'Add'}</Text>
+                </Pressable>
+              ))}
+            </View>
+            {/* right: BMI spotlight (or a prompt to add height) */}
+            {bmi != null ? (
+              <View style={{ flex: 1, backgroundColor: '#EEF6F1', borderWidth: 1, borderColor: '#CFE7D8', borderRadius: 12, padding: 11, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ fontFamily: font.body700, fontSize: 8.5, letterSpacing: 0.3, textTransform: 'uppercase', color: '#3a6a52' }}>Pre-preg BMI</Text>
+                <Text style={{ fontFamily: font.display700, fontSize: 25, color: '#3a6a52', lineHeight: 29 }}>{bmi.toFixed(1)}</Text>
+                <Text style={{ fontFamily: font.body700, fontSize: 9.5, color: '#1E6C50', marginTop: 1 }}>{goal.category}</Text>
+                <Text style={{ fontFamily: font.body500, fontSize: 9, color: '#3a6a52', marginTop: 2, textAlign: 'center' }}>goal {goal.lo}–{goal.hi} kg</Text>
+              </View>
+            ) : (
+              <View style={{ flex: 1, backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#EBD9E3', borderRadius: 12, padding: 11, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ fontFamily: font.body400, fontSize: 10, color: color.muted, textAlign: 'center', lineHeight: 14 }}>Add height for a personalised BMI range — using 11.5–16 kg for now.</Text>
+              </View>
+            )}
+          </View>
+        )}
+      </View>
+
+      {/* Chart card */}
       <View style={blockStyle}>
         {/* Title row — current weight (log today via steppers) */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
@@ -2353,7 +2404,7 @@ function CareCheckinCard() {
               <Polygon points={[...corridor.map((c) => `${gx(c.wk)},${gy(c.hi)}`), ...corridor.map((c) => `${gx(c.wk)},${gy(c.lo)}`).reverse()].join(' ')} fill="#DCEFE3" />
               <SvgLine x1={gx(curWeek)} y1={16} x2={gx(curWeek)} y2={plotBot} stroke={rose} strokeWidth={1.4} strokeDasharray="3 3" opacity={0.55} />
               {projected != null && <SvgLine x1={gx(curWeek)} y1={gy(lastGain)} x2={gx(40)} y2={gy(projected)} stroke={rose} strokeWidth={2} strokeDasharray="4 4" opacity={0.45} />}
-              {gainPts.length > 1 && <Polyline points={gainPts.map((p) => `${gx(p.wk)},${gy(p.gain)}`).join(' ')} fill="none" stroke={rose} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" />}
+              {linePts.length > 1 && <Polyline points={linePts.map((p) => `${gx(p.wk)},${gy(p.gain)}`).join(' ')} fill="none" stroke={rose} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" />}
               {gainPts.map((p, i) => { const r = recommendedGain(p.wk, goal); const bad = p.gain > r.hi + 0.4 || p.gain < r.lo - 0.4; return bad ? <Circle key={i} cx={gx(p.wk)} cy={gy(p.gain)} r={3.5} fill="#D8505A" stroke="#fff" strokeWidth={1.5} /> : null; })}
               <Circle cx={gx(curWeek)} cy={gy(lastGain)} r={4.5} fill={rose} stroke="#fff" strokeWidth={2} />
               {projected != null && <Circle cx={gx(40)} cy={gy(projected)} r={4} fill="#fff" stroke={rose} strokeWidth={2} />}
@@ -2375,41 +2426,8 @@ function CareCheckinCard() {
             </View>
           </>
         ) : (
-          <Text style={{ fontFamily: font.body400, fontSize: 11.5, color: color.muted, paddingVertical: 6 }}>Set your start weight below, then log today to see your gain against the recommended range.</Text>
+          <Text style={{ fontFamily: font.body400, fontSize: 11.5, color: color.muted, paddingVertical: 6 }}>Set your start weight above, then log today to see your gain against the recommended range.</Text>
         )}
-
-        {/* Starting point — anchors the chart & BMI */}
-        <View style={{ borderTopWidth: 1, borderTopColor: '#EFE0E9', marginTop: 12, paddingTop: 11 }}>
-          <Text style={{ fontFamily: font.body700, fontSize: 9.5, letterSpacing: 0.5, textTransform: 'uppercase', color: '#B7889F', marginBottom: 8 }}>Starting point</Text>
-          {editField ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <TextInput value={fieldVal} onChangeText={setFieldVal} keyboardType="decimal-pad" autoFocus placeholder={editField === 'start' ? 'kg' : 'cm'} placeholderTextColor={color.faint}
-                style={{ flex: 1, backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#E0C2D2', borderRadius: 11, paddingVertical: 8, paddingHorizontal: 11, fontFamily: font.body700, fontSize: 15, color: color.ink }} />
-              <Pressable onPress={commitEdit} style={{ backgroundColor: rose, borderRadius: 11, paddingVertical: 9, paddingHorizontal: 14 }}><Text style={{ fontFamily: font.body700, fontSize: 12, color: '#fff' }}>Save</Text></Pressable>
-              <Pressable onPress={() => setEditField(null)} hitSlop={8}><Text style={{ fontFamily: font.body700, fontSize: 12, color: color.muted }}>Cancel</Text></Pressable>
-            </View>
-          ) : (
-            <View style={{ flexDirection: 'row', gap: 8 }}>
-              {([['start', 'Start weight', startWeightKg, 'kg'], ['height', 'Height', heightCm, 'cm']] as const).map(([f, k, val, unit]) => (
-                <Pressable key={f} onPress={() => openEdit(f)} style={{ flex: 1, backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#EBD9E3', borderRadius: 12, paddingVertical: 8, paddingHorizontal: 11 }}>
-                  <Text style={{ fontFamily: font.body700, fontSize: 8.5, letterSpacing: 0.3, textTransform: 'uppercase', color: '#B7889F' }}>{k}</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 3 }}>
-                    <Text style={{ fontFamily: font.display700, fontSize: 15, color: val != null ? color.ink : color.faint }}>{val != null ? (f === 'start' ? val.toFixed(1) : String(val)) : '—'}<Text style={{ fontFamily: font.body500, fontSize: 10, color: color.muted }}> {unit}</Text></Text>
-                    <Text style={{ fontFamily: font.body700, fontSize: 11, color: roseInk }}>{val != null ? 'Edit' : 'Add'}</Text>
-                  </View>
-                </Pressable>
-              ))}
-            </View>
-          )}
-          {bmi != null ? (
-            <View style={{ marginTop: 9, backgroundColor: '#EEF6F1', borderWidth: 1, borderColor: '#CFE7D8', borderRadius: 11, paddingVertical: 8, paddingHorizontal: 11, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Text style={{ fontFamily: font.body700, fontSize: 11, color: '#3a6a52' }}>Pre-pregnancy BMI {bmi.toFixed(1)}</Text>
-              <View style={{ backgroundColor: '#fff', borderRadius: radius.pill, paddingVertical: 2, paddingHorizontal: 9 }}><Text style={{ fontFamily: font.body700, fontSize: 10, color: '#1E6C50' }}>{goal.category} · {goal.lo}–{goal.hi} kg</Text></View>
-            </View>
-          ) : (
-            <Text style={{ fontFamily: font.body400, fontSize: 10, color: color.muted, marginTop: 7, paddingHorizontal: 2 }}>Add height to personalise your range — using a general 11.5–16 kg goal for now.</Text>
-          )}
-        </View>
       </View>
 
       {/* Water */}
