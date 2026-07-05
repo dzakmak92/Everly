@@ -1631,25 +1631,107 @@ function PregApptsPanel() {
   );
 }
 
-/** Monitoring & calls — the merged health hub: when-to-call triage, what to
- *  expect this week, glucose/BP monitoring, your support circle and helplines. */
-function MonitorPanel() {
-  const { pregVitals, addPregVital, dueDate, supportContacts, addSupportContact, deleteSupportContact } = useData();
+/** Blood glucose + blood pressure — trend charts (banded like the weight chart)
+ *  with −/+ stepper inputs matching the water/sleep rows. Lives in the Care card
+ *  below the sleep chart. */
+function VitalsMonitoring() {
+  const { pregVitals, addPregVital } = useData();
   const { toast } = useFeedback();
-  const wx = useWeather();
-  const [expanded, setExpanded] = useState(false);
   const [tag, setTag] = useState('fasting');
   const [gVal, setGVal] = useState(5.2);          // glucose draft (mmol/L)
   const [sysV, setSysV] = useState(118);           // systolic draft
   const [diaV, setDiaV] = useState(74);            // diastolic draft
-  const [cityOpen, setCityOpen] = useState(false);
-  const [adding, setAdding] = useState(false);
-  const [nm, setNm] = useState(''); const [role, setRole] = useState(''); const [phone, setPhone] = useState('');
-  // Trend series — chronological (oldest → newest), last 10.
   const gluSeries = pregVitals.filter((v) => v.kind === 'glucose' && v.glucose != null).slice(0, 10).reverse();
   const bpSeries = pregVitals.filter((v) => v.kind === 'bp' && (v.systolic != null || v.diastolic != null)).slice(0, 10).reverse();
   const logGlucose = () => { addPregVital({ kind: 'glucose', glucose: gVal, tag }); toast('Glucose logged'); };
   const logBp = () => { addPregVital({ kind: 'bp', systolic: sysV, diastolic: diaV }); toast('Blood pressure logged'); };
+  const gHigh = tag.includes('fasting') ? gVal >= 5.3 : gVal > 7.8;
+  const bpHigh = sysV >= 140 || diaV >= 90;
+  const roseInk = color.roseInk, teal = color.maternalTeal;
+  const hint = { fontFamily: font.body400, fontSize: 11.5, color: color.muted, paddingVertical: 8, textAlign: 'center' as const };
+  const block = { backgroundColor: '#FAF3F6', borderRadius: radius.tile, padding: 12 } as const;
+  const stepRow = (emoji: string, name: string, val: string, unit: string, status: string, ok: boolean, onDec: () => void, onInc: () => void) => (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+      <Text style={{ fontSize: 16 }}>{emoji}</Text>
+      <Text numberOfLines={1} style={{ flex: 1, minWidth: 0, fontFamily: font.body700, fontSize: 12, color: '#7d7a90' }}>{name}</Text>
+      <Text style={{ fontFamily: font.display700, fontSize: 17, color: color.ink }}>{val}<Text style={{ fontFamily: font.body500, fontSize: 10, color: color.muted }}>{unit}</Text></Text>
+      {status ? <View style={{ backgroundColor: ok ? '#E4F3EC' : '#FBE7D8', borderRadius: radius.pill, paddingVertical: 2, paddingHorizontal: 7 }}><Text style={{ fontFamily: font.body700, fontSize: 9, color: ok ? '#1E6C50' : '#B5662E' }}>{status}</Text></View> : null}
+      <Stepper accent={roseInk} onDec={onDec} onInc={onInc} />
+    </View>
+  );
+  return (
+    <>
+      {/* Blood glucose */}
+      <View style={[block, { marginBottom: 8 }]}>
+        <PanelLabel>Blood glucose</PanelLabel>
+        <View style={{ marginTop: 6, marginBottom: 8 }}><SelectChips options={['fasting', 'post-meal']} value={tag} onChange={setTag} /></View>
+        {stepRow('💉', 'Glucose', gVal.toFixed(1), ' mmol/L', gHigh ? 'High' : 'In range', !gHigh, () => setGVal(Math.max(0, Math.round((gVal - 0.1) * 10) / 10)), () => setGVal(Math.round((gVal + 0.1) * 10) / 10))}
+        {gluSeries.length >= 1 ? (() => {
+          const n = gluSeries.length, W = 300, H = 116, xL = 18, top = 10, bot = 90;
+          const vals = gluSeries.map((s) => s.glucose as number);
+          const yMin = Math.min(4.5, ...vals) - 0.3, yMax = Math.max(6, ...vals) + 0.3;
+          const gx = (i: number) => xL + (n <= 1 ? 0.5 : i / (n - 1)) * (W - xL - 8);
+          const gy = (v: number) => top + (1 - (v - yMin) / ((yMax - yMin) || 1)) * (bot - top);
+          return (
+            <Svg width="100%" height={104} viewBox={`0 0 ${W} ${H}`}>
+              <Rect x={xL} y={gy(5.3)} width={W - xL - 8} height={Math.max(0, bot - gy(5.3))} fill="#DCEFE3" />
+              <SvgLine x1={xL} y1={gy(5.3)} x2={W - 8} y2={gy(5.3)} stroke="#5aa78c" strokeWidth={1} strokeDasharray="3 3" />
+              <SvgText x={W - 8} y={gy(5.3) - 3} fontSize={7.5} fill="#3a8a6e" textAnchor="end">5.3 fasting</SvgText>
+              {n > 1 && <Polyline points={gluSeries.map((s, i) => `${gx(i)},${gy(s.glucose as number)}`).join(' ')} fill="none" stroke={teal} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />}
+              {gluSeries.map((s, i) => { const r = s.glucose as number; const fasting = (s.tag ?? '').includes('fasting'); const hi = fasting ? r >= 5.3 : r > 7.8; return <Circle key={i} cx={gx(i)} cy={gy(r)} r={3.2} fill={hi ? '#D8505A' : teal} stroke="#fff" strokeWidth={1.3} />; })}
+              <SvgText x={W / 2} y={H - 2} fontSize={7.5} fill="#b0a6ae" textAnchor="middle">last {n} reading{n === 1 ? '' : 's'}</SvgText>
+            </Svg>
+          );
+        })() : <Text style={hint}>Log a reading to see your trend.</Text>}
+        <Button label="Log reading" onPress={logGlucose} tint={color.rose} style={{ marginTop: 8 }} />
+      </View>
+
+      {/* Blood pressure */}
+      <View style={block}>
+        <PanelLabel>Blood pressure</PanelLabel>
+        <View style={{ marginTop: 6 }}>
+          {stepRow('🩺', 'Systolic', String(sysV), ' mmHg', bpHigh ? 'High' : 'Normal', !bpHigh, () => setSysV(Math.max(0, sysV - 1)), () => setSysV(sysV + 1))}
+          {stepRow('💓', 'Diastolic', String(diaV), ' mmHg', '', true, () => setDiaV(Math.max(0, diaV - 1)), () => setDiaV(diaV + 1))}
+        </View>
+        {bpSeries.length >= 1 ? (() => {
+          const n = bpSeries.length, W = 300, H = 116, xL = 22, top = 10, bot = 90;
+          const sysVals = bpSeries.map((s) => s.systolic ?? 0), diaVals = bpSeries.map((s) => s.diastolic ?? 0);
+          const yMin = Math.min(65, ...diaVals) - 5, yMax = Math.max(145, ...sysVals) + 5;
+          const gx = (i: number) => xL + (n <= 1 ? 0.5 : i / (n - 1)) * (W - xL - 8);
+          const gy = (v: number) => top + (1 - (v - yMin) / ((yMax - yMin) || 1)) * (bot - top);
+          return (
+            <Svg width="100%" height={104} viewBox={`0 0 ${W} ${H}`}>
+              <SvgLine x1={xL} y1={gy(140)} x2={W - 8} y2={gy(140)} stroke="#D8505A" strokeWidth={1} strokeDasharray="3 3" opacity={0.6} />
+              <SvgLine x1={xL} y1={gy(90)} x2={W - 8} y2={gy(90)} stroke="#D8505A" strokeWidth={1} strokeDasharray="3 3" opacity={0.4} />
+              <SvgText x={W - 8} y={gy(140) - 3} fontSize={7.5} fill="#c0505a" textAnchor="end">140/90 limit</SvgText>
+              {n > 1 && <Polyline points={bpSeries.map((s, i) => `${gx(i)},${gy(s.systolic ?? 0)}`).join(' ')} fill="none" stroke="#6B6FC9" strokeWidth={2.4} strokeLinejoin="round" />}
+              {n > 1 && <Polyline points={bpSeries.map((s, i) => `${gx(i)},${gy(s.diastolic ?? 0)}`).join(' ')} fill="none" stroke="#A9A6E4" strokeWidth={2.2} strokeLinejoin="round" />}
+              {bpSeries.map((s, i) => <Circle key={`s${i}`} cx={gx(i)} cy={gy(s.systolic ?? 0)} r={2.9} fill="#6B6FC9" />)}
+              {bpSeries.map((s, i) => <Circle key={`d${i}`} cx={gx(i)} cy={gy(s.diastolic ?? 0)} r={2.7} fill="#A9A6E4" />)}
+            </Svg>
+          );
+        })() : <Text style={hint}>Log a reading to see your trend.</Text>}
+        {bpSeries.length >= 1 && (
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 4 }}>
+            <ChartKey sw="#6B6FC9" t="Systolic" /><ChartKey sw="#A9A6E4" t="Diastolic" /><ChartKey sw="#D8505A" t="140/90 limit" />
+          </View>
+        )}
+        <Button label="Log reading" onPress={logBp} tint={color.rose} style={{ marginTop: 10 }} />
+      </View>
+    </>
+  );
+}
+
+/** Monitoring & calls — what to expect, the when-to-call triage, your support
+ *  circle and helplines. (Vitals monitoring lives in the Care card.) */
+function MonitorPanel() {
+  const { dueDate, supportContacts, addSupportContact, deleteSupportContact } = useData();
+  const { toast } = useFeedback();
+  const wx = useWeather();
+  const [expanded, setExpanded] = useState(false);
+  const [cityOpen, setCityOpen] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [nm, setNm] = useState(''); const [role, setRole] = useState(''); const [phone, setPhone] = useState('');
   const addContact = () => { if (!nm.trim()) return; addSupportContact({ name: nm, role, phone }); setNm(''); setRole(''); setPhone(''); setAdding(false); toast('Contact added'); };
   const week = gestFromDueDate(dueDate ?? undefined)?.week ?? null;
   const helplines = helplinesFor(wx.location?.country);
@@ -1665,20 +1747,6 @@ function MonitorPanel() {
   const dotRow = { flexDirection: 'row' as const, gap: 9, alignItems: 'flex-start' as const, paddingVertical: 4 };
   const dot = { width: 7, height: 7, borderRadius: 4, marginTop: 6 };
   const dotTx = { flex: 1, fontFamily: font.body500, fontSize: 13, color: color.ink, lineHeight: 18 };
-  const teal = color.maternalTeal;
-  const hint = { fontFamily: font.body400, fontSize: 11.5, color: color.muted, paddingVertical: 8, textAlign: 'center' as const };
-  // A −/+ stepper metric row, matching the water/sleep inputs.
-  const stepRow = (emoji: string, name: string, val: string, unit: string, status: string, ok: boolean, onDec: () => void, onInc: () => void) => (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-      <Text style={{ fontSize: 16 }}>{emoji}</Text>
-      <Text numberOfLines={1} style={{ flex: 1, minWidth: 0, fontFamily: font.body700, fontSize: 12, color: '#7d7a90' }}>{name}</Text>
-      <Text style={{ fontFamily: font.display700, fontSize: 17, color: color.ink }}>{val}<Text style={{ fontFamily: font.body500, fontSize: 10, color: color.muted }}>{unit}</Text></Text>
-      {status ? <View style={{ backgroundColor: ok ? '#E4F3EC' : '#FBE7D8', borderRadius: radius.pill, paddingVertical: 2, paddingHorizontal: 7 }}><Text style={{ fontFamily: font.body700, fontSize: 9, color: ok ? '#1E6C50' : '#B5662E' }}>{status}</Text></View> : null}
-      <Stepper accent={teal} onDec={onDec} onInc={onInc} />
-    </View>
-  );
-  const gHigh = tag.includes('fasting') ? gVal >= 5.3 : gVal > 7.8;
-  const bpHigh = sysV >= 140 || diaV >= 90;
 
   return (
     <View style={{ gap: 14 }}>
@@ -1729,69 +1797,6 @@ function MonitorPanel() {
               <Text style={{ fontSize: 14 }}>📞</Text><Text style={{ fontFamily: font.body700, fontSize: 13.5, color: '#fff' }}>Call maternity triage</Text>
             </Pressable>
           </View>
-        </View>
-      </View>
-
-      {/* Monitoring — glucose + BP with trend charts + stepper inputs */}
-      <View>
-        <Text style={secLbl}>Monitoring</Text>
-
-        {/* Blood glucose */}
-        <View style={{ backgroundColor: '#FAF3F6', borderRadius: radius.tile, padding: 12, marginBottom: 8 }}>
-          <PanelLabel>Blood glucose</PanelLabel>
-          <View style={{ marginTop: 6, marginBottom: 8 }}><SelectChips options={['fasting', 'post-meal']} value={tag} onChange={setTag} /></View>
-          {stepRow('💉', 'Glucose', gVal.toFixed(1), ' mmol/L', gHigh ? 'High' : 'In range', !gHigh, () => setGVal(Math.max(0, Math.round((gVal - 0.1) * 10) / 10)), () => setGVal(Math.round((gVal + 0.1) * 10) / 10))}
-          {gluSeries.length >= 1 ? (() => {
-            const n = gluSeries.length, W = 300, H = 116, xL = 18, top = 10, bot = 90;
-            const vals = gluSeries.map((s) => s.glucose as number);
-            const yMin = Math.min(4.5, ...vals) - 0.3, yMax = Math.max(6, ...vals) + 0.3;
-            const gx = (i: number) => xL + (n <= 1 ? 0.5 : i / (n - 1)) * (W - xL - 8);
-            const gy = (v: number) => top + (1 - (v - yMin) / ((yMax - yMin) || 1)) * (bot - top);
-            return (
-              <Svg width="100%" height={104} viewBox={`0 0 ${W} ${H}`}>
-                <Rect x={xL} y={gy(5.3)} width={W - xL - 8} height={Math.max(0, bot - gy(5.3))} fill="#DCEFE3" />
-                <SvgLine x1={xL} y1={gy(5.3)} x2={W - 8} y2={gy(5.3)} stroke="#5aa78c" strokeWidth={1} strokeDasharray="3 3" />
-                <SvgText x={W - 8} y={gy(5.3) - 3} fontSize={7.5} fill="#3a8a6e" textAnchor="end">5.3 fasting</SvgText>
-                {n > 1 && <Polyline points={gluSeries.map((s, i) => `${gx(i)},${gy(s.glucose as number)}`).join(' ')} fill="none" stroke={teal} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />}
-                {gluSeries.map((s, i) => { const r = s.glucose as number; const fasting = (s.tag ?? '').includes('fasting'); const hi = fasting ? r >= 5.3 : r > 7.8; return <Circle key={i} cx={gx(i)} cy={gy(r)} r={3.2} fill={hi ? '#D8505A' : teal} stroke="#fff" strokeWidth={1.3} />; })}
-                <SvgText x={W / 2} y={H - 2} fontSize={7.5} fill="#b0a6ae" textAnchor="middle">last {n} reading{n === 1 ? '' : 's'}</SvgText>
-              </Svg>
-            );
-          })() : <Text style={hint}>Log a reading to see your trend.</Text>}
-          <Button label="Log reading" onPress={logGlucose} tint={teal} style={{ marginTop: 8 }} />
-        </View>
-
-        {/* Blood pressure */}
-        <View style={{ backgroundColor: '#FAF3F6', borderRadius: radius.tile, padding: 12 }}>
-          <PanelLabel>Blood pressure</PanelLabel>
-          <View style={{ marginTop: 6 }}>
-            {stepRow('🩺', 'Systolic', String(sysV), ' mmHg', bpHigh ? 'High' : 'Normal', !bpHigh, () => setSysV(Math.max(0, sysV - 1)), () => setSysV(sysV + 1))}
-            {stepRow('💓', 'Diastolic', String(diaV), ' mmHg', '', true, () => setDiaV(Math.max(0, diaV - 1)), () => setDiaV(diaV + 1))}
-          </View>
-          {bpSeries.length >= 1 ? (() => {
-            const n = bpSeries.length, W = 300, H = 116, xL = 22, top = 10, bot = 90;
-            const sysVals = bpSeries.map((s) => s.systolic ?? 0), diaVals = bpSeries.map((s) => s.diastolic ?? 0);
-            const yMin = Math.min(65, ...diaVals) - 5, yMax = Math.max(145, ...sysVals) + 5;
-            const gx = (i: number) => xL + (n <= 1 ? 0.5 : i / (n - 1)) * (W - xL - 8);
-            const gy = (v: number) => top + (1 - (v - yMin) / ((yMax - yMin) || 1)) * (bot - top);
-            return (
-              <Svg width="100%" height={104} viewBox={`0 0 ${W} ${H}`}>
-                <SvgLine x1={xL} y1={gy(140)} x2={W - 8} y2={gy(140)} stroke="#D8505A" strokeWidth={1} strokeDasharray="3 3" opacity={0.6} />
-                <SvgLine x1={xL} y1={gy(90)} x2={W - 8} y2={gy(90)} stroke="#D8505A" strokeWidth={1} strokeDasharray="3 3" opacity={0.4} />
-                <SvgText x={W - 8} y={gy(140) - 3} fontSize={7.5} fill="#c0505a" textAnchor="end">140/90 limit</SvgText>
-                {n > 1 && <Polyline points={bpSeries.map((s, i) => `${gx(i)},${gy(s.systolic ?? 0)}`).join(' ')} fill="none" stroke="#6B6FC9" strokeWidth={2.4} strokeLinejoin="round" />}
-                {n > 1 && <Polyline points={bpSeries.map((s, i) => `${gx(i)},${gy(s.diastolic ?? 0)}`).join(' ')} fill="none" stroke="#A9A6E4" strokeWidth={2.2} strokeLinejoin="round" />}
-                {bpSeries.map((s, i) => <Circle key={`s${i}`} cx={gx(i)} cy={gy(s.systolic ?? 0)} r={2.9} fill="#6B6FC9" />)}
-                {bpSeries.map((s, i) => <Circle key={`d${i}`} cx={gx(i)} cy={gy(s.diastolic ?? 0)} r={2.7} fill="#A9A6E4" />)}
-              </Svg>
-            );
-          })() : <Text style={hint}>Log a reading to see your trend.</Text>}
-          {bpSeries.length >= 1 && (
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 4 }}>
-              <ChartKey sw="#6B6FC9" t="Systolic" /><ChartKey sw="#A9A6E4" t="Diastolic" /><ChartKey sw="#D8505A" t="140/90 limit" />
-            </View>
-          )}
-          <Button label="Log reading" onPress={logBp} tint={teal} style={{ marginTop: 10 }} />
         </View>
       </View>
 
@@ -2400,6 +2405,9 @@ function CareCheckinCard() {
   const linePts = gainPts.length && lastGain != null && curWeek > (lastWk ?? 0)
     ? [...gainPts, { wk: curWeek, gain: lastGain, kg: lastKg ?? 0 }]
     : gainPts;
+  // Whether there's a logged-weight trend to overlay. The corridor chart itself
+  // shows whenever a due date is set, so the chart is never "missing".
+  const hasWeightData = gainPts.length >= 1 && lastGain != null && startKg != null;
 
   /* ── water & sleep (last 7 days from check-ins) ── */
   const days7 = Array.from({ length: 7 }, (_, i) => { const d = new Date(now); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - (6 - i)); return d; });
@@ -2499,23 +2507,27 @@ function CareCheckinCard() {
           <View style={{ marginLeft: 'auto' }}><Stepper accent={roseInk} onDec={() => setWeight(Math.round((wVal - 0.1) * 10) / 10)} onInc={() => setWeight(Math.round((wVal + 0.1) * 10) / 10)} /></View>
         </View>
 
-        {gainPts.length >= 1 && lastGain != null && startKg != null ? (
+        {week != null ? (
           <>
-            <Text style={{ fontFamily: font.body400, fontSize: 10.5, color: color.muted, marginTop: 6, marginBottom: 4, paddingHorizontal: 2 }}>since {startKg.toFixed(1)} kg start · <Text style={{ fontFamily: font.body700, color: roseInk }}>{lastGain >= 0 ? '+' : ''}{lastGain.toFixed(1)} kg gained</Text> · goal {goal.lo}–{goal.hi} kg by birth</Text>
+            <Text style={{ fontFamily: font.body400, fontSize: 10.5, color: color.muted, marginTop: 6, marginBottom: 4, paddingHorizontal: 2 }}>
+              {hasWeightData
+                ? <>since {startKg!.toFixed(1)} kg start · <Text style={{ fontFamily: font.body700, color: roseInk }}>{lastGain! >= 0 ? '+' : ''}{lastGain!.toFixed(1)} kg gained</Text> · goal {goal.lo}–{goal.hi} kg by birth</>
+                : <>Log today’s weight to track your gain · goal {goal.lo}–{goal.hi} kg by birth</>}
+            </Text>
 
-            {/* cumulative-gain corridor chart */}
+            {/* cumulative-gain corridor chart — always shown when pregnant */}
             <Svg width="100%" height={128} viewBox={`0 0 ${WW} ${WH}`}>
               {weekTicks.map((w, i) => <SvgLine key={`g${i}`} x1={gx(w)} y1={16} x2={gx(w)} y2={plotBot} stroke="#EBDCE4" strokeWidth={1} />)}
               <SvgLine x1={xL} y1={gy(0)} x2={WW - 8} y2={gy(0)} stroke="#D8C6D1" strokeWidth={1} strokeDasharray="3 3" />
               <SvgText x={xL - 3} y={gy(0) + 3} fontSize={7.5} fill="#b6acb4" textAnchor="end">0</SvgText>
               <Polygon points={[...corridor.map((c) => `${gx(c.wk)},${gy(c.hi)}`), ...corridor.map((c) => `${gx(c.wk)},${gy(c.lo)}`).reverse()].join(' ')} fill="#DCEFE3" />
               <SvgLine x1={gx(curWeek)} y1={16} x2={gx(curWeek)} y2={plotBot} stroke={rose} strokeWidth={1.4} strokeDasharray="3 3" opacity={0.55} />
-              {projected != null && <SvgLine x1={gx(curWeek)} y1={gy(lastGain)} x2={gx(40)} y2={gy(projected)} stroke={rose} strokeWidth={2} strokeDasharray="4 4" opacity={0.45} />}
-              {linePts.length > 1 && <Polyline points={linePts.map((p) => `${gx(p.wk)},${gy(p.gain)}`).join(' ')} fill="none" stroke={rose} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" />}
-              {gainPts.map((p, i) => { const r = recommendedGain(p.wk, goal); const bad = p.gain > r.hi + 0.4 || p.gain < r.lo - 0.4; return bad ? <Circle key={i} cx={gx(p.wk)} cy={gy(p.gain)} r={3.5} fill="#D8505A" stroke="#fff" strokeWidth={1.5} /> : null; })}
-              <Circle cx={gx(curWeek)} cy={gy(lastGain)} r={4.5} fill={rose} stroke="#fff" strokeWidth={2} />
-              {projected != null && <Circle cx={gx(40)} cy={gy(projected)} r={4} fill="#fff" stroke={rose} strokeWidth={2} />}
-              {projected != null && <SvgText x={gx(40)} y={gy(projected) - 6} fontSize={7.5} fill={roseInk} textAnchor="end" fontWeight="700">≈{projected >= 0 ? '+' : ''}{projected.toFixed(0)} by 40w</SvgText>}
+              {hasWeightData && projected != null && <SvgLine x1={gx(curWeek)} y1={gy(lastGain!)} x2={gx(40)} y2={gy(projected)} stroke={rose} strokeWidth={2} strokeDasharray="4 4" opacity={0.45} />}
+              {hasWeightData && linePts.length > 1 && <Polyline points={linePts.map((p) => `${gx(p.wk)},${gy(p.gain)}`).join(' ')} fill="none" stroke={rose} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" />}
+              {hasWeightData && gainPts.map((p, i) => { const r = recommendedGain(p.wk, goal); const bad = p.gain > r.hi + 0.4 || p.gain < r.lo - 0.4; return bad ? <Circle key={i} cx={gx(p.wk)} cy={gy(p.gain)} r={3.5} fill="#D8505A" stroke="#fff" strokeWidth={1.5} /> : null; })}
+              {hasWeightData && <Circle cx={gx(curWeek)} cy={gy(lastGain!)} r={4.5} fill={rose} stroke="#fff" strokeWidth={2} />}
+              {hasWeightData && projected != null && <Circle cx={gx(40)} cy={gy(projected)} r={4} fill="#fff" stroke={rose} strokeWidth={2} />}
+              {hasWeightData && projected != null && <SvgText x={gx(40)} y={gy(projected) - 6} fontSize={7.5} fill={roseInk} textAnchor="end" fontWeight="700">≈{projected >= 0 ? '+' : ''}{projected.toFixed(0)} by 40w</SvgText>}
               {weekTicks.map((w, i) => <SvgText key={`t${i}`} x={gx(w)} y={WH - 16} fontSize={9.5} fill="#7d6a74" textAnchor="middle" fontWeight="700">{w}</SvgText>)}
               <SvgText x={gx((axMinWk + 40) / 2)} y={WH - 3} fontSize={8} fill="#b0a6ae" textAnchor="middle" fontWeight="700">weeks</SvgText>
             </Svg>
@@ -2525,12 +2537,14 @@ function CareCheckinCard() {
               <ChartKey sw={rose} t="Projected" />
             </View>
 
-            {/* insight stats */}
-            <View style={{ flexDirection: 'row', gap: 7, marginTop: 10 }}>
-              <MiniStat v={pace != null ? `${pace >= 0 ? '+' : ''}${pace.toFixed(2)}` : '—'} k="kg / week" badge={pace != null ? (paceOk ? 'Good pace' : pace > 0.7 ? 'Fast' : 'Slow') : ''} ok={paceOk} />
-              <MiniStat v={`${lastGain >= 0 ? '+' : ''}${lastGain.toFixed(1)}`} k="total gain" badge={wStatus === 'On track' ? 'In range' : wStatus === 'Above range' ? 'High' : wStatus === 'Below range' ? 'Low' : ''} ok={wStatusOk} />
-              <MiniStat v={projected != null ? `≈${projected.toFixed(0)}` : '—'} k="at birth" badge={projected != null ? (projected >= goal.lo && projected <= goal.hi ? 'On target' : projected > goal.hi ? 'Over' : 'Under') : ''} ok={projected != null && projected >= goal.lo && projected <= goal.hi} />
-            </View>
+            {/* insight stats — once there's a logged trend */}
+            {hasWeightData && (
+              <View style={{ flexDirection: 'row', gap: 7, marginTop: 10 }}>
+                <MiniStat v={pace != null ? `${pace >= 0 ? '+' : ''}${pace.toFixed(2)}` : '—'} k="kg / week" badge={pace != null ? (paceOk ? 'Good pace' : pace > 0.7 ? 'Fast' : 'Slow') : ''} ok={paceOk} />
+                <MiniStat v={`${lastGain! >= 0 ? '+' : ''}${lastGain!.toFixed(1)}`} k="total gain" badge={wStatus === 'On track' ? 'In range' : wStatus === 'Above range' ? 'High' : wStatus === 'Below range' ? 'Low' : ''} ok={wStatusOk} />
+                <MiniStat v={projected != null ? `≈${projected.toFixed(0)}` : '—'} k="at birth" badge={projected != null ? (projected >= goal.lo && projected <= goal.hi ? 'On target' : projected > goal.hi ? 'Over' : 'Under') : ''} ok={projected != null && projected >= goal.lo && projected <= goal.hi} />
+              </View>
+            )}
           </>
         ) : (
           <Text style={{ fontFamily: font.body400, fontSize: 11.5, color: color.muted, paddingVertical: 6 }}>Set your start weight above, then log today to see your gain against the recommended range.</Text>
@@ -2560,6 +2574,10 @@ function CareCheckinCard() {
         {dayAxis}
         <View style={{ flexDirection: 'row', gap: 11, marginTop: 6 }}><ChartKey sw="#B8A6E0" t="Hours slept" /><ChartKey sw="#DCEFE3" t="7–9h recommended" /></View>
       </View>
+
+      {/* Monitoring — blood glucose & pressure trend charts, below sleep */}
+      {label('Monitoring')}
+      <VitalsMonitoring />
 
       {/* Meals */}
       {label('Meals')}
