@@ -888,11 +888,11 @@ function MaternityView({
   const showGrid = phase === 'postpartum' || (phase === 'pregnancy' && pregLive);
 
   // Feature tiles per phase (2-column grid). `key` is the panel selector.
-  const tiles =
+  // Pregnancy's Monitoring & calls is rendered as its own full-width card
+  // (below), so the grid is postpartum-only.
+  const tiles: { key: string; label: string; bg: string; icon: React.ReactNode }[] =
     phase === 'pregnancy'
-      ? [
-          { key: 'monitor', label: 'Monitoring & calls', bg: '#FBE0EA', icon: <Shield size={20} color="#B04070" /> },
-        ]
+      ? []
       : [
           { key: 'epds', label: 'Wellbeing', bg: '#E7E4FB', icon: <Smile size={20} color={color.primary} /> },
           { key: 'recovery', label: 'Recovery', bg: '#D8F0E6', icon: <Shield size={20} color="#2C8475" /> },
@@ -1017,8 +1017,22 @@ function MaternityView({
         </View>
       )}
 
+      {/* Monitoring & calls — one full-width card (pregnancy) */}
+      {showGrid && phase === 'pregnancy' && (
+        <View style={{ gap: 10 }}>
+          <Label>More for you</Label>
+          <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 16, gap: 14, borderWidth: 2, borderColor: color.rose }, shadow.card]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <View style={{ width: 36, height: 36, borderRadius: 11, backgroundColor: '#FBE0EA', alignItems: 'center', justifyContent: 'center' }}><Shield size={20} color="#B04070" /></View>
+              <Text style={{ flex: 1, fontFamily: font.display700, fontSize: 17, color: color.ink }}>Monitoring &amp; calls</Text>
+            </View>
+            <MonitorPanel />
+          </View>
+        </View>
+      )}
+
       {/* Feature grid — tapping a card expands it inline, directly under its row */}
-      {showGrid && (
+      {showGrid && tiles.length > 0 && (
       <View style={{ gap: 10 }}>
         <Label>{phase === 'pregnancy' ? 'More for you' : 'Looking after you'}</Label>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
