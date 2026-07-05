@@ -1634,18 +1634,22 @@ function PregApptsPanel() {
 /** Monitoring & calls — the merged health hub: when-to-call triage, what to
  *  expect this week, glucose/BP monitoring, your support circle and helplines. */
 function MonitorPanel() {
-  const { pregVitals, addPregVital, deletePregVital, dueDate, supportContacts, addSupportContact, deleteSupportContact } = useData();
+  const { pregVitals, addPregVital, dueDate, supportContacts, addSupportContact, deleteSupportContact } = useData();
   const { toast } = useFeedback();
   const wx = useWeather();
-  const [g, setG] = useState(''); const [tag, setTag] = useState('fasting');
-  const [sys, setSys] = useState(''); const [dia, setDia] = useState('');
+  const [expanded, setExpanded] = useState(false);
+  const [tag, setTag] = useState('fasting');
+  const [gVal, setGVal] = useState(5.2);          // glucose draft (mmol/L)
+  const [sysV, setSysV] = useState(118);           // systolic draft
+  const [diaV, setDiaV] = useState(74);            // diastolic draft
   const [cityOpen, setCityOpen] = useState(false);
   const [adding, setAdding] = useState(false);
   const [nm, setNm] = useState(''); const [role, setRole] = useState(''); const [phone, setPhone] = useState('');
-  const glucose = pregVitals.filter((v) => v.kind === 'glucose').slice(0, 4);
-  const bp = pregVitals.filter((v) => v.kind === 'bp').slice(0, 4);
-  const addG = () => { const v = numOrUndef(g); if (v == null) return; addPregVital({ kind: 'glucose', glucose: v, tag }); setG(''); };
-  const addBp = () => { const s = numOrUndef(sys), d = numOrUndef(dia); if (s == null && d == null) return; addPregVital({ kind: 'bp', systolic: s, diastolic: d }); setSys(''); setDia(''); };
+  // Trend series — chronological (oldest → newest), last 10.
+  const gluSeries = pregVitals.filter((v) => v.kind === 'glucose' && v.glucose != null).slice(0, 10).reverse();
+  const bpSeries = pregVitals.filter((v) => v.kind === 'bp' && (v.systolic != null || v.diastolic != null)).slice(0, 10).reverse();
+  const logGlucose = () => { addPregVital({ kind: 'glucose', glucose: gVal, tag }); toast('Glucose logged'); };
+  const logBp = () => { addPregVital({ kind: 'bp', systolic: sysV, diastolic: diaV }); toast('Blood pressure logged'); };
   const addContact = () => { if (!nm.trim()) return; addSupportContact({ name: nm, role, phone }); setNm(''); setRole(''); setPhone(''); setAdding(false); toast('Contact added'); };
   const week = gestFromDueDate(dueDate ?? undefined)?.week ?? null;
   const helplines = helplinesFor(wx.location?.country);
@@ -1661,30 +1665,24 @@ function MonitorPanel() {
   const dotRow = { flexDirection: 'row' as const, gap: 9, alignItems: 'flex-start' as const, paddingVertical: 4 };
   const dot = { width: 7, height: 7, borderRadius: 4, marginTop: 6 };
   const dotTx = { flex: 1, fontFamily: font.body500, fontSize: 13, color: color.ink, lineHeight: 18 };
+  const teal = color.maternalTeal;
+  const hint = { fontFamily: font.body400, fontSize: 11.5, color: color.muted, paddingVertical: 8, textAlign: 'center' as const };
+  // A −/+ stepper metric row, matching the water/sleep inputs.
+  const stepRow = (emoji: string, name: string, val: string, unit: string, status: string, ok: boolean, onDec: () => void, onInc: () => void) => (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+      <Text style={{ fontSize: 16 }}>{emoji}</Text>
+      <Text numberOfLines={1} style={{ flex: 1, minWidth: 0, fontFamily: font.body700, fontSize: 12, color: '#7d7a90' }}>{name}</Text>
+      <Text style={{ fontFamily: font.display700, fontSize: 17, color: color.ink }}>{val}<Text style={{ fontFamily: font.body500, fontSize: 10, color: color.muted }}>{unit}</Text></Text>
+      {status ? <View style={{ backgroundColor: ok ? '#E4F3EC' : '#FBE7D8', borderRadius: radius.pill, paddingVertical: 2, paddingHorizontal: 7 }}><Text style={{ fontFamily: font.body700, fontSize: 9, color: ok ? '#1E6C50' : '#B5662E' }}>{status}</Text></View> : null}
+      <Stepper accent={teal} onDec={onDec} onInc={onInc} />
+    </View>
+  );
+  const gHigh = tag.includes('fasting') ? gVal >= 5.3 : gVal > 7.8;
+  const bpHigh = sysV >= 140 || diaV >= 90;
 
   return (
     <View style={{ gap: 14 }}>
-      {/* When to call — severity list */}
-      <View>
-        <Text style={secLbl}>When to call</Text>
-        <View style={{ borderWidth: 1.5, borderColor: '#F3C4CB', borderRadius: 16, overflow: 'hidden' }}>
-          <View style={{ backgroundColor: '#FCE7E9', paddingVertical: 11, paddingHorizontal: 13, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Text style={{ fontSize: 15 }}>📞</Text>
-            <Text style={{ fontFamily: font.body700, fontSize: 13, color: '#B5303B' }}>Get help if you notice…</Text>
-          </View>
-          <View style={{ paddingHorizontal: 13, paddingBottom: 12, paddingTop: 2 }}>
-            <Text style={{ fontFamily: font.body700, fontSize: 10, letterSpacing: 0.4, textTransform: 'uppercase', color: '#B5303B', marginTop: 10, marginBottom: 2 }}>Call your midwife now</Text>
-            {RED_FLAGS_CALL_NOW.map((f, i) => (<View key={i} style={dotRow}><View style={[dot, { backgroundColor: '#B5303B' }]} /><Text style={dotTx}>{f}</Text></View>))}
-            <Text style={{ fontFamily: font.body700, fontSize: 10, letterSpacing: 0.4, textTransform: 'uppercase', color: color.goldInk, marginTop: 10, marginBottom: 2 }}>Call soon / same day</Text>
-            {RED_FLAGS_CALL_SOON.map((f, i) => (<View key={i} style={dotRow}><View style={[dot, { backgroundColor: color.goldInk }]} /><Text style={dotTx}>{f}</Text></View>))}
-            <Pressable onPress={callTriage} accessibilityLabel="Call maternity triage" style={{ marginTop: 11, backgroundColor: '#8E1F2C', borderRadius: 12, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-              <Text style={{ fontSize: 14 }}>📞</Text><Text style={{ fontFamily: font.body700, fontSize: 13.5, color: '#fff' }}>Call maternity triage</Text>
-            </Pressable>
-          </View>
-        </View>
-      </View>
-
-      {/* What to expect this week */}
+      {/* What to expect this week — always visible (the collapsed preview) */}
       {week != null && (() => {
         const items = expectedSymptoms(week);
         return (
@@ -1707,32 +1705,93 @@ function MonitorPanel() {
         );
       })()}
 
-      {/* Monitoring — glucose + BP */}
+      {/* Expand — reveal monitoring, when to call & support */}
+      <Pressable onPress={() => setExpanded((v) => !v)} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 8 }}>
+        <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.roseInk }}>{expanded ? 'Show less' : 'Monitoring, when to call & support'}</Text>
+        <Text style={{ fontFamily: font.body700, fontSize: 11, color: color.roseInk }}>{expanded ? '▴' : '▾'}</Text>
+      </Pressable>
+
+      {expanded && (<>
+      {/* When to call — severity list */}
       <View>
-        <Text style={secLbl}>Monitoring</Text>
-        <View style={{ gap: 8 }}>
-          <PanelLabel>Blood glucose</PanelLabel>
-          {glucose.map((v) => {
-            const r = v.glucose ?? 0; const fasting = (v.tag ?? '').includes('fasting'); const high = fasting ? r >= 5.3 : r > 7.8;
-            return <PanelRow key={v.id} title={`${v.glucose} mmol/L${high ? ' ⚠' : ''}`} sub={`${v.tag || ''} · ${dayTimeOf(v.at)}`} onDelete={() => deletePregVital(v.id)} />;
-          })}
-          <SelectChips options={['fasting', 'post-meal']} value={tag} onChange={setTag} />
-          <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-end' }}>
-            <View style={{ flex: 1 }}><Field label="Glucose (mmol/L)" value={g} onChangeText={setG} placeholder="e.g. 5.2" /></View>
-            <Button label="Log" onPress={addG} style={{ paddingHorizontal: 16 }} />
+        <Text style={secLbl}>When to call</Text>
+        <View style={{ borderWidth: 1.5, borderColor: '#F3C4CB', borderRadius: 16, overflow: 'hidden' }}>
+          <View style={{ backgroundColor: '#FCE7E9', paddingVertical: 11, paddingHorizontal: 13, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Text style={{ fontSize: 15 }}>📞</Text>
+            <Text style={{ fontFamily: font.body700, fontSize: 13, color: '#B5303B' }}>Get help if you notice…</Text>
+          </View>
+          <View style={{ paddingHorizontal: 13, paddingBottom: 12, paddingTop: 2 }}>
+            <Text style={{ fontFamily: font.body700, fontSize: 10, letterSpacing: 0.4, textTransform: 'uppercase', color: '#B5303B', marginTop: 10, marginBottom: 2 }}>Call your midwife now</Text>
+            {RED_FLAGS_CALL_NOW.map((f, i) => (<View key={i} style={dotRow}><View style={[dot, { backgroundColor: '#B5303B' }]} /><Text style={dotTx}>{f}</Text></View>))}
+            <Text style={{ fontFamily: font.body700, fontSize: 10, letterSpacing: 0.4, textTransform: 'uppercase', color: color.goldInk, marginTop: 10, marginBottom: 2 }}>Call soon / same day</Text>
+            {RED_FLAGS_CALL_SOON.map((f, i) => (<View key={i} style={dotRow}><View style={[dot, { backgroundColor: color.goldInk }]} /><Text style={dotTx}>{f}</Text></View>))}
+            <Pressable onPress={callTriage} accessibilityLabel="Call maternity triage" style={{ marginTop: 11, backgroundColor: '#8E1F2C', borderRadius: 12, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              <Text style={{ fontSize: 14 }}>📞</Text><Text style={{ fontFamily: font.body700, fontSize: 13.5, color: '#fff' }}>Call maternity triage</Text>
+            </Pressable>
           </View>
         </View>
-        <View style={{ gap: 8, marginTop: 12 }}>
+      </View>
+
+      {/* Monitoring — glucose + BP with trend charts + stepper inputs */}
+      <View>
+        <Text style={secLbl}>Monitoring</Text>
+
+        {/* Blood glucose */}
+        <View style={{ backgroundColor: '#FAF3F6', borderRadius: radius.tile, padding: 12, marginBottom: 8 }}>
+          <PanelLabel>Blood glucose</PanelLabel>
+          <View style={{ marginTop: 6, marginBottom: 8 }}><SelectChips options={['fasting', 'post-meal']} value={tag} onChange={setTag} /></View>
+          {stepRow('💉', 'Glucose', gVal.toFixed(1), ' mmol/L', gHigh ? 'High' : 'In range', !gHigh, () => setGVal(Math.max(0, Math.round((gVal - 0.1) * 10) / 10)), () => setGVal(Math.round((gVal + 0.1) * 10) / 10))}
+          {gluSeries.length >= 1 ? (() => {
+            const n = gluSeries.length, W = 300, H = 116, xL = 18, top = 10, bot = 90;
+            const vals = gluSeries.map((s) => s.glucose as number);
+            const yMin = Math.min(4.5, ...vals) - 0.3, yMax = Math.max(6, ...vals) + 0.3;
+            const gx = (i: number) => xL + (n <= 1 ? 0.5 : i / (n - 1)) * (W - xL - 8);
+            const gy = (v: number) => top + (1 - (v - yMin) / ((yMax - yMin) || 1)) * (bot - top);
+            return (
+              <Svg width="100%" height={104} viewBox={`0 0 ${W} ${H}`}>
+                <Rect x={xL} y={gy(5.3)} width={W - xL - 8} height={Math.max(0, bot - gy(5.3))} fill="#DCEFE3" />
+                <SvgLine x1={xL} y1={gy(5.3)} x2={W - 8} y2={gy(5.3)} stroke="#5aa78c" strokeWidth={1} strokeDasharray="3 3" />
+                <SvgText x={W - 8} y={gy(5.3) - 3} fontSize={7.5} fill="#3a8a6e" textAnchor="end">5.3 fasting</SvgText>
+                {n > 1 && <Polyline points={gluSeries.map((s, i) => `${gx(i)},${gy(s.glucose as number)}`).join(' ')} fill="none" stroke={teal} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />}
+                {gluSeries.map((s, i) => { const r = s.glucose as number; const fasting = (s.tag ?? '').includes('fasting'); const hi = fasting ? r >= 5.3 : r > 7.8; return <Circle key={i} cx={gx(i)} cy={gy(r)} r={3.2} fill={hi ? '#D8505A' : teal} stroke="#fff" strokeWidth={1.3} />; })}
+                <SvgText x={W / 2} y={H - 2} fontSize={7.5} fill="#b0a6ae" textAnchor="middle">last {n} reading{n === 1 ? '' : 's'}</SvgText>
+              </Svg>
+            );
+          })() : <Text style={hint}>Log a reading to see your trend.</Text>}
+          <Button label="Log reading" onPress={logGlucose} tint={teal} style={{ marginTop: 8 }} />
+        </View>
+
+        {/* Blood pressure */}
+        <View style={{ backgroundColor: '#FAF3F6', borderRadius: radius.tile, padding: 12 }}>
           <PanelLabel>Blood pressure</PanelLabel>
-          {bp.map((v) => {
-            const high = (v.systolic ?? 0) >= 140 || (v.diastolic ?? 0) >= 90;
-            return <PanelRow key={v.id} title={`${v.systolic}/${v.diastolic} mmHg${high ? ' ⚠' : ''}`} sub={dayTimeOf(v.at)} onDelete={() => deletePregVital(v.id)} />;
-          })}
-          <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-end' }}>
-            <View style={{ flex: 1 }}><Field label="Systolic" value={sys} onChangeText={setSys} placeholder="118" /></View>
-            <View style={{ flex: 1 }}><Field label="Diastolic" value={dia} onChangeText={setDia} placeholder="74" /></View>
-            <Button label="Log" onPress={addBp} style={{ paddingHorizontal: 16 }} />
+          <View style={{ marginTop: 6 }}>
+            {stepRow('🩺', 'Systolic', String(sysV), ' mmHg', bpHigh ? 'High' : 'Normal', !bpHigh, () => setSysV(Math.max(0, sysV - 1)), () => setSysV(sysV + 1))}
+            {stepRow('💓', 'Diastolic', String(diaV), ' mmHg', '', true, () => setDiaV(Math.max(0, diaV - 1)), () => setDiaV(diaV + 1))}
           </View>
+          {bpSeries.length >= 1 ? (() => {
+            const n = bpSeries.length, W = 300, H = 116, xL = 22, top = 10, bot = 90;
+            const sysVals = bpSeries.map((s) => s.systolic ?? 0), diaVals = bpSeries.map((s) => s.diastolic ?? 0);
+            const yMin = Math.min(65, ...diaVals) - 5, yMax = Math.max(145, ...sysVals) + 5;
+            const gx = (i: number) => xL + (n <= 1 ? 0.5 : i / (n - 1)) * (W - xL - 8);
+            const gy = (v: number) => top + (1 - (v - yMin) / ((yMax - yMin) || 1)) * (bot - top);
+            return (
+              <Svg width="100%" height={104} viewBox={`0 0 ${W} ${H}`}>
+                <SvgLine x1={xL} y1={gy(140)} x2={W - 8} y2={gy(140)} stroke="#D8505A" strokeWidth={1} strokeDasharray="3 3" opacity={0.6} />
+                <SvgLine x1={xL} y1={gy(90)} x2={W - 8} y2={gy(90)} stroke="#D8505A" strokeWidth={1} strokeDasharray="3 3" opacity={0.4} />
+                <SvgText x={W - 8} y={gy(140) - 3} fontSize={7.5} fill="#c0505a" textAnchor="end">140/90 limit</SvgText>
+                {n > 1 && <Polyline points={bpSeries.map((s, i) => `${gx(i)},${gy(s.systolic ?? 0)}`).join(' ')} fill="none" stroke="#6B6FC9" strokeWidth={2.4} strokeLinejoin="round" />}
+                {n > 1 && <Polyline points={bpSeries.map((s, i) => `${gx(i)},${gy(s.diastolic ?? 0)}`).join(' ')} fill="none" stroke="#A9A6E4" strokeWidth={2.2} strokeLinejoin="round" />}
+                {bpSeries.map((s, i) => <Circle key={`s${i}`} cx={gx(i)} cy={gy(s.systolic ?? 0)} r={2.9} fill="#6B6FC9" />)}
+                {bpSeries.map((s, i) => <Circle key={`d${i}`} cx={gx(i)} cy={gy(s.diastolic ?? 0)} r={2.7} fill="#A9A6E4" />)}
+              </Svg>
+            );
+          })() : <Text style={hint}>Log a reading to see your trend.</Text>}
+          {bpSeries.length >= 1 && (
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 4 }}>
+              <ChartKey sw="#6B6FC9" t="Systolic" /><ChartKey sw="#A9A6E4" t="Diastolic" /><ChartKey sw="#D8505A" t="140/90 limit" />
+            </View>
+          )}
+          <Button label="Log reading" onPress={logBp} tint={teal} style={{ marginTop: 10 }} />
         </View>
       </View>
 
@@ -1783,6 +1842,7 @@ function MonitorPanel() {
           ))}
         </View>
       </View>
+      </>)}
 
       <CityPickerModal visible={cityOpen} wx={wx} onClose={() => setCityOpen(false)} />
     </View>
