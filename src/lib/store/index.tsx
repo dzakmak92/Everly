@@ -221,6 +221,7 @@ type DataValue = {
   setDueDate: (d: string | null) => void;
   checkins: PregCheckin[];
   addCheckin: (input: { mood: number; symptoms: string[]; weightKg?: number; waterL?: number; sleepH?: number; meals?: string[] }) => void;
+  upsertTodayCheckin: (patch: { mood?: number; symptoms?: string[]; weightKg?: number; waterL?: number; sleepH?: number; meals?: string[] }) => void;
   deleteCheckin: (id: string) => void;
   pregArchive: PregArchive[];
   closePregnancy: (bornDate: string) => void;
@@ -661,6 +662,16 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
   const addCheckin = useCallback((input: { mood: number; symptoms: string[]; weightKg?: number; waterL?: number; sleepH?: number; meals?: string[] }) => {
     setCheckins((prev) => [{ id: newId(), at: new Date().toISOString(), mood: input.mood, symptoms: input.symptoms, weightKg: input.weightKg, waterL: input.waterL, sleepH: input.sleepH, meals: input.meals }, ...prev]);
   }, []);
+  // Merge a single metric into today's check-in (creating it if needed), so
+  // per-chart Save buttons update one entry rather than adding duplicates.
+  const upsertTodayCheckin = useCallback((patch: { mood?: number; symptoms?: string[]; weightKg?: number; waterL?: number; sleepH?: number; meals?: string[] }) => {
+    setCheckins((prev) => {
+      const t = new Date();
+      const idx = prev.findIndex((c) => { const d = new Date(c.at); return d.getFullYear() === t.getFullYear() && d.getMonth() === t.getMonth() && d.getDate() === t.getDate(); });
+      if (idx >= 0) { const copy = [...prev]; copy[idx] = { ...copy[idx], ...patch }; return copy; }
+      return [{ id: newId(), at: new Date().toISOString(), mood: patch.mood ?? 2, symptoms: patch.symptoms ?? [], weightKg: patch.weightKg, waterL: patch.waterL, sleepH: patch.sleepH, meals: patch.meals }, ...prev];
+    });
+  }, []);
   const deleteCheckin = useCallback((id: string) => setCheckins((prev) => prev.filter((c) => c.id !== id)), []);
   // Close the live pregnancy: snapshot it into the read-only archive and clear
   // the live due date + check-ins (a new pregnancy reopens by setting a due date).
@@ -781,7 +792,7 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
       caregivers, addCaregiver, deleteCaregiver,
       custody, setCustodyDay,
       expenses, addExpense, toggleExpenseSettled, deleteExpense,
-      dueDate, setDueDate, checkins, addCheckin, deleteCheckin, pregArchive, closePregnancy, dockSide, setDockSide,
+      dueDate, setDueDate, checkins, addCheckin, upsertTodayCheckin, deleteCheckin, pregArchive, closePregnancy, dockSide, setDockSide,
       maternalBirth, setMaternalBirth, epdsResults, addEpdsResult, deleteEpdsResult, recoveryLogs, addRecoveryLog, deleteRecoveryLog,
       tzContacts, addTzContact, deleteTzContact, savedTips, saveTip, deleteTip,
       birthPrep, addBirthPrep, toggleBirthPrep, deleteBirthPrep,
@@ -803,7 +814,7 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
       clearAll,
       demoPremium, setDemoPremium, loadSampleData,
     }),
-    [loading, children, activeChild, setActiveChild, addChild, updateChild, deleteChild, entries, addEntry, deleteEntry, events, addEvent, deleteEvent, updateEvent, vaccines, addVaccine, updateVaccine, deleteVaccine, medications, addMedication, toggleMedication, deleteMedication, growth, addGrowth, deleteGrowth, routines, addRoutine, addRoutineStep, toggleStep, resetRoutine, deleteRoutine, chores, addChore, toggleChore, deleteChore, milestones, addMilestone, deleteMilestone, milestoneMedia, addMilestoneMedia, removeMilestoneMedia, caregivers, addCaregiver, deleteCaregiver, custody, setCustodyDay, expenses, addExpense, toggleExpenseSettled, deleteExpense, dueDate, setDueDate, checkins, addCheckin, deleteCheckin, pregArchive, closePregnancy, dockSide, setDockSide, maternalBirth, setMaternalBirth, epdsResults, addEpdsResult, deleteEpdsResult, recoveryLogs, addRecoveryLog, deleteRecoveryLog, tzContacts, addTzContact, deleteTzContact, savedTips, saveTip, deleteTip, birthPrep, addBirthPrep, toggleBirthPrep, deleteBirthPrep, prepSections, addPrepSection, renamePrepSection, deletePrepSection, savedNames, saveName, deleteName, supportContacts, addSupportContact, deleteSupportContact, startWeightKg, setStartWeightKg, heightCm, setHeightCm, pregStatus, setPregStatus, pregAppts, addPregAppt, deletePregAppt, updatePregAppt, pregVitals, addPregVital, deletePregVital, lastPeriod, setLastPeriod, cycleLength, setCycleLength, ttcItems, addTtc, toggleTtc, deleteTtc, momCare, addMomCare, deleteMomCare, pelvicLog, addPelvic, matAppts, addMatAppt, deleteMatAppt, updateMatAppt, kickSessions, addKickSession, deleteKickSession, clearKickSessions, contractionSessions, addContraction, deleteContraction, clearContractions, kickDraft, setKickDraft, contractionStart, setContractionStart, clearAll, demoPremium, setDemoPremium, loadSampleData],
+    [loading, children, activeChild, setActiveChild, addChild, updateChild, deleteChild, entries, addEntry, deleteEntry, events, addEvent, deleteEvent, updateEvent, vaccines, addVaccine, updateVaccine, deleteVaccine, medications, addMedication, toggleMedication, deleteMedication, growth, addGrowth, deleteGrowth, routines, addRoutine, addRoutineStep, toggleStep, resetRoutine, deleteRoutine, chores, addChore, toggleChore, deleteChore, milestones, addMilestone, deleteMilestone, milestoneMedia, addMilestoneMedia, removeMilestoneMedia, caregivers, addCaregiver, deleteCaregiver, custody, setCustodyDay, expenses, addExpense, toggleExpenseSettled, deleteExpense, dueDate, setDueDate, checkins, addCheckin, upsertTodayCheckin, deleteCheckin, pregArchive, closePregnancy, dockSide, setDockSide, maternalBirth, setMaternalBirth, epdsResults, addEpdsResult, deleteEpdsResult, recoveryLogs, addRecoveryLog, deleteRecoveryLog, tzContacts, addTzContact, deleteTzContact, savedTips, saveTip, deleteTip, birthPrep, addBirthPrep, toggleBirthPrep, deleteBirthPrep, prepSections, addPrepSection, renamePrepSection, deletePrepSection, savedNames, saveName, deleteName, supportContacts, addSupportContact, deleteSupportContact, startWeightKg, setStartWeightKg, heightCm, setHeightCm, pregStatus, setPregStatus, pregAppts, addPregAppt, deletePregAppt, updatePregAppt, pregVitals, addPregVital, deletePregVital, lastPeriod, setLastPeriod, cycleLength, setCycleLength, ttcItems, addTtc, toggleTtc, deleteTtc, momCare, addMomCare, deleteMomCare, pelvicLog, addPelvic, matAppts, addMatAppt, deleteMatAppt, updateMatAppt, kickSessions, addKickSession, deleteKickSession, clearKickSessions, contractionSessions, addContraction, deleteContraction, clearContractions, kickDraft, setKickDraft, contractionStart, setContractionStart, clearAll, demoPremium, setDemoPremium, loadSampleData],
   );
 
   return <DataContext.Provider value={value}>{node}</DataContext.Provider>;
