@@ -18,7 +18,7 @@ import { DurationField } from '../../../src/components/DurationField';
 import { useSupabase } from '../../../src/lib/supabase';
 import { ageLabel, stageFrom } from '../../../src/lib/age';
 import {
-  gestFromDueDate, weekContent, MOODS, PREG_SYMPTOMS, RED_FLAGS_CALL_NOW, RED_FLAGS_CALL_SOON, RED_FLAGS_SHORT, expectedSymptoms, dueDateFromLmp, TRIMESTER_TIPS, BABY_NAMES,
+  gestFromDueDate, weekContent, MOODS, PREG_SYMPTOMS, RED_FLAGS_CALL_NOW, RED_FLAGS_CALL_SOON, expectedSymptoms, dueDateFromLmp, TRIMESTER_TIPS, BABY_NAMES,
   bmiFrom, gainGoal, recommendedGain,
 } from '../../../src/lib/pregnancy';
 import { EPDS_QUESTIONS, scoreEpds, BAND_LABEL, CRISIS_RESOURCES } from '../../../src/lib/epds';
@@ -1631,87 +1631,160 @@ function PregApptsPanel() {
   );
 }
 
-function TriagePanel() {
-  return (
-    <View style={{ gap: 14 }}>
-      <View style={{ gap: 8 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <View style={{ backgroundColor: '#FBE0EA', borderRadius: radius.pill, paddingVertical: 4, paddingHorizontal: 11 }}>
-            <Text style={{ fontFamily: font.body700, fontSize: 11, color: color.roseInk }}>Call now</Text>
-          </View>
-        </View>
-        {RED_FLAGS_CALL_NOW.map((f, i) => (
-          <View key={i} style={{ flexDirection: 'row', gap: 8 }}>
-            <Text style={{ color: color.roseInk, fontFamily: font.body700 }}>•</Text>
-            <Text style={{ flex: 1, fontFamily: font.body500, fontSize: 13, color: color.ink }}>{f}</Text>
-          </View>
-        ))}
-      </View>
-      <View style={{ gap: 8 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <View style={{ backgroundColor: '#FBF1CE', borderRadius: radius.pill, paddingVertical: 4, paddingHorizontal: 11 }}>
-            <Text style={{ fontFamily: font.body700, fontSize: 11, color: color.goldInk }}>Call soon</Text>
-          </View>
-        </View>
-        {RED_FLAGS_CALL_SOON.map((f, i) => (
-          <View key={i} style={{ flexDirection: 'row', gap: 8 }}>
-            <Text style={{ color: color.goldInk, fontFamily: font.body700 }}>•</Text>
-            <Text style={{ flex: 1, fontFamily: font.body500, fontSize: 13, color: color.ink }}>{f}</Text>
-          </View>
-        ))}
-      </View>
-    </View>
-  );
-}
-
-/** Monitoring (glucose + BP) and the when-to-call triage, matching preg-vitals. */
+/** Monitoring & calls — the merged health hub: when-to-call triage, what to
+ *  expect this week, glucose/BP monitoring, your support circle and helplines. */
 function MonitorPanel() {
-  const { pregVitals, addPregVital, deletePregVital } = useData();
-  const [tab, setTab] = useState<'monitoring' | 'triage'>('monitoring');
+  const { pregVitals, addPregVital, deletePregVital, dueDate, supportContacts, addSupportContact, deleteSupportContact } = useData();
+  const { toast } = useFeedback();
+  const wx = useWeather();
   const [g, setG] = useState(''); const [tag, setTag] = useState('fasting');
   const [sys, setSys] = useState(''); const [dia, setDia] = useState('');
+  const [cityOpen, setCityOpen] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [nm, setNm] = useState(''); const [role, setRole] = useState(''); const [phone, setPhone] = useState('');
   const glucose = pregVitals.filter((v) => v.kind === 'glucose').slice(0, 4);
   const bp = pregVitals.filter((v) => v.kind === 'bp').slice(0, 4);
   const addG = () => { const v = numOrUndef(g); if (v == null) return; addPregVital({ kind: 'glucose', glucose: v, tag }); setG(''); };
   const addBp = () => { const s = numOrUndef(sys), d = numOrUndef(dia); if (s == null && d == null) return; addPregVital({ kind: 'bp', systolic: s, diastolic: d }); setSys(''); setDia(''); };
+  const addContact = () => { if (!nm.trim()) return; addSupportContact({ name: nm, role, phone }); setNm(''); setRole(''); setPhone(''); setAdding(false); toast('Contact added'); };
+  const week = gestFromDueDate(dueDate ?? undefined)?.week ?? null;
+  const helplines = helplinesFor(wx.location?.country);
+  const openTel = (tel?: string, detail?: string) => { const n = tel || dialable(detail ?? ''); if (n) Linking.openURL(`tel:${n}`); };
+  const callTriage = () => {
+    const c = supportContacts.find((c) => c.phone);
+    if (c?.phone) { Linking.openURL(`tel:${c.phone}`); return; }
+    const h = helplines.find((h) => h.tel || dialable(h.detail));
+    const n = h ? (h.tel || dialable(h.detail)) : null;
+    if (n) Linking.openURL(`tel:${n}`); else toast('Add your midwife’s number in Your circle below');
+  };
+  const secLbl = { fontFamily: font.body700, fontSize: 10, letterSpacing: 0.6, textTransform: 'uppercase' as const, color: '#B7889F', marginBottom: 8, paddingHorizontal: 2 };
+  const dotRow = { flexDirection: 'row' as const, gap: 9, alignItems: 'flex-start' as const, paddingVertical: 4 };
+  const dot = { width: 7, height: 7, borderRadius: 4, marginTop: 6 };
+  const dotTx = { flex: 1, fontFamily: font.body500, fontSize: 13, color: color.ink, lineHeight: 18 };
+
   return (
     <View style={{ gap: 14 }}>
-      <View style={{ flexDirection: 'row', backgroundColor: color.canvas, borderRadius: radius.pill, padding: 3 }}>
-        {([['monitoring', 'Monitoring'], ['triage', 'When to call']] as [typeof tab, string][]).map(([k, l]) => {
-          const on = tab === k;
-          return <Pressable key={k} onPress={() => setTab(k)} style={{ flex: 1, paddingVertical: 8, borderRadius: radius.pill, alignItems: 'center', backgroundColor: on ? color.maternalTeal : 'transparent' }}><Text style={{ fontFamily: font.body700, fontSize: 12.5, color: on ? '#fff' : color.muted }}>{l}</Text></Pressable>;
-        })}
+      {/* When to call — severity list */}
+      <View>
+        <Text style={secLbl}>When to call</Text>
+        <View style={{ borderWidth: 1.5, borderColor: '#F3C4CB', borderRadius: 16, overflow: 'hidden' }}>
+          <View style={{ backgroundColor: '#FCE7E9', paddingVertical: 11, paddingHorizontal: 13, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Text style={{ fontSize: 15 }}>📞</Text>
+            <Text style={{ fontFamily: font.body700, fontSize: 13, color: '#B5303B' }}>Get help if you notice…</Text>
+          </View>
+          <View style={{ paddingHorizontal: 13, paddingBottom: 12, paddingTop: 2 }}>
+            <Text style={{ fontFamily: font.body700, fontSize: 10, letterSpacing: 0.4, textTransform: 'uppercase', color: '#B5303B', marginTop: 10, marginBottom: 2 }}>Call your midwife now</Text>
+            {RED_FLAGS_CALL_NOW.map((f, i) => (<View key={i} style={dotRow}><View style={[dot, { backgroundColor: '#B5303B' }]} /><Text style={dotTx}>{f}</Text></View>))}
+            <Text style={{ fontFamily: font.body700, fontSize: 10, letterSpacing: 0.4, textTransform: 'uppercase', color: color.goldInk, marginTop: 10, marginBottom: 2 }}>Call soon / same day</Text>
+            {RED_FLAGS_CALL_SOON.map((f, i) => (<View key={i} style={dotRow}><View style={[dot, { backgroundColor: color.goldInk }]} /><Text style={dotTx}>{f}</Text></View>))}
+            <Pressable onPress={callTriage} accessibilityLabel="Call maternity triage" style={{ marginTop: 11, backgroundColor: '#8E1F2C', borderRadius: 12, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              <Text style={{ fontSize: 14 }}>📞</Text><Text style={{ fontFamily: font.body700, fontSize: 13.5, color: '#fff' }}>Call maternity triage</Text>
+            </Pressable>
+          </View>
+        </View>
       </View>
-      {tab === 'monitoring' ? (
-        <>
-          <View style={{ gap: 8 }}>
-            <PanelLabel>Blood glucose</PanelLabel>
-            {glucose.map((v) => {
-              const r = v.glucose ?? 0; const fasting = (v.tag ?? '').includes('fasting'); const high = fasting ? r >= 5.3 : r > 7.8;
-              return <PanelRow key={v.id} title={`${v.glucose} mmol/L${high ? ' ⚠' : ''}`} sub={`${v.tag || ''} · ${dayTimeOf(v.at)}`} onDelete={() => deletePregVital(v.id)} />;
-            })}
-            <SelectChips options={['fasting', 'post-meal']} value={tag} onChange={setTag} />
-            <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-end' }}>
-              <View style={{ flex: 1 }}><Field label="Glucose (mmol/L)" value={g} onChangeText={setG} placeholder="e.g. 5.2" /></View>
-              <Button label="Log" onPress={addG} style={{ paddingHorizontal: 16 }} />
+
+      {/* What to expect this week */}
+      {week != null && (() => {
+        const items = expectedSymptoms(week);
+        return (
+          <View>
+            <Text style={secLbl}>What to expect · week {week}</Text>
+            <View style={{ backgroundColor: '#EAF6EE', borderWidth: 1, borderColor: '#CDE7D5', borderRadius: 16, padding: 13 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                <Text style={{ fontSize: 15 }}>🌱</Text>
+                <Text style={{ fontFamily: font.body700, fontSize: 13, color: '#1E6C50' }}>Common now — usually normal</Text>
+              </View>
+              <Text style={{ fontFamily: font.body400, fontSize: 11, color: '#5e8a72', marginBottom: 4 }}>Around this week many mums notice:</Text>
+              {items.map((s, i) => (
+                <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 7, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: 'rgba(46,125,91,0.12)' }}>
+                  <View style={{ width: 30, height: 30, borderRadius: 9, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 15 }}>{s.emoji}</Text></View>
+                  <Text style={{ flex: 1, fontFamily: font.body600, fontSize: 13, color: color.ink }}>{s.label}</Text>
+                </View>
+              ))}
             </View>
           </View>
-          <View style={{ gap: 8 }}>
-            <PanelLabel>Blood pressure</PanelLabel>
-            {bp.map((v) => {
-              const high = (v.systolic ?? 0) >= 140 || (v.diastolic ?? 0) >= 90;
-              return <PanelRow key={v.id} title={`${v.systolic}/${v.diastolic} mmHg${high ? ' ⚠' : ''}`} sub={dayTimeOf(v.at)} onDelete={() => deletePregVital(v.id)} />;
-            })}
-            <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-end' }}>
-              <View style={{ flex: 1 }}><Field label="Systolic" value={sys} onChangeText={setSys} placeholder="118" /></View>
-              <View style={{ flex: 1 }}><Field label="Diastolic" value={dia} onChangeText={setDia} placeholder="74" /></View>
-              <Button label="Log" onPress={addBp} style={{ paddingHorizontal: 16 }} />
-            </View>
+        );
+      })()}
+
+      {/* Monitoring — glucose + BP */}
+      <View>
+        <Text style={secLbl}>Monitoring</Text>
+        <View style={{ gap: 8 }}>
+          <PanelLabel>Blood glucose</PanelLabel>
+          {glucose.map((v) => {
+            const r = v.glucose ?? 0; const fasting = (v.tag ?? '').includes('fasting'); const high = fasting ? r >= 5.3 : r > 7.8;
+            return <PanelRow key={v.id} title={`${v.glucose} mmol/L${high ? ' ⚠' : ''}`} sub={`${v.tag || ''} · ${dayTimeOf(v.at)}`} onDelete={() => deletePregVital(v.id)} />;
+          })}
+          <SelectChips options={['fasting', 'post-meal']} value={tag} onChange={setTag} />
+          <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-end' }}>
+            <View style={{ flex: 1 }}><Field label="Glucose (mmol/L)" value={g} onChangeText={setG} placeholder="e.g. 5.2" /></View>
+            <Button label="Log" onPress={addG} style={{ paddingHorizontal: 16 }} />
           </View>
-        </>
-      ) : (
-        <TriagePanel />
-      )}
+        </View>
+        <View style={{ gap: 8, marginTop: 12 }}>
+          <PanelLabel>Blood pressure</PanelLabel>
+          {bp.map((v) => {
+            const high = (v.systolic ?? 0) >= 140 || (v.diastolic ?? 0) >= 90;
+            return <PanelRow key={v.id} title={`${v.systolic}/${v.diastolic} mmHg${high ? ' ⚠' : ''}`} sub={dayTimeOf(v.at)} onDelete={() => deletePregVital(v.id)} />;
+          })}
+          <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-end' }}>
+            <View style={{ flex: 1 }}><Field label="Systolic" value={sys} onChangeText={setSys} placeholder="118" /></View>
+            <View style={{ flex: 1 }}><Field label="Diastolic" value={dia} onChangeText={setDia} placeholder="74" /></View>
+            <Button label="Log" onPress={addBp} style={{ paddingHorizontal: 16 }} />
+          </View>
+        </View>
+      </View>
+
+      {/* Your support circle */}
+      <View>
+        <Text style={secLbl}>Your support circle</Text>
+        {supportContacts.map((c) => (
+          <View key={c.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#FAF3F6', borderRadius: radius.tile, paddingVertical: 9, paddingHorizontal: 11, marginBottom: 7 }}>
+            <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: '#FBE0EA', alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontFamily: font.display700, fontSize: 13, color: color.roseInk }}>{c.name.charAt(0).toUpperCase()}</Text></View>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.ink }}>{c.name}</Text>
+              {c.role ? <Text style={{ fontFamily: font.body400, fontSize: 10, color: color.muted }}>{c.role}</Text> : null}
+            </View>
+            {c.phone ? <Pressable onPress={() => Linking.openURL(`tel:${c.phone}`)} style={{ backgroundColor: color.rose, borderRadius: radius.pill, paddingVertical: 6, paddingHorizontal: 12 }}><Text style={{ fontFamily: font.body700, fontSize: 10.5, color: '#fff' }}>Call</Text></Pressable> : null}
+            <Pressable onPress={() => deleteSupportContact(c.id)} hitSlop={8}><Text style={{ fontFamily: font.body700, fontSize: 16, color: color.faint }}>×</Text></Pressable>
+          </View>
+        ))}
+        {adding ? (
+          <View style={{ gap: 8, backgroundColor: '#FAF3F6', borderRadius: radius.tile, padding: 12 }}>
+            <Field label="Name" value={nm} onChangeText={setNm} placeholder="e.g. Sarah" autoCapitalize="words" />
+            <Field label="Role (optional)" value={role} onChangeText={setRole} placeholder="Midwife, partner, doula…" autoCapitalize="sentences" />
+            <Field label="Phone (optional)" value={phone} onChangeText={setPhone} placeholder="e.g. 07123 456789" />
+            <View style={{ flexDirection: 'row', gap: 8 }}><Button label="Cancel" variant="secondary" onPress={() => setAdding(false)} style={{ flex: 1 }} /><Button label="Add" onPress={addContact} style={{ flex: 1 }} tint={color.rose} /></View>
+          </View>
+        ) : (
+          <Pressable onPress={() => setAdding(true)} style={{ borderWidth: 1.4, borderColor: '#E0C2D2', borderStyle: 'dashed', borderRadius: radius.tile, paddingVertical: 10, alignItems: 'center' }}><Text style={{ fontFamily: font.body700, fontSize: 12, color: color.roseInk }}>＋ Add someone</Text></Pressable>
+        )}
+      </View>
+
+      {/* Helplines (city-linked) */}
+      <View>
+        <Text style={secLbl}>Helplines</Text>
+        <View style={{ backgroundColor: '#FBE0EA', borderRadius: radius.tile, padding: 13 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+            <Text style={{ flex: 1, fontFamily: font.body700, fontSize: 12.5, color: '#8A2F58' }}>Support, any time</Text>
+            <Pressable onPress={() => setCityOpen(true)} style={{ backgroundColor: '#fff', borderRadius: radius.pill, paddingVertical: 3, paddingHorizontal: 9 }}>
+              <Text style={{ fontFamily: font.body700, fontSize: 10, color: color.roseInk }}>📍 {wx.location ? `${wx.location.name} · Change` : 'Add your city'}</Text>
+            </Pressable>
+          </View>
+          {helplines.map((h, i) => (
+            <Pressable key={i} onPress={() => openTel(h.tel, h.detail)} accessibilityLabel={`Call ${h.name}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 9, paddingVertical: 7, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: 'rgba(176,64,112,0.14)' }}>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.ink }}>{h.name}</Text>
+                <Text style={{ fontFamily: font.body400, fontSize: 11, color: '#7d6a74' }}>{h.detail}</Text>
+              </View>
+              <Text style={{ fontSize: 14 }}>📞</Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
+
+      <CityPickerModal visible={cityOpen} wx={wx} onClose={() => setCityOpen(false)} />
     </View>
   );
 }
@@ -2169,24 +2242,6 @@ function Stepper({ onDec, onInc, accent }: { onDec: () => void; onInc: () => voi
 }
 
 /** A block that gently pulses a red glow to draw the eye (the "when to call"). */
-function PulsingAlert({ children }: { children: React.ReactNode }) {
-  const pulse = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    const anim = Animated.loop(Animated.sequence([
-      Animated.timing(pulse, { toValue: 1, duration: 950, easing: Easing.inOut(Easing.ease), useNativeDriver: false }),
-      Animated.timing(pulse, { toValue: 0, duration: 950, easing: Easing.inOut(Easing.ease), useNativeDriver: false }),
-    ]));
-    anim.start();
-    return () => anim.stop();
-  }, [pulse]);
-  const borderColor = pulse.interpolate({ inputRange: [0, 1], outputRange: ['#F3C4CB', '#E0808D'] });
-  return (
-    <Animated.View style={{ backgroundColor: '#FCE7E9', borderWidth: 1.5, borderColor, borderRadius: radius.tile, padding: 13 }}>
-      {children}
-    </Animated.View>
-  );
-}
-
 /** Compact city search to localise the helplines (reuses the weather location). */
 function CityPickerModal({ visible, wx, onClose }: { visible: boolean; wx: ReturnType<typeof useWeather>; onClose: () => void }) {
   const { toast } = useFeedback();
@@ -2221,9 +2276,8 @@ function CityPickerModal({ visible, wx, onClose }: { visible: boolean; wx: Retur
 }
 
 function CareCheckinCard() {
-  const { checkins, addCheckin, deleteCheckin, supportContacts, addSupportContact, deleteSupportContact, dueDate, startWeightKg, setStartWeightKg, heightCm, setHeightCm } = useData();
+  const { checkins, addCheckin, deleteCheckin, dueDate, startWeightKg, setStartWeightKg, heightCm, setHeightCm } = useData();
   const { toast } = useFeedback();
-  const wx = useWeather();
   const now = new Date();
   const gest = gestFromDueDate(dueDate ?? undefined);
   const week = gest?.week ?? null;
@@ -2234,7 +2288,6 @@ function CareCheckinCard() {
   const [water, setWater] = useState<number>(todayCheckin?.waterL ?? 0);
   const [sleep, setSleep] = useState<number | null>(todayCheckin?.sleepH ?? null);
   const [meals, setMeals] = useState<string[]>(todayCheckin?.meals ?? []);
-  const [cityOpen, setCityOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [editField, setEditField] = useState<null | 'start' | 'height'>(null);
   const [fieldVal, setFieldVal] = useState('');
@@ -2305,12 +2358,6 @@ function CareCheckinCard() {
     </View>
   );
 
-  const contacts = supportContacts;
-  const [adding, setAdding] = useState(false);
-  const [nm, setNm] = useState(''); const [role, setRole] = useState(''); const [phone, setPhone] = useState('');
-  const addContact = () => { if (!nm.trim()) return; addSupportContact({ name: nm, role, phone }); setNm(''); setRole(''); setPhone(''); setAdding(false); toast('Contact added'); };
-  const helplines = helplinesFor(wx.location?.country);
-  const openTel = (tel?: string, detail?: string) => { const n = tel || dialable(detail ?? ''); if (n) Linking.openURL(`tel:${n}`); };
 
   const rose = color.rose, roseInk = color.roseInk;
   const label = (t: string, right?: React.ReactNode) => (
@@ -2470,83 +2517,14 @@ function CareCheckinCard() {
 
       <Button label="Save today" onPress={save} tint={rose} style={{ marginTop: 16 }} />
 
-      {/* Expand / collapse — guidance & support hidden by default */}
+      {/* Expand / collapse — recent check-ins hidden by default */}
       <Pressable onPress={() => setExpanded((v) => !v)} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 12, marginTop: 4 }}>
-        <Text style={{ fontFamily: font.body700, fontSize: 12, color: roseInk }}>{expanded ? 'Show less' : 'Guidance & support'}</Text>
+        <Text style={{ fontFamily: font.body700, fontSize: 12, color: roseInk }}>{expanded ? 'Show less' : 'Recent check-ins'}</Text>
         <Text style={{ fontFamily: font.body700, fontSize: 11, color: roseInk }}>{expanded ? '▴' : '▾'}</Text>
       </Pressable>
 
       {expanded && (<>
-      <View style={{ height: 1, backgroundColor: color.hairline }} />
-
-      {/* What to expect this week */}
-      {week != null && (() => {
-        const items = expectedSymptoms(week);
-        return (
-          <>
-            {label('What to expect', <Text style={{ fontFamily: font.body700, fontSize: 10, color: '#C99' }}>Week {week}</Text>)}
-            <View style={{ backgroundColor: '#E7F4EC', borderWidth: 1, borderColor: '#CDE7D5', borderRadius: radius.tile, padding: 13 }}>
-              <Text style={{ fontFamily: font.body700, fontSize: 12, color: '#1E6C50', marginBottom: 3 }}>Common right now — usually normal</Text>
-              <Text style={{ fontFamily: font.body400, fontSize: 11, color: '#5e8a72', marginBottom: 9 }}>Around this week many mums notice:</Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-                {items.map((s, i) => <View key={i} style={{ backgroundColor: '#fff', borderWidth: 1, borderColor: '#CDE7D5', borderRadius: radius.pill, paddingVertical: 5, paddingHorizontal: 10 }}><Text style={{ fontFamily: font.body700, fontSize: 11, color: '#3a6a52' }}>{s.emoji} {s.label}</Text></View>)}
-              </View>
-            </View>
-          </>
-        );
-      })()}
-
-      {/* When to call (pulsing red) */}
-      {label('When to call')}
-      <PulsingAlert>
-        <Text style={{ fontFamily: font.body700, fontSize: 12, color: '#B5303B', marginBottom: 8 }}>📞 Call your midwife now if you notice</Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-          {RED_FLAGS_SHORT.map((s, i) => <View key={i} style={{ backgroundColor: '#fff', borderWidth: 1, borderColor: '#F3C4CB', borderRadius: radius.pill, paddingVertical: 5, paddingHorizontal: 10 }}><Text style={{ fontFamily: font.body700, fontSize: 11, color: '#B5303B' }}>{s.emoji} {s.label}</Text></View>)}
-        </View>
-      </PulsingAlert>
-
-      {/* Support circle */}
-      {label('Your support circle')}
-      {contacts.map((c) => (
-        <View key={c.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#FAF3F6', borderRadius: radius.tile, paddingVertical: 9, paddingHorizontal: 11, marginBottom: 7 }}>
-          <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: '#FBE0EA', alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontFamily: font.display700, fontSize: 13, color: roseInk }}>{c.name.charAt(0).toUpperCase()}</Text></View>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.ink }}>{c.name}</Text>
-            {c.role ? <Text style={{ fontFamily: font.body400, fontSize: 10, color: color.muted }}>{c.role}</Text> : null}
-          </View>
-          {c.phone ? <Pressable onPress={() => Linking.openURL(`tel:${c.phone}`)} style={{ backgroundColor: rose, borderRadius: radius.pill, paddingVertical: 6, paddingHorizontal: 12 }}><Text style={{ fontFamily: font.body700, fontSize: 10.5, color: '#fff' }}>Call</Text></Pressable> : null}
-          <Pressable onPress={() => deleteSupportContact(c.id)} hitSlop={8}><Text style={{ fontFamily: font.body700, fontSize: 16, color: color.faint }}>×</Text></Pressable>
-        </View>
-      ))}
-      {adding ? (
-        <View style={{ gap: 8, backgroundColor: '#FAF3F6', borderRadius: radius.tile, padding: 12 }}>
-          <Field label="Name" value={nm} onChangeText={setNm} placeholder="e.g. Sarah" autoCapitalize="words" />
-          <Field label="Role (optional)" value={role} onChangeText={setRole} placeholder="Midwife, partner, doula…" autoCapitalize="sentences" />
-          <Field label="Phone (optional)" value={phone} onChangeText={setPhone} placeholder="e.g. 07123 456789" />
-          <View style={{ flexDirection: 'row', gap: 8 }}><Button label="Cancel" variant="secondary" onPress={() => setAdding(false)} style={{ flex: 1 }} /><Button label="Add" onPress={addContact} style={{ flex: 1 }} tint={rose} /></View>
-        </View>
-      ) : (
-        <Pressable onPress={() => setAdding(true)} style={{ borderWidth: 1.4, borderColor: '#E0C2D2', borderStyle: 'dashed', borderRadius: radius.tile, paddingVertical: 10, alignItems: 'center' }}><Text style={{ fontFamily: font.body700, fontSize: 12, color: roseInk }}>＋ Add someone</Text></Pressable>
-      )}
-
-      {/* Helplines (city-linked) */}
-      <View style={{ backgroundColor: '#FBE0EA', borderRadius: radius.tile, padding: 13, marginTop: 12 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
-          <Text style={{ flex: 1, fontFamily: font.body700, fontSize: 12.5, color: '#8A2F58' }}>Support, any time</Text>
-          <Pressable onPress={() => setCityOpen(true)} style={{ backgroundColor: '#fff', borderRadius: radius.pill, paddingVertical: 3, paddingHorizontal: 9 }}>
-            <Text style={{ fontFamily: font.body700, fontSize: 10, color: roseInk }}>📍 {wx.location ? `${wx.location.name} · Change` : 'Add your city'}</Text>
-          </Pressable>
-        </View>
-        {helplines.map((h, i) => (
-          <Pressable key={i} onPress={() => openTel(h.tel, h.detail)} accessibilityLabel={`Call ${h.name}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 9, paddingVertical: 7, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: 'rgba(176,64,112,0.14)' }}>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.ink }}>{h.name}</Text>
-              <Text style={{ fontFamily: font.body400, fontSize: 11, color: '#7d6a74' }}>{h.detail}</Text>
-            </View>
-            <Text style={{ fontSize: 14 }}>📞</Text>
-          </Pressable>
-        ))}
-      </View>
+      <View style={{ height: 1, backgroundColor: color.hairline, marginBottom: 4 }} />
 
       {/* Recent check-ins — review & delete past entries */}
       {label('Your recent check-ins')}
@@ -2572,8 +2550,6 @@ function CareCheckinCard() {
         })
       )}
       </>)}
-
-      <CityPickerModal visible={cityOpen} wx={wx} onClose={() => setCityOpen(false)} />
     </View>
   );
 }
