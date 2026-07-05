@@ -21,12 +21,29 @@ const SEED = [
   { title: '6-week GP check', kind: 'appointment' as const, off: 42, prep: 'Contraception, mental health, physical recovery, return to work' },
 ];
 
+/** Standard antenatal schedule (gestational week from LMP). Dates are computed
+ *  from the user's last period / due date. Some checks are first-baby-only. */
+const PREG_ANTENATAL: { title: string; kind: 'appointment' | 'test'; week: number; detail: string }[] = [
+  { title: 'Booking appointment', kind: 'appointment', week: 8, detail: 'Midwife booking — history, bloods & urine' },
+  { title: 'Dating scan (12-week)', kind: 'test', week: 12, detail: 'Ultrasound + combined screening' },
+  { title: '16-week midwife check', kind: 'appointment', week: 16, detail: 'Blood pressure, urine; discuss results' },
+  { title: '20-week anomaly scan', kind: 'test', week: 20, detail: 'Detailed anatomy ultrasound' },
+  { title: '25-week check (1st baby)', kind: 'appointment', week: 25, detail: 'BP, urine, fundal height' },
+  { title: '28-week check', kind: 'appointment', week: 28, detail: 'Bloods, glucose, anti-D if needed' },
+  { title: '31-week check (1st baby)', kind: 'appointment', week: 31, detail: 'BP, urine, fundal height' },
+  { title: '34-week check', kind: 'appointment', week: 34, detail: 'BP, urine; talk through your birth plan' },
+  { title: '36-week check', kind: 'appointment', week: 36, detail: 'Baby’s position; feeding chat' },
+  { title: '38-week check', kind: 'appointment', week: 38, detail: 'BP, urine, fundal height' },
+  { title: '40-week check (1st baby)', kind: 'appointment', week: 40, detail: 'BP, urine; discuss going overdue' },
+  { title: '41-week check', kind: 'appointment', week: 41, detail: 'Membrane sweep offer; induction chat' },
+];
+
 /** Unified appointments — Pregnancy (appts + tests) and Mum&Me (postpartum). */
 export default function Appointments() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ tab?: string }>();
-  const { pregAppts, addPregAppt, deletePregAppt, matAppts, addMatAppt, deleteMatAppt, maternalBirth } = useData();
+  const { pregAppts, addPregAppt, deletePregAppt, matAppts, addMatAppt, deleteMatAppt, maternalBirth, lastPeriod, dueDate } = useData();
   const { toast, confirm } = useFeedback();
 
   const [mode, setMode] = useState<Mode>(params.tab === 'maternal' ? 'maternal' : 'pregnancy');
@@ -59,6 +76,43 @@ export default function Appointments() {
     toast('Standard schedule loaded');
   }
 
+  // ── Standard antenatal schedule loader (pregnancy) ──
+  // Base the dates on the last period, else back-calculate from the due date
+  // (due date = LMP + 280 days).
+  const lmp = lastPeriod
+    ? new Date(`${lastPeriod}T00:00:00`)
+    : dueDate
+      ? new Date(new Date(`${dueDate}T00:00:00`).getTime() - 280 * 86400000)
+      : null;
+  const normT = (s: string) => s.trim().toLowerCase();
+  const havePreg = new Set(pregAppts.map((a) => normT(a.title)));
+  const antenatal = lmp
+    ? PREG_ANTENATAL.map((it) => {
+        const d = new Date(lmp.getTime() + it.week * 7 * 86400000);
+        return { ...it, date: d, iso: d.toISOString().slice(0, 10), have: havePreg.has(normT(it.title)) };
+      })
+    : [];
+  const [loadOpen, setLoadOpen] = useState(false);
+  const [sel, setSel] = useState<Set<string>>(new Set());
+  const startToday = new Date(); startToday.setHours(0, 0, 0, 0);
+  const openLoad = () => {
+    // Pre-select the appointments still ahead and not already on the list.
+    setSel(new Set(antenatal.filter((a) => !a.have && a.date.getTime() >= startToday.getTime()).map((a) => a.title)));
+    setLoadOpen(true);
+  };
+  const toggleSel = (t: string) => setSel((s) => { const n = new Set(s); if (n.has(t)) n.delete(t); else n.add(t); return n; });
+  const selCount = antenatal.filter((a) => sel.has(a.title) && !a.have).length;
+  const doLoad = () => {
+    let added = 0;
+    antenatal.forEach((a) => {
+      if (!sel.has(a.title) || a.have) return;
+      addPregAppt({ title: a.title, at: `${a.iso}T09:00:00`, kind: a.kind });
+      added++;
+    });
+    setLoadOpen(false);
+    toast(added > 0 ? `Added ${added} appointment${added === 1 ? '' : 's'}` : 'Nothing new to add');
+  };
+
   const appts = pregAppts.filter((a) => a.kind === 'appointment');
   const tests = pregAppts.filter((a) => a.kind === 'test');
   const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0);
@@ -90,6 +144,9 @@ export default function Appointments() {
 
       {mode === 'pregnancy' ? (
         <>
+          {lmp && (
+            <Button label="↻ Load standard schedule" variant="secondary" onPress={openLoad} />
+          )}
           <View style={{ gap: 8 }}>
             <Text style={Label}>Upcoming</Text>
             {upcomingAppts.length === 0 ? <Empty t="No upcoming appointments." /> : upcomingAppts.map((a) => (
@@ -133,6 +190,58 @@ export default function Appointments() {
           ))}
         </View>
       )}
+
+      {/* Standard antenatal schedule picker */}
+      <Modal visible={loadOpen} transparent animationType="fade" onRequestClose={() => setLoadOpen(false)}>
+        <Pressable onPress={() => setLoadOpen(false)} style={{ flex: 1, backgroundColor: 'rgba(40,18,50,0.35)', justifyContent: 'center', paddingHorizontal: 24 }}>
+          <Pressable onPress={() => {}} style={[{ backgroundColor: '#fff', borderRadius: 22, padding: 18, maxHeight: '84%' }, shadow.card]}>
+            <Text style={{ fontFamily: font.display700, fontSize: 17, color: color.ink }}>Standard antenatal schedule</Text>
+            <Text style={{ fontFamily: font.body400, fontSize: 12.5, color: color.muted, marginTop: 3, marginBottom: 8 }}>Dates are estimated from your due date — you can change any of them after adding. Anything already booked is skipped.</Text>
+
+            {(() => {
+              const pickable = antenatal.filter((a) => !a.have);
+              const allOn = pickable.length > 0 && pickable.every((a) => sel.has(a.title));
+              return (
+                <Pressable onPress={() => setSel(allOn ? new Set() : new Set(pickable.map((a) => a.title)))} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: color.hairline }}>
+                  <View style={{ width: 22, height: 22, borderRadius: 7, borderWidth: 2, borderColor: allOn ? color.primary : '#CFC9E4', backgroundColor: allOn ? color.primary : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
+                    {allOn ? <Text style={{ color: '#fff', fontSize: 12, fontFamily: font.body700 }}>✓</Text> : null}
+                  </View>
+                  <Text style={{ fontFamily: font.body700, fontSize: 13, color: color.primary }}>{allOn ? 'Clear all' : 'Select all'}</Text>
+                </Pressable>
+              );
+            })()}
+
+            <ScrollView style={{ maxHeight: 400 }} showsVerticalScrollIndicator={false}>
+              {antenatal.map((a) => {
+                const on = sel.has(a.title);
+                const past = a.date.getTime() < startToday.getTime();
+                return (
+                  <Pressable key={a.title} disabled={a.have} onPress={() => toggleSel(a.title)} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingVertical: 11, opacity: a.have ? 0.45 : 1 }}>
+                    <View style={{ width: 22, height: 22, borderRadius: 7, borderWidth: 2, marginTop: 1, borderColor: on && !a.have ? color.primary : '#CFC9E4', backgroundColor: on && !a.have ? color.primary : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
+                      {on && !a.have ? <Text style={{ color: '#fff', fontSize: 12, fontFamily: font.body700 }}>✓</Text> : null}
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Text style={{ flex: 1, fontFamily: font.body700, fontSize: 13.5, color: color.ink }} numberOfLines={1}>{a.title}</Text>
+                        {a.kind === 'test' && <Text style={{ fontFamily: font.body700, fontSize: 9, color: color.primary, backgroundColor: '#EEF0FF', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}>SCAN</Text>}
+                      </View>
+                      <Text style={{ fontFamily: font.body400, fontSize: 11.5, color: color.muted, marginTop: 1 }}>{a.detail}</Text>
+                      <Text style={{ fontFamily: font.body500, fontSize: 11, color: a.have ? color.muted : past ? color.faint : color.roseInk, marginTop: 2 }}>
+                        Week {a.week} · {dayLabel(`${a.iso}T09:00:00`)}{a.have ? ' · already booked' : past ? ' · past' : ''}
+                      </Text>
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
+              <Button label="Cancel" variant="secondary" onPress={() => setLoadOpen(false)} style={{ flex: 1 }} />
+              <Button label={selCount > 0 ? `Add ${selCount}` : 'Add'} disabled={selCount === 0} onPress={doLoad} style={{ flex: 1 }} />
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
         <Pressable onPress={() => setOpen(false)} style={{ flex: 1, backgroundColor: 'rgba(40,18,50,0.35)', justifyContent: 'center', paddingHorizontal: 28 }}>
