@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, Pressable, Modal, ScrollView, Platform, Share, Linking, useWindowDimensions, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
+import { View, Text, Pressable, Modal, ScrollView, Platform, Share, Linking, useWindowDimensions, Animated, PanResponder } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, font, radius, shadow } from '../../../src/theme/tokens';
 import { Button, Notice } from '../../../src/components/forms';
-import { ChevronRight, Star, Shield, Bell, Moon, Ruler, Globe, Mail, Users, CreditCard, Check, Download, Info } from '../../../src/components/icons';
+import { ChevronRight, Star, Shield, Bell, Moon, Ruler, Globe, Mail, CreditCard, Check, Download, Info } from '../../../src/components/icons';
 import { Silhouette } from '../../../src/components/ui';
+import Admin from '../admin';
 import { useSupabase, signOut, isAdmin } from '../../../src/lib/supabase';
 import { useData } from '../../../src/lib/store';
 import { useSettings, exportEverlyData, THEME_LABEL, UNITS_LABEL, DATEFMT_LABEL, WEEKSTART_LABEL, type ThemePref, type UnitsPref, type DateFmt, type WeekStart } from '../../../src/lib/settings';
@@ -90,13 +91,29 @@ export default function SettingsTab() {
   const [admin, setAdmin] = useState(false);
   useEffect(() => { let a = true; isAdmin().then((v) => { if (a) setAdmin(v); }).catch(() => {}); return () => { a = false; }; }, []);
 
+  // User/Admin pager — a translate-based pager so both the tab buttons and a
+  // horizontal swipe move it reliably (RNW's ScrollView.scrollTo is flaky here).
   const [tab, setTab] = useState(0);
-  const pagerRef = useRef<ScrollView>(null);
-  function goTab(i: number) { setTab(i); pagerRef.current?.scrollTo({ x: i * width, animated: true }); }
-  function onPage(e: NativeSyntheticEvent<NativeScrollEvent>) {
-    const i = Math.round(e.nativeEvent.contentOffset.x / width);
-    if (i !== tab) setTab(i);
+  const [pagerW, setPagerW] = useState(width);
+  const tabRef = useRef(0);
+  const anim = useRef(new Animated.Value(0)).current;
+  function goTab(i: number) {
+    tabRef.current = i; setTab(i);
+    Animated.spring(anim, { toValue: -i * pagerW, useNativeDriver: false, speed: 16, bounciness: 3 }).start();
   }
+  useEffect(() => { anim.setValue(-tabRef.current * pagerW); }, [pagerW, anim]);
+  const pan = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dx) > 14 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
+      onPanResponderMove: (_e, g) => anim.setValue(-tabRef.current * pagerW + g.dx),
+      onPanResponderRelease: (_e, g) => {
+        let i = tabRef.current;
+        if (g.dx < -48 && i < 1) i = 1;
+        else if (g.dx > 48 && i > 0) i = 0;
+        goTab(i);
+      },
+    }),
+  ).current;
 
   const [pagerH, setPagerH] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -205,27 +222,8 @@ export default function SettingsTab() {
     </ScrollView>
   );
 
-  // ── Admin console page ──────────────────────────────────────────────────
-  const AdminPage = (
-    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 6, paddingBottom: insets.bottom + 24 }} showsVerticalScrollIndicator={false}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#FBF1CE', borderRadius: 12, paddingVertical: 10, paddingHorizontal: 13 }}>
-        <Shield size={16} color="#9A7B1F" />
-        <Text style={{ fontFamily: font.body700, fontSize: 12, color: '#8A6D18' }}>Operator console — admin only</Text>
-      </View>
-
-      <SectionHeader>Manage</SectionHeader>
-      <Card>
-        <Row first icon={<Users size={16} color="#6B6FC9" />} bg="#E7E4FB" title="Users" sub="Search, suspend, change plan" onPress={() => router.push('/(app)/admin')} />
-        <Row icon={<CreditCard size={16} color="#2C8475" />} bg="#D8F0E6" title="Billing" sub="Subscriptions & dunning" onPress={() => router.push('/(app)/admin')} />
-        <Row icon={<Shield size={16} color="#B5662E" />} bg="#FCE6D8" title="Config & flags" sub="Feature toggles, remote config" onPress={() => router.push('/(app)/admin')} />
-        <Row icon={<Info size={16} color="#6F6E86" />} bg="#EDECF5" title="Audit log" sub="Recent operator actions" onPress={() => router.push('/(app)/admin')} />
-      </Card>
-
-      <View style={{ marginTop: 16 }}>
-        <Button label="Open full console" onPress={() => router.push('/(app)/admin')} />
-      </View>
-    </ScrollView>
-  );
+  // ── Admin console page — the full operator console, embedded ─────────────
+  const AdminPage = <Admin embedded />;
 
   return (
     <View style={{ flex: 1, backgroundColor: color.canvas, paddingTop: insets.top + 10 }}>
@@ -249,11 +247,15 @@ export default function SettingsTab() {
       </View>
 
       {admin ? (
-        <View style={{ flex: 1, marginTop: 6 }} onLayout={(e) => setPagerH(e.nativeEvent.layout.height)}>
-          <ScrollView ref={pagerRef} horizontal pagingEnabled showsHorizontalScrollIndicator={false} onMomentumScrollEnd={onPage} scrollEventThrottle={16} style={{ flex: 1 }}>
-            <View style={{ width, height: pagerH || undefined }}>{UserPage}</View>
-            <View style={{ width, height: pagerH || undefined }}>{AdminPage}</View>
-          </ScrollView>
+        <View
+          style={{ flex: 1, marginTop: 6, overflow: 'hidden' }}
+          onLayout={(e) => { setPagerW(e.nativeEvent.layout.width); setPagerH(e.nativeEvent.layout.height); }}
+          {...pan.panHandlers}
+        >
+          <Animated.View style={{ flexDirection: 'row', width: pagerW * 2, height: pagerH || undefined, transform: [{ translateX: anim }] }}>
+            <View style={{ width: pagerW, height: pagerH || undefined }}>{UserPage}</View>
+            <View style={{ width: pagerW, height: pagerH || undefined }}>{AdminPage}</View>
+          </Animated.View>
         </View>
       ) : (
         <View style={{ flex: 1, marginTop: 6 }}>{UserPage}</View>

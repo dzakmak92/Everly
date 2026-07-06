@@ -48,7 +48,7 @@ const statusC = (s: string) => STATUS_C[s] ?? STATUS_C.none;
 const isDunning = (s: string) => s === 'past_due' || s === 'unpaid';
 
 /** Operator console — gated by is_admin; reads + edits live thin-server state. */
-export default function Admin() {
+export default function Admin({ embedded }: { embedded?: boolean } = {}) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
@@ -163,12 +163,14 @@ export default function Admin() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: color.canvas, paddingTop: insets.top + 8 }}>
-      <View style={{ paddingHorizontal: 20 }}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={{ width: 40, height: 40, justifyContent: 'center' }}><ChevronLeft size={24} color={color.ink} /></Pressable>
-        <Text style={{ fontFamily: font.display700, fontSize: 26, color: color.ink, paddingHorizontal: 2 }}>Admin</Text>
-        <Text style={{ fontFamily: font.body400, fontSize: 13, color: color.muted, marginTop: 4, paddingHorizontal: 2 }}>Operator console</Text>
-      </View>
+    <View style={{ flex: 1, backgroundColor: color.canvas, paddingTop: embedded ? 0 : insets.top + 8 }}>
+      {!embedded && (
+        <View style={{ paddingHorizontal: 20 }}>
+          <Pressable onPress={() => router.back()} hitSlop={8} style={{ width: 40, height: 40, justifyContent: 'center' }}><ChevronLeft size={24} color={color.ink} /></Pressable>
+          <Text style={{ fontFamily: font.display700, fontSize: 26, color: color.ink, paddingHorizontal: 2 }}>Admin</Text>
+          <Text style={{ fontFamily: font.body400, fontSize: 13, color: color.muted, marginTop: 4, paddingHorizontal: 2 }}>Operator console</Text>
+        </View>
+      )}
 
       {!admin ? (
         <View style={{ padding: 20 }}>
@@ -183,7 +185,7 @@ export default function Admin() {
       ) : (
         <>
           {/* tab switcher */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, marginTop: 14 }} contentContainerStyle={{ paddingHorizontal: 20, gap: 8 }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, marginTop: embedded ? 2 : 14 }} contentContainerStyle={{ paddingHorizontal: 20, gap: 8 }}>
             {TABS.map((t) => {
               const a = t === tab;
               return (
@@ -194,7 +196,7 @@ export default function Admin() {
             })}
           </ScrollView>
 
-          <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 14, paddingBottom: insets.bottom + 28, gap: 14 }} showsVerticalScrollIndicator={false}>
+          <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 14, paddingBottom: embedded ? 24 : insets.bottom + 28, gap: 14 }} showsVerticalScrollIndicator={false}>
             <Notice text={msg} />
 
             {tab === 'Overview' && (
