@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import Svg, { Circle, Path, Rect, Defs, LinearGradient, Stop, Text as SvgText } from 'react-native-svg';
+import Svg, { Circle, Path, Rect, Line as SvgLine, Defs, LinearGradient, Stop, Text as SvgText } from 'react-native-svg';
 import { color, font } from '../theme/tokens';
 
 /** A single point on the day timeline. */
@@ -22,9 +22,8 @@ function colorAt(h: number) {
   return '#3B3568';
 }
 
-/** Switchable day overview — a horizontal ribbon or a 24-hour dial. */
+/** Switchable day overview — a horizontal ribbon or a sunrise→sunset dial. */
 export function DayTimeline({ items, layout, unit = 'entry' }: { items: TlItem[]; layout: 'ribbon' | 'clock'; unit?: 'entry' | 'event' }) {
-  if (items.length === 0) return null;
   return layout === 'clock' ? <ClockTimeline items={items} unit={unit} /> : <RibbonTimeline items={items} />;
 }
 
@@ -72,50 +71,66 @@ function RibbonTimeline({ items }: { items: TlItem[] }) {
   );
 }
 
-/** Clock: a 24-hour dial with twilight bands (night / dawn / day / dusk / evening). */
+/** Clock: a sunrise→sunset dial. Sunrise on the left, noon at the top, sunset on
+   the right, midnight at the bottom — day arc over the top, night below — with
+   24-hour tick slots and time-of-day colour bands. */
 function ClockTimeline({ items, unit }: { items: TlItem[]; unit: 'entry' | 'event' }) {
-  const cx = 100, cy = 100, R = 80;
-  const angle = (h: number) => (h / 24) * 2 * Math.PI - Math.PI / 2;
+  const cx = 110, cy = 110, R = 86;
+  // Map the hour so 6→left, 12→top, 18→right, 0→bottom.
+  const angle = (h: number) => ((((h - 18) % 24) + 24) % 24) / 24 * 2 * Math.PI;
   const P = (r: number, a: number): [number, number] => [cx + r * Math.cos(a), cy + r * Math.sin(a)];
   const arcPath = (r: number, h0: number, h1: number) => {
     const [x0, y0] = P(r, angle(h0)); const [x1, y1] = P(r, angle(h1));
-    const large = ((h1 - h0 + 24) % 24) > 12 ? 1 : 0;
-    return `M ${x0} ${y0} A ${r} ${r} 0 ${large} 1 ${x1} ${y1}`;
+    const span = (((h1 - h0) % 24) + 24) % 24;
+    return `M ${x0} ${y0} A ${r} ${r} 0 ${span > 12 ? 1 : 0} 1 ${x1} ${y1}`;
   };
   const bands: [number, number, string][] = [
-    [21, 6, '#4C4680'],   // night
-    [6, 8, '#E8A57E'],    // dawn
-    [8, 17, '#F7CE86'],   // day
-    [17, 19, '#EC9A6A'],  // dusk
-    [19, 21, '#7E6BAE'],  // evening
+    [6, 8, '#E8A57E'], [8, 11, '#F7CE86'], [11, 13, '#FBD98A'], [13, 16, '#F5C878'],
+    [16, 18, '#EC9A6A'], [18, 20, '#8C7AB8'], [20, 4, '#453F72'], [4, 6, '#6E5F9C'],
   ];
+  const now = new Date(); const nowH = now.getHours() + now.getMinutes() / 60;
+  const [nx, ny] = P(R, angle(nowH));
+  const [srx, sry] = P(R + 9, angle(6)); const [ssx, ssy] = P(R + 9, angle(18));
+  const plural = unit === 'entry' ? 'entries' : 'events';
   return (
     <View style={{ alignItems: 'center', gap: 12 }}>
-      <Svg width={200} height={200} viewBox="0 0 200 200">
-        <Circle cx={cx} cy={cy} r={R} fill="none" stroke={color.hairline} strokeWidth={11} />
-        {bands.map(([h0, h1, c], i) => <Path key={i} d={arcPath(R, h0, h1)} fill="none" stroke={c} strokeWidth={11} strokeLinecap="round" />)}
-        {([[0, '0'], [6, '6'], [12, '12'], [18, '18']] as const).map(([h, label]) => {
-          const [x, y] = P(R - 19, angle(h));
-          return <SvgText key={h} x={x} y={y + 4} fontSize={12} fill={color.muted} textAnchor="middle" fontWeight="700">{label}</SvgText>;
+      <Svg width={210} height={210} viewBox="0 0 220 220">
+        <Circle cx={cx} cy={cy} r={R} fill="none" stroke={color.hairline} strokeWidth={12} />
+        {bands.map(([h0, h1, c], i) => <Path key={i} d={arcPath(R, h0, h1)} fill="none" stroke={c} strokeWidth={12} />)}
+        {/* hour ticks — bold every 3h */}
+        {Array.from({ length: 24 }, (_, h) => {
+          const major = h % 3 === 0; const [x1, y1] = P(R - 6, angle(h)); const [x2, y2] = P(R - (major ? 13 : 9), angle(h));
+          return <SvgLine key={`k${h}`} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#fff" strokeWidth={major ? 1.6 : 1} opacity={major ? 0.9 : 0.5} />;
         })}
-        <SvgText x={cx} y={cy - 28} fontSize={13} textAnchor="middle">🌙</SvgText>
-        <SvgText x={cx} y={cy + 42} fontSize={15} textAnchor="middle">☀️</SvgText>
-        <SvgText x={cx} y={cy - 1} fontSize={26} fontWeight="700" fill={color.ink} textAnchor="middle">{String(items.length)}</SvgText>
-        <SvgText x={cx} y={cy + 16} fontSize={11} fill={color.muted} textAnchor="middle">{items.length === 1 ? unit : `${unit === 'entry' ? 'entries' : 'events'}`}</SvgText>
+        {/* 24-hour numbers */}
+        {[0, 3, 6, 9, 12, 15, 18, 21].map((h) => { const [x, y] = P(R - 24, angle(h)); return <SvgText key={`n${h}`} x={x} y={y + 3.5} fontSize={9.5} fill="#8a8098" textAnchor="middle" fontWeight="800">{String(h)}</SvgText>; })}
+        <SvgText x={srx - 2} y={sry + 3} fontSize={11} textAnchor="middle">🌅</SvgText>
+        <SvgText x={ssx + 2} y={ssy + 3} fontSize={11} textAnchor="middle">🌇</SvgText>
+        <SvgText x={cx} y={cy - 32} fontSize={13} textAnchor="middle">☀️</SvgText>
+        <SvgText x={cx} y={cy + 44} fontSize={13} textAnchor="middle">🌙</SvgText>
+        <SvgText x={cx} y={cy - 2} fontSize={26} fontWeight="800" fill={color.ink} textAnchor="middle">{String(items.length)}</SvgText>
+        <SvgText x={cx} y={cy + 16} fontSize={10.5} fill={color.muted} textAnchor="middle">{items.length === 1 ? unit : plural}</SvgText>
         {items.map((it) => {
           const d = new Date(it.at); const h = d.getHours() + d.getMinutes() / 60; const [x, y] = P(R, angle(h));
-          return <Circle key={it.id} cx={x} cy={y} r={8} fill={it.color} stroke="#fff" strokeWidth={3} />;
+          return <Circle key={it.id} cx={x} cy={y} r={7} fill={it.color} stroke="#fff" strokeWidth={3} />;
         })}
+        {/* live "now" sun token */}
+        <Circle cx={nx} cy={ny} r={9} fill="#fff" stroke={color.rose} strokeWidth={2} />
+        <SvgText x={nx} y={ny + 3.5} fontSize={9} textAnchor="middle">☀️</SvgText>
       </Svg>
-      <View style={{ alignSelf: 'stretch', gap: 7 }}>
-        {items.map((it) => (
-          <View key={it.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: it.color }} />
-            <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.muted, width: 64 }}>{tlTime(it.at)}</Text>
-            <Text style={{ flex: 1, fontFamily: font.body600, fontSize: 13, color: color.ink }} numberOfLines={1}>{it.title}</Text>
-          </View>
-        ))}
-      </View>
+      {items.length > 0 ? (
+        <View style={{ alignSelf: 'stretch', gap: 7 }}>
+          {items.map((it) => (
+            <View key={it.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: it.color }} />
+              <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.muted, width: 64 }}>{tlTime(it.at)}</Text>
+              <Text style={{ flex: 1, fontFamily: font.body600, fontSize: 13, color: color.ink }} numberOfLines={1}>{it.title}</Text>
+            </View>
+          ))}
+        </View>
+      ) : (
+        <Text style={{ fontFamily: font.body500, fontSize: 12.5, color: color.muted }}>Nothing planned for this day yet.</Text>
+      )}
     </View>
   );
 }

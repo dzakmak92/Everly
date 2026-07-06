@@ -247,25 +247,23 @@ export default function CalendarTab() {
         </View>
       </View>
 
-      {/* Day timeline overview (ribbon / clock) */}
-      {dayItems.length > 0 && (
-        <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 16, gap: 12 }, shadow.card]}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Text style={{ fontFamily: font.body700, fontSize: 13, color: color.ink }}>Day overview</Text>
-            <View style={{ flexDirection: 'row', backgroundColor: color.canvas, borderRadius: radius.pill, padding: 3 }}>
-              {(['ribbon', 'clock'] as const).map((l) => {
-                const on = tlLayout === l;
-                return (
-                  <Pressable key={l} onPress={() => setTlLayout(l)} style={{ paddingVertical: 5, paddingHorizontal: 12, borderRadius: radius.pill, backgroundColor: on ? color.primary : 'transparent' }}>
-                    <Text style={{ fontFamily: on ? font.body700 : font.body600, fontSize: 11.5, color: on ? '#fff' : color.muted }}>{l === 'ribbon' ? 'Line' : 'Clock'}</Text>
-                  </Pressable>
-                );
-              })}
-            </View>
+      {/* Day timeline overview (ribbon / clock) — always visible */}
+      <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 16, gap: 12 }, shadow.card]}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Text style={{ fontFamily: font.body700, fontSize: 13, color: color.ink }}>Day overview</Text>
+          <View style={{ flexDirection: 'row', backgroundColor: color.canvas, borderRadius: radius.pill, padding: 3 }}>
+            {(['ribbon', 'clock'] as const).map((l) => {
+              const on = tlLayout === l;
+              return (
+                <Pressable key={l} onPress={() => setTlLayout(l)} style={{ paddingVertical: 5, paddingHorizontal: 12, borderRadius: radius.pill, backgroundColor: on ? color.primary : 'transparent' }}>
+                  <Text style={{ fontFamily: on ? font.body700 : font.body600, fontSize: 11.5, color: on ? '#fff' : color.muted }}>{l === 'ribbon' ? 'Line' : 'Clock'}</Text>
+                </Pressable>
+              );
+            })}
           </View>
-          <DayTimeline items={dayItems} layout={tlLayout} unit="event" />
         </View>
-      )}
+        <DayTimeline items={dayItems} layout={tlLayout} unit="event" />
+      </View>
 
       {/* Events (colour-coded per child, editable) */}
       {selEvents.map((ev) => {
