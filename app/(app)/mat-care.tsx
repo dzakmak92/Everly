@@ -6,6 +6,7 @@ import { color, font, radius, shadow } from '../../src/theme/tokens';
 import { Button, Field } from '../../src/components/forms';
 import { ChevronLeft } from '../../src/components/icons';
 import { useData } from '../../src/lib/store';
+import { useUnits } from '../../src/lib/units';
 import { useFeedback } from '../../src/components/Feedback';
 
 const COMFORT = ['Painful', 'Some pain', 'Okay', 'Comfortable'];
@@ -16,6 +17,7 @@ export default function MatCare() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { momCare, addMomCare, deleteMomCare } = useData();
+  const u = useUnits();
   const { toast } = useFeedback();
   const [sleepOpen, setSleepOpen] = useState(false);
   const [hrs, setHrs] = useState('');
@@ -75,17 +77,17 @@ export default function MatCare() {
       {/* Hydration */}
       <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 16, gap: 10 }, shadow.card]}>
         <Text style={{ fontFamily: font.body700, fontSize: 13, color: color.ink }}>Hydration today</Text>
-        <Text style={{ fontFamily: font.display700, fontSize: 24, color: color.ink }}>{(todayWater / 1000).toFixed(1)}L <Text style={{ fontFamily: font.body500, fontSize: 13, color: color.muted }}>/ {goalWater / 1000}L goal</Text></Text>
+        <Text style={{ fontFamily: font.display700, fontSize: 24, color: color.ink }}>{u.fmtWaterMl(todayWater, u.imperial ? 0 : 1)} <Text style={{ fontFamily: font.body500, fontSize: 13, color: color.muted }}>/ {u.fmtWaterMl(goalWater, u.imperial ? 0 : 1)} goal</Text></Text>
         <View style={{ flexDirection: 'row', gap: 8 }}>
           {[250, 500].map((v) => (
             <Pressable key={v} onPress={() => { addMomCare({ kind: 'water', value: v }); toast('Water logged'); }} style={{ flex: 1, paddingVertical: 11, borderRadius: radius.tile, alignItems: 'center', backgroundColor: '#DCEBFA' }}>
-              <Text style={{ fontFamily: font.body700, fontSize: 13, color: color.preconceptionSky }}>+{v} ml</Text>
+              <Text style={{ fontFamily: font.body700, fontSize: 13, color: color.preconceptionSky }}>+{u.fmtBottle(v)}</Text>
             </Pressable>
           ))}
         </View>
         {lastWater && (
           <Pressable onPress={() => deleteMomCare(lastWater.id)} hitSlop={8} style={{ alignSelf: 'flex-start' }}>
-            <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.muted }}>× Undo last (+{lastWater.value} ml)</Text>
+            <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.muted }}>× Undo last (+{u.fmtBottle(lastWater.value)})</Text>
           </Pressable>
         )}
         <Text style={{ fontFamily: font.body400, fontSize: 12, color: color.muted }}>Breastfeeding needs ~500ml extra a day.</Text>

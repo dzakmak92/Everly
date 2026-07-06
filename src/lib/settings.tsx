@@ -17,7 +17,6 @@ export type Prefs = {
   weekStart: WeekStart;
   notifReminders: boolean;
   notifDigest: boolean;
-  appLock: boolean;
 };
 
 export const DEFAULT_PREFS: Prefs = {
@@ -27,7 +26,6 @@ export const DEFAULT_PREFS: Prefs = {
   weekStart: 'mon',
   notifReminders: true,
   notifDigest: true,
-  appLock: false,
 };
 
 const PREFS_KEY = 'everly.prefs.v1';

@@ -4,11 +4,12 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, font, radius, shadow } from '../../../src/theme/tokens';
 import { Button, Notice } from '../../../src/components/forms';
-import { ChevronRight, Star, Shield, Bell, Moon, Ruler, Globe, Lock, Mail, LogOut, Users, CreditCard, Check, Download, Info } from '../../../src/components/icons';
+import { ChevronRight, Star, Shield, Bell, Moon, Ruler, Globe, Mail, Users, CreditCard, Check, Download, Info } from '../../../src/components/icons';
 import { Silhouette } from '../../../src/components/ui';
 import { useSupabase, signOut, isAdmin } from '../../../src/lib/supabase';
 import { useData } from '../../../src/lib/store';
 import { useSettings, exportEverlyData, THEME_LABEL, UNITS_LABEL, DATEFMT_LABEL, WEEKSTART_LABEL, type ThemePref, type UnitsPref, type DateFmt, type WeekStart } from '../../../src/lib/settings';
+import { requestNotifPermission, syncNotifications } from '../../../src/lib/notifications';
 import { useFeedback } from '../../../src/components/Feedback';
 
 const PLAN_PILL: Record<string, string> = { free: 'Free', pro: 'Pro', family: 'Family', lifetime: 'Lifetime' };
@@ -129,6 +130,18 @@ export default function SettingsTab() {
   }
   function openLink(url: string, fallback: string) { Linking.openURL(url).catch(() => toast(fallback)); }
 
+  // Keep OS-scheduled reminders in sync with the saved preferences on open.
+  useEffect(() => { syncNotifications(prefs); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
+  async function toggleNotif(key: 'notifReminders' | 'notifDigest') {
+    const next = !prefs[key];
+    if (next && Platform.OS !== 'web') {
+      const ok = await requestNotifPermission();
+      if (!ok) toast('Allow notifications in your device settings to get reminders');
+    }
+    setPref(key, next);
+    syncNotifications({ notifReminders: prefs.notifReminders, notifDigest: prefs.notifDigest, [key]: next });
+  }
+
   // ── User settings page ──────────────────────────────────────────────────
   const UserPage = (
     <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 6, paddingBottom: insets.bottom + 24 }} showsVerticalScrollIndicator={false}>
@@ -159,10 +172,9 @@ export default function SettingsTab() {
         <Row icon={<Globe size={16} color="#B5662E" />} bg="#FCE6D8" title="Language" value="English" onPress={() => toast('More languages coming soon')} />
       </Card>
 
-      <SectionHeader>Privacy & security</SectionHeader>
+      <SectionHeader>Privacy & data</SectionHeader>
       <Card>
-        <Row first icon={<Lock size={16} color="#6F6E86" />} bg="#EDECF5" title="App lock" sub="Require Face ID / passcode to open" right={<Toggle on={prefs.appLock} onPress={() => { setPref('appLock', !prefs.appLock); toast(!prefs.appLock ? 'App lock on' : 'App lock off'); }} />} />
-        <Row icon={<Download size={16} color="#6B6FC9" />} bg="#E7E4FB" title="Export my data" sub="Download an on-device JSON backup" onPress={onExport} />
+        <Row first icon={<Download size={16} color="#6B6FC9" />} bg="#E7E4FB" title="Export my data" sub="Download an on-device JSON backup" onPress={onExport} />
         <Row icon={<Shield size={16} color="#E98FB3" />} bg="#FBE0EA" title="Clear activity log" danger onPress={() => setConfirmWipe(true)} />
       </Card>
       <View style={{ backgroundColor: '#E7E4FB', borderRadius: 14, paddingVertical: 12, paddingHorizontal: 14, flexDirection: 'row', gap: 10, alignItems: 'flex-start', marginTop: 10 }}>
@@ -280,8 +292,8 @@ export default function SettingsTab() {
       {/* Notifications */}
       <Sheet visible={notifOpen} onClose={() => setNotifOpen(false)} title="Notifications">
         <Card>
-          <Row first title="Reminders" sub="Appointments, meds & routines" right={<Toggle on={prefs.notifReminders} onPress={() => setPref('notifReminders', !prefs.notifReminders)} />} />
-          <Row title="Weekly digest" sub="A Sunday summary of your week" right={<Toggle on={prefs.notifDigest} onPress={() => setPref('notifDigest', !prefs.notifDigest)} />} />
+          <Row first title="Reminders" sub="A gentle daily nudge at 9am" right={<Toggle on={prefs.notifReminders} onPress={() => toggleNotif('notifReminders')} />} />
+          <Row title="Weekly digest" sub="A Sunday summary of your week" right={<Toggle on={prefs.notifDigest} onPress={() => toggleNotif('notifDigest')} />} />
         </Card>
         <Text style={{ fontFamily: font.body400, fontSize: 11, color: color.muted }}>You'll also need to allow notifications in your device settings.</Text>
         <Button label="Done" onPress={() => setNotifOpen(false)} />

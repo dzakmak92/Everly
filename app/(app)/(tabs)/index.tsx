@@ -34,6 +34,7 @@ import {
   type EntryKind, type FeedSide, type DiaperType, type Child, type Lochia, type ChildColor, type PregArchive, type PregStatus,
   type Entry, type EventItem, type Vaccine, type Medication, type KickSession, type PregVital, type PregCheckin, type PregAppt, type BirthPrepItem,
 } from '../../../src/lib/store';
+import { useUnits } from '../../../src/lib/units';
 import HealthTab from '../health';
 import TimelineTab from '../timeline';
 import InsightsScreen from '../insights';
@@ -66,6 +67,7 @@ function agoLabel(iso: string) {
 export default function Today() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const u = useUnits();
   const { session, profile } = useSupabase();
   const {
     entries, addEntry, deleteEntry, children, activeChild, setActiveChild, events, vaccines,
@@ -173,8 +175,9 @@ export default function Today() {
   function save() {
     if (!kind) return;
     const n = (s: string) => { const v = parseInt(s, 10); return isNaN(v) ? undefined : v; };
-    if (kind === 'feed') addEntry('feed', { side, volumeMl: side === 'bottle' ? n(ml) : undefined, durationMin: n(mins), note });
-    else if (kind === 'pump') addEntry('pump', { volumeMl: n(ml), note });
+    const vol = (s: string) => { const v = parseFloat(s.replace(',', '.')); return isNaN(v) ? undefined : Math.round(u.bottleToMl(v)); };
+    if (kind === 'feed') addEntry('feed', { side, volumeMl: side === 'bottle' ? vol(ml) : undefined, durationMin: n(mins), note });
+    else if (kind === 'pump') addEntry('pump', { volumeMl: vol(ml), note });
     else if (kind === 'sleep') addEntry('sleep', { durationMin: n(mins), note });
     else if (kind === 'diaper') addEntry('diaper', { diaperType: diaper, note });
     else if (kind === 'activity') addEntry('activity', { durationMin: n(mins), note });
@@ -369,9 +372,9 @@ export default function Today() {
           <Pressable onPress={() => {}} style={[{ backgroundColor: color.canvas, borderRadius: radius.card, padding: 20, gap: 14 }, shadow.card]}>
             <Text style={{ fontFamily: font.display700, fontSize: 18, color: color.ink }}>{kind ? ENTRY_META[kind].label : ''}</Text>
             {kind === 'feed' && <Chips options={[['left', 'Left'], ['right', 'Right'], ['bottle', 'Bottle']]} value={side} onChange={(v) => setSide(v as FeedSide)} />}
-            {kind === 'feed' && side === 'bottle' && <Field label="Amount (ml)" value={ml} onChangeText={setMl} placeholder="e.g. 120" />}
+            {kind === 'feed' && side === 'bottle' && <Field label={`Amount (${u.bottleUnit})`} value={ml} onChangeText={setMl} placeholder={u.imperial ? 'e.g. 4' : 'e.g. 120'} />}
             {(kind === 'feed' || kind === 'sleep' || kind === 'activity') && <DurationField label="Duration" value={mins} onChange={setMins} />}
-            {kind === 'pump' && <Field label="Amount (ml)" value={ml} onChangeText={setMl} placeholder="e.g. 90" />}
+            {kind === 'pump' && <Field label={`Amount (${u.bottleUnit})`} value={ml} onChangeText={setMl} placeholder={u.imperial ? 'e.g. 3' : 'e.g. 90'} />}
             {kind === 'diaper' && <Chips options={[['wet', 'Wet'], ['dirty', 'Dirty'], ['both', 'Both']]} value={diaper} onChange={(v) => setDiaper(v as DiaperType)} />}
             {kind === 'mood' && <Chips options={MOOD_LABELS.map((l, i) => [String(i), l] as [string, string])} value={String(mood)} onChange={(v) => setMood(parseInt(v, 10))} />}
             <Field label={kind === 'note' || kind === 'meal' || kind === 'medicine' || kind === 'potty' ? 'Note' : 'Note (optional)'} value={note} onChangeText={setNote} placeholder={kind === 'meal' ? 'What did they eat?' : kind === 'medicine' ? 'Medicine & dose' : kind === 'potty' ? 'e.g. pee / poo / accident' : 'Anything to add?'} autoCapitalize="sentences" />
@@ -865,6 +868,7 @@ function MaternityView({
   onArrived: () => void;
   onStartPregnancy: () => void;
 }) {
+  const u = useUnits();
   // Accordion grid: one card open at a time, panel renders full-width below.
   const [openCard, setOpenCard] = useState<string | null>(null);
   // Switching phase from the pinned tabs should collapse any open card.
@@ -958,7 +962,7 @@ function MaternityView({
               </View>
               {(wk.lengthCm > 0 || wk.weightG > 0) && (
                 <Text style={{ fontFamily: font.body500, fontSize: 12, color: 'rgba(255,255,255,0.9)' }}>
-                  {wk.lengthCm > 0 ? `~${wk.lengthCm} cm` : ''}{wk.weightG > 0 ? `${wk.lengthCm > 0 ? ' · ' : ''}~${wk.weightG} g` : ''} · tap for week-by-week
+                  {wk.lengthCm > 0 ? `~${u.fmtLength(wk.lengthCm, 0)}` : ''}{wk.weightG > 0 ? `${wk.lengthCm > 0 ? ' · ' : ''}~${u.fmtBabyWeight(wk.weightG)}` : ''} · tap for week-by-week
                 </Text>
               )}
             </View>
@@ -1501,19 +1505,20 @@ function PrepSection({ name, items, open, onToggle, onAdd, onToggleItem, onDelet
 
 function CheckinPanel({ onClose }: { onClose: () => void }) {
   const { checkins, addCheckin } = useData();
+  const u = useUnits();
   const [mood, setMood] = useState<number>(2);
   const [symptoms, setSymptoms] = useState<string[]>([]);
   const [weight, setWeight] = useState('');
   const latest = checkins[0];
   const toggleSym = (s: string) => setSymptoms((cur) => (cur.includes(s) ? cur.filter((x) => x !== s) : [...cur, s]));
-  const save = () => { addCheckin({ mood, symptoms, weightKg: numOrUndef(weight) }); onClose(); };
+  const save = () => { const w = numOrUndef(weight); addCheckin({ mood, symptoms, weightKg: w == null ? undefined : u.weightToKg(w) }); onClose(); };
   return (
     <View style={{ gap: 14 }}>
       {latest && (
         <View style={{ backgroundColor: color.canvas, borderRadius: radius.tile, padding: 12 }}>
           <PanelLabel>Latest check-in</PanelLabel>
           <Text style={{ fontFamily: font.body600, fontSize: 13, color: color.ink, marginTop: 4 }}>
-            {MOODS[latest.mood] ?? '—'}{latest.weightKg ? ` · ${latest.weightKg} kg` : ''}{latest.symptoms.length ? ` · ${latest.symptoms.join(', ')}` : ''}
+            {MOODS[latest.mood] ?? '—'}{latest.weightKg ? ` · ${u.fmtWeight(latest.weightKg)}` : ''}{latest.symptoms.length ? ` · ${latest.symptoms.join(', ')}` : ''}
           </Text>
           <Text style={{ fontFamily: font.body400, fontSize: 11.5, color: color.muted, marginTop: 2 }}>{dayTimeOf(latest.at)}</Text>
         </View>
@@ -1526,13 +1531,14 @@ function CheckinPanel({ onClose }: { onClose: () => void }) {
         <PanelLabel>Symptoms</PanelLabel>
         <WrapChips options={PREG_SYMPTOMS} selected={symptoms} onToggle={toggleSym} />
       </View>
-      <Field label="Weight (kg)" value={weight} onChangeText={setWeight} placeholder="e.g. 68.5" keyboardType="default" />
+      <Field label={`Weight (${u.weightUnit})`} value={weight} onChangeText={setWeight} placeholder={u.imperial ? 'e.g. 151' : 'e.g. 68.5'} keyboardType="default" />
       <Button label="Save check-in" onPress={save} />
     </View>
   );
 }
 
 function WeekPanel({ dueDate }: { dueDate: string | null }) {
+  const u = useUnits();
   const gest = gestFromDueDate(dueDate ?? undefined);
   const [week, setWeek] = useState<number>(gest?.week ?? 12);
   const [tab, setTab] = useState<'baby' | 'body' | 'nutrition'>('baby');
@@ -1574,7 +1580,7 @@ function WeekPanel({ dueDate }: { dueDate: string | null }) {
         <View style={{ backgroundColor: color.canvas, borderRadius: radius.tile, padding: 14, gap: 6 }}>
           <Text style={{ fontFamily: font.body700, fontSize: 15, color: color.ink }}>Size of a {c.size}</Text>
           {(c.lengthCm > 0 || c.weightG > 0) && (
-            <Text style={{ fontFamily: font.body500, fontSize: 13, color: color.inkSecondary }}>{c.lengthCm > 0 ? `~${c.lengthCm} cm` : ''}{c.weightG > 0 ? `${c.lengthCm > 0 ? ' · ' : ''}~${c.weightG} g` : ''}</Text>
+            <Text style={{ fontFamily: font.body500, fontSize: 13, color: color.inkSecondary }}>{c.lengthCm > 0 ? `~${u.fmtLength(c.lengthCm, 0)}` : ''}{c.weightG > 0 ? `${c.lengthCm > 0 ? ' · ' : ''}~${u.fmtBabyWeight(c.weightG)}` : ''}</Text>
           )}
           <Text style={{ fontFamily: font.body400, fontSize: 13, color: color.muted, marginTop: 2, lineHeight: 19 }}>{c.note}</Text>
         </View>
@@ -2378,6 +2384,11 @@ function CityPickerModal({ visible, wx, onClose }: { visible: boolean; wx: Retur
 function CareCheckinCard() {
   const { checkins, upsertTodayCheckin, dueDate, startWeightKg, setStartWeightKg, heightCm, setHeightCm } = useData();
   const { toast } = useFeedback();
+  const u = useUnits();
+  // display helpers: canonical (kg/cm/L) → chosen-unit string, trailing zeros trimmed
+  const wStr = (kg: number, dp = 1) => String(Math.round(u.weightFromKg(kg) * 10 ** dp) / 10 ** dp);
+  const lStr = (cm: number, dp = 0) => String(Math.round(u.lengthFromCm(cm) * 10 ** dp) / 10 ** dp);
+  const watStr = (l: number, dp = 1) => String(Math.round(u.waterFromL(l) * 10 ** dp) / 10 ** dp);
   const now = new Date();
   const gest = gestFromDueDate(dueDate ?? undefined);
   const week = gest?.week ?? null;
@@ -2393,8 +2404,19 @@ function CareCheckinCard() {
   const lastWeight = checkins.filter((c) => c.weightKg != null).sort((a, b) => ccMs(b.at) - ccMs(a.at))[0]?.weightKg ?? 65;
   const wVal = weight ?? Math.round(lastWeight * 10) / 10;
   const sVal = sleep ?? 7;
-  const openEdit = (f: 'start' | 'height') => { setEditField(f); setFieldVal((f === 'start' ? startWeightKg : heightCm)?.toString() ?? ''); };
-  const commitEdit = () => { const n = parseFloat(fieldVal.replace(',', '.')); const v = isNaN(n) || n <= 0 ? null : n; if (editField === 'start') setStartWeightKg(v); else if (editField === 'height') setHeightCm(v); setEditField(null); toast('Saved'); };
+  const openEdit = (f: 'start' | 'height') => {
+    setEditField(f);
+    const canon = f === 'start' ? startWeightKg : heightCm;
+    const disp = canon == null ? null : f === 'start' ? u.weightFromKg(canon) : u.lengthFromCm(canon);
+    setFieldVal(disp == null ? '' : String(Math.round(disp * 10) / 10));
+  };
+  const commitEdit = () => {
+    const n = parseFloat(fieldVal.replace(',', '.'));
+    const disp = isNaN(n) || n <= 0 ? null : n;
+    const canon = disp == null ? null : editField === 'start' ? u.weightToKg(disp) : u.lengthToCm(disp);
+    if (editField === 'start') setStartWeightKg(canon); else if (editField === 'height') setHeightCm(canon);
+    setEditField(null); toast('Saved');
+  };
   // Each chart saves its own metric into today's check-in.
   const saveWeight = () => { upsertTodayCheckin({ weightKg: wVal }); toast('Weight saved'); };
   const saveWater = () => { upsertTodayCheckin({ waterL: water || undefined }); toast('Water saved'); };
@@ -2497,7 +2519,7 @@ function CareCheckinCard() {
         <Text style={{ fontFamily: font.body700, fontSize: 9.5, letterSpacing: 0.5, textTransform: 'uppercase', color: '#B7889F', marginBottom: 8 }}>Starting point</Text>
         {editField ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <TextInput value={fieldVal} onChangeText={setFieldVal} keyboardType="decimal-pad" autoFocus placeholder={editField === 'start' ? 'kg' : 'cm'} placeholderTextColor={color.faint}
+            <TextInput value={fieldVal} onChangeText={setFieldVal} keyboardType="decimal-pad" autoFocus placeholder={editField === 'start' ? u.weightUnit : u.lengthUnit} placeholderTextColor={color.faint}
               style={{ flex: 1, backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#E0C2D2', borderRadius: 11, paddingVertical: 8, paddingHorizontal: 11, fontFamily: font.body700, fontSize: 15, color: color.ink }} />
             <Pressable onPress={commitEdit} style={{ backgroundColor: rose, borderRadius: 11, paddingVertical: 9, paddingHorizontal: 14 }}><Text style={{ fontFamily: font.body700, fontSize: 12, color: '#fff' }}>Save</Text></Pressable>
             <Pressable onPress={() => setEditField(null)} hitSlop={8}><Text style={{ fontFamily: font.body700, fontSize: 12, color: color.muted }}>Cancel</Text></Pressable>
@@ -2506,11 +2528,11 @@ function CareCheckinCard() {
           <View style={{ flexDirection: 'row', gap: 8 }}>
             {/* left: the two edit tiles, stacked */}
             <View style={{ flex: 1.3, gap: 8 }}>
-              {([['start', 'Start weight', startWeightKg, 'kg'], ['height', 'Height', heightCm, 'cm']] as const).map(([f, k, val, unit]) => (
+              {([['start', 'Start weight', startWeightKg, u.weightUnit], ['height', 'Height', heightCm, u.lengthUnit]] as const).map(([f, k, val, unit]) => (
                 <Pressable key={f} onPress={() => openEdit(f)} style={{ backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#EBD9E3', borderRadius: 12, paddingVertical: 8, paddingHorizontal: 11, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                   <View>
                     <Text style={{ fontFamily: font.body700, fontSize: 8.5, letterSpacing: 0.3, textTransform: 'uppercase', color: '#B7889F' }}>{k}</Text>
-                    <Text style={{ fontFamily: font.display700, fontSize: 15, color: val != null ? color.ink : color.faint, marginTop: 2 }}>{val != null ? (f === 'start' ? val.toFixed(1) : String(val)) : '—'}<Text style={{ fontFamily: font.body500, fontSize: 10, color: color.muted }}> {unit}</Text></Text>
+                    <Text style={{ fontFamily: font.display700, fontSize: 15, color: val != null ? color.ink : color.faint, marginTop: 2 }}>{val != null ? (f === 'start' ? wStr(val) : lStr(val)) : '—'}<Text style={{ fontFamily: font.body500, fontSize: 10, color: color.muted }}> {unit}</Text></Text>
                   </View>
                   <Text style={{ fontFamily: font.body700, fontSize: 11, color: roseInk }}>{val != null ? 'Edit' : 'Add'}</Text>
                 </Pressable>
@@ -2522,11 +2544,11 @@ function CareCheckinCard() {
                 <Text style={{ fontFamily: font.body700, fontSize: 8.5, letterSpacing: 0.3, textTransform: 'uppercase', color: '#3a6a52' }}>Pre-preg BMI</Text>
                 <Text style={{ fontFamily: font.display700, fontSize: 25, color: '#3a6a52', lineHeight: 29 }}>{bmi.toFixed(1)}</Text>
                 <Text style={{ fontFamily: font.body700, fontSize: 9.5, color: '#1E6C50', marginTop: 1 }}>{goal.category}</Text>
-                <Text style={{ fontFamily: font.body500, fontSize: 9, color: '#3a6a52', marginTop: 2, textAlign: 'center' }}>goal {goal.lo}–{goal.hi} kg</Text>
+                <Text style={{ fontFamily: font.body500, fontSize: 9, color: '#3a6a52', marginTop: 2, textAlign: 'center' }}>goal {wStr(goal.lo)}–{wStr(goal.hi)} {u.weightUnit}</Text>
               </View>
             ) : (
               <View style={{ flex: 1, backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#EBD9E3', borderRadius: 12, padding: 11, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ fontFamily: font.body400, fontSize: 10, color: color.muted, textAlign: 'center', lineHeight: 14 }}>Add height for a personalised BMI range — using 11.5–16 kg for now.</Text>
+                <Text style={{ fontFamily: font.body400, fontSize: 10, color: color.muted, textAlign: 'center', lineHeight: 14 }}>Add height for a personalised BMI range — using {wStr(11.5)}–{wStr(16)} {u.weightUnit} for now.</Text>
               </View>
             )}
           </View>
@@ -2538,17 +2560,17 @@ function CareCheckinCard() {
         {/* Title row — current weight (log today via steppers) */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
           <Text style={{ fontSize: 18 }}>⚖️</Text>
-          <Text style={{ fontFamily: font.display700, fontSize: 25, color: color.ink, lineHeight: 27 }}>{wVal.toFixed(1)}<Text style={{ fontFamily: font.body500, fontSize: 13, color: color.muted }}> kg</Text></Text>
+          <Text style={{ fontFamily: font.display700, fontSize: 25, color: color.ink, lineHeight: 27 }}>{wStr(wVal)}<Text style={{ fontFamily: font.body500, fontSize: 13, color: color.muted }}> {u.weightUnit}</Text></Text>
           {wStatus ? <View style={{ backgroundColor: wStatusOk ? '#E4F3EC' : '#FBE7D8', borderRadius: radius.pill, paddingVertical: 3, paddingHorizontal: 9 }}><Text style={{ fontFamily: font.body700, fontSize: 10, color: wStatusOk ? '#1E6C50' : '#B5662E' }}>{wStatus}</Text></View> : null}
-          <View style={{ marginLeft: 'auto' }}><Stepper accent={roseInk} onDec={() => setWeight(Math.round((wVal - 0.1) * 10) / 10)} onInc={() => setWeight(Math.round((wVal + 0.1) * 10) / 10)} /></View>
+          <View style={{ marginLeft: 'auto' }}><Stepper accent={roseInk} onDec={() => setWeight(Math.round((wVal - u.weightStepKg) * 100) / 100)} onInc={() => setWeight(Math.round((wVal + u.weightStepKg) * 100) / 100)} /></View>
         </View>
 
         {week != null ? (
           <>
             <Text style={{ fontFamily: font.body400, fontSize: 10.5, color: color.muted, marginTop: 6, marginBottom: 4, paddingHorizontal: 2 }}>
               {hasWeightData
-                ? <>since {startKg!.toFixed(1)} kg start · <Text style={{ fontFamily: font.body700, color: roseInk }}>{lastGain! >= 0 ? '+' : ''}{lastGain!.toFixed(1)} kg gained</Text> · goal {goal.lo}–{goal.hi} kg by birth</>
-                : <>Log today’s weight to track your gain · goal {goal.lo}–{goal.hi} kg by birth</>}
+                ? <>since {wStr(startKg!)} {u.weightUnit} start · <Text style={{ fontFamily: font.body700, color: roseInk }}>{lastGain! >= 0 ? '+' : ''}{wStr(lastGain!)} {u.weightUnit} gained</Text> · goal {wStr(goal.lo)}–{wStr(goal.hi)} {u.weightUnit} by birth</>
+                : <>Log today’s weight to track your gain · goal {wStr(goal.lo)}–{wStr(goal.hi)} {u.weightUnit} by birth</>}
             </Text>
 
             {/* cumulative-gain corridor chart — always shown when pregnant */}
@@ -2563,7 +2585,7 @@ function CareCheckinCard() {
               {hasWeightData && gainPts.map((p, i) => { const r = recommendedGain(p.wk, goal); const bad = p.gain > r.hi + 0.4 || p.gain < r.lo - 0.4; return bad ? <Circle key={i} cx={gx(p.wk)} cy={gy(p.gain)} r={3.5} fill="#D8505A" stroke="#fff" strokeWidth={1.5} /> : null; })}
               {hasWeightData && <Circle cx={gx(curWeek)} cy={gy(lastGain!)} r={4.5} fill={rose} stroke="#fff" strokeWidth={2} />}
               {hasWeightData && projected != null && <Circle cx={gx(40)} cy={gy(projected)} r={4} fill="#fff" stroke={rose} strokeWidth={2} />}
-              {hasWeightData && projected != null && <SvgText x={gx(40)} y={gy(projected) - 6} fontSize={7.5} fill={roseInk} textAnchor="end" fontWeight="700">≈{projected >= 0 ? '+' : ''}{projected.toFixed(0)} by 40w</SvgText>}
+              {hasWeightData && projected != null && <SvgText x={gx(40)} y={gy(projected) - 6} fontSize={7.5} fill={roseInk} textAnchor="end" fontWeight="700">≈{projected >= 0 ? '+' : ''}{wStr(projected, 0)} by 40w</SvgText>}
               {weekTicks.map((w, i) => <SvgText key={`t${i}`} x={gx(w)} y={WH - 16} fontSize={9.5} fill="#7d6a74" textAnchor="middle" fontWeight="700">{w}</SvgText>)}
               <SvgText x={gx((axMinWk + 40) / 2)} y={WH - 3} fontSize={8} fill="#b0a6ae" textAnchor="middle" fontWeight="700">weeks</SvgText>
             </Svg>
@@ -2576,9 +2598,9 @@ function CareCheckinCard() {
             {/* insight stats — once there's a logged trend */}
             {hasWeightData && (
               <View style={{ flexDirection: 'row', gap: 7, marginTop: 10 }}>
-                <MiniStat v={pace != null ? `${pace >= 0 ? '+' : ''}${pace.toFixed(2)}` : '—'} k="kg / week" badge={pace != null ? (paceOk ? 'Good pace' : pace > 0.7 ? 'Fast' : 'Slow') : ''} ok={paceOk} />
-                <MiniStat v={`${lastGain! >= 0 ? '+' : ''}${lastGain!.toFixed(1)}`} k="total gain" badge={wStatus === 'On track' ? 'In range' : wStatus === 'Above range' ? 'High' : wStatus === 'Below range' ? 'Low' : ''} ok={wStatusOk} />
-                <MiniStat v={projected != null ? `≈${projected.toFixed(0)}` : '—'} k="at birth" badge={projected != null ? (projected >= goal.lo && projected <= goal.hi ? 'On target' : projected > goal.hi ? 'Over' : 'Under') : ''} ok={projected != null && projected >= goal.lo && projected <= goal.hi} />
+                <MiniStat v={pace != null ? `${pace >= 0 ? '+' : ''}${wStr(pace, 2)}` : '—'} k={`${u.weightUnit} / week`} badge={pace != null ? (paceOk ? 'Good pace' : pace > 0.7 ? 'Fast' : 'Slow') : ''} ok={paceOk} />
+                <MiniStat v={`${lastGain! >= 0 ? '+' : ''}${wStr(lastGain!)}`} k="total gain" badge={wStatus === 'On track' ? 'In range' : wStatus === 'Above range' ? 'High' : wStatus === 'Below range' ? 'Low' : ''} ok={wStatusOk} />
+                <MiniStat v={projected != null ? `≈${wStr(projected, 0)}` : '—'} k="at birth" badge={projected != null ? (projected >= goal.lo && projected <= goal.hi ? 'On target' : projected > goal.hi ? 'Over' : 'Under') : ''} ok={projected != null && projected >= goal.lo && projected <= goal.hi} />
               </View>
             )}
           </>
@@ -2591,13 +2613,13 @@ function CareCheckinCard() {
       {/* Water */}
       {label('Water')}
       <View style={blockStyle}>
-        {metricRow('💧', 'Water', water.toFixed(1), 'L', water >= 2 ? 'Goal met' : 'Below 2L', water >= 2, () => setWater(Math.max(0, Math.round((water - 0.25) * 100) / 100)), () => setWater(Math.round((water + 0.25) * 100) / 100))}
+        {metricRow('💧', 'Water', watStr(water), ` ${u.waterUnit}`, water >= 2 ? 'Goal met' : `Below ${watStr(2, 0)} ${u.waterUnit}`, water >= 2, () => setWater(Math.max(0, Math.round((water - u.waterStepL) * 1000) / 1000)), () => setWater(Math.round((water + u.waterStepL) * 1000) / 1000))}
         <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 4, height: 42, position: 'relative' }}>
           <View style={{ position: 'absolute', left: 0, right: 0, top: `${(1 - 2 / wMax) * 100}%`, borderTopWidth: 1.5, borderColor: '#9AB0C9', borderStyle: 'dashed' }} />
           {waterVals.map((v, i) => <View key={i} style={{ flex: 1, height: `${Math.max(4, (v / wMax) * 100)}%`, borderRadius: 3, backgroundColor: '#7FB0D8' }} />)}
         </View>
         {dayAxis}
-        <Text style={{ fontFamily: font.body700, fontSize: 8, color: '#9AB0C9', textAlign: 'right', marginTop: 2 }}>– – 2L goal</Text>
+        <Text style={{ fontFamily: font.body700, fontSize: 8, color: '#9AB0C9', textAlign: 'right', marginTop: 2 }}>– – {watStr(2, 0)} {u.waterUnit} goal</Text>
         {saveBtn(saveWater)}
       </View>
 
@@ -2649,6 +2671,7 @@ function ChartKey({ sw, t, border }: { sw: string; t: string; border?: string })
  */
 function CarePanel() {
   const { pregStatus, setPregStatus, checkins, addCheckin, momCare, addMomCare, supportContacts, addSupportContact, deleteSupportContact } = useData();
+  const u = useUnits();
 
   const now = Date.now();
   const todays = checkins.filter((c) => careIsToday(c.at)).sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
@@ -2710,7 +2733,7 @@ function CarePanel() {
         <PanelLabel>Self-care today</PanelLabel>
         <View style={{ flexDirection: 'row', gap: 8 }}>
           <Pressable onPress={() => addMomCare({ kind: 'water', value: 250 })} style={{ flex: 1, backgroundColor: '#FAF3F6', borderRadius: radius.tile, paddingVertical: 11, alignItems: 'center' }}>
-            <Text style={{ fontFamily: font.display700, fontSize: 15, color: color.ink }}>{(todayWater / 1000).toFixed(1)}L</Text>
+            <Text style={{ fontFamily: font.display700, fontSize: 15, color: color.ink }}>{u.fmtWaterMl(todayWater, u.imperial ? 0 : 1)}</Text>
             <Text style={{ fontFamily: font.body600, fontSize: 9.5, color: color.muted, marginTop: 2 }}>💧 water · +250</Text>
           </Pressable>
           <View style={{ flex: 1, backgroundColor: '#FAF3F6', borderRadius: radius.tile, paddingVertical: 11, alignItems: 'center' }}>
@@ -3047,6 +3070,7 @@ const WATER_GOAL = 2200;
 
 function RecoveryPanel() {
   const { recoveryLogs, addRecoveryLog, momCare, addMomCare } = useData();
+  const u = useUnits();
   const [sys, setSys] = useState('');
   const [dia, setDia] = useState('');
   const [lochia, setLochia] = useState<Lochia | null>(null);
@@ -3117,12 +3141,12 @@ function RecoveryPanel() {
         <Button label="Log" onPress={logSleep} style={{ paddingHorizontal: 16 }} />
       </View>
 
-      <PanelLabel>Hydration today · {(todayWater / 1000).toFixed(1)} / {(WATER_GOAL / 1000).toFixed(1)} L</PanelLabel>
+      <PanelLabel>Hydration today · {u.fmtWaterMl(todayWater, u.imperial ? 0 : 1)} / {u.fmtWaterMl(WATER_GOAL, u.imperial ? 0 : 1)}</PanelLabel>
       <ProgressBar pct={Math.min(100, Math.round((todayWater / WATER_GOAL) * 100))} track={color.canvas} colors={['#6BBFAE', color.maternalTeal]} />
       <View style={{ flexDirection: 'row', gap: 8 }}>
         {[250, 500].map((ml) => (
           <Pressable key={ml} onPress={() => addMomCare({ kind: 'water', value: ml })} style={{ flex: 1, paddingVertical: 11, borderRadius: radius.tile, alignItems: 'center', backgroundColor: color.canvas, borderWidth: 1, borderColor: color.hairline }}>
-            <Text style={{ fontFamily: font.body700, fontSize: 13, color: color.tealDeep }}>+{ml} ml</Text>
+            <Text style={{ fontFamily: font.body700, fontSize: 13, color: color.tealDeep }}>+{u.fmtBottle(ml)}</Text>
           </Pressable>
         ))}
       </View>

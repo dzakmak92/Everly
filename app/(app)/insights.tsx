@@ -7,6 +7,7 @@ import { color, font, radius, shadow, childToken } from '../../src/theme/tokens'
 import { ChevronLeft, Leaf } from '../../src/components/icons';
 import { Silhouette } from '../../src/components/ui';
 import { useData, entriesOn, upcomingEvents, ENTRY_META, type Entry } from '../../src/lib/store';
+import { useUnits } from '../../src/lib/units';
 
 const DAY = 86400000;
 const WEEK_MS = 7 * DAY;
@@ -139,6 +140,7 @@ function feedCountFor(dayEntries: Entry[]): number {
 
 function DayTab() {
   const { entries, activeChild, growth } = useData();
+  const u = useUnits();
 
   // Scope to the active child so switching changes the ring + stats.
   const cid = activeChild?.id;
@@ -184,11 +186,12 @@ function DayTab() {
     .map((g) => (useWeight ? g.weightKg! : g.heightCm!));
   const latestVal = growthSeries.length ? growthSeries[growthSeries.length - 1] : null;
   const prevVal = growthSeries.length > 1 ? growthSeries[growthSeries.length - 2] : null;
-  const growthUnit = useWeight ? 'kg' : 'cm';
-  const growthLabel = latestVal != null ? `${latestVal}${growthUnit}` : '—';
+  const growthUnit = useWeight ? u.weightUnit : u.lengthUnit;
+  const gConv = (v: number) => (useWeight ? u.weightFromKg(v) : u.lengthFromCm(v));
+  const growthLabel = latestVal != null ? `${Math.round(gConv(latestVal) * 10) / 10}${growthUnit}` : '—';
   const growthTrend =
     latestVal != null && prevVal != null && latestVal !== prevVal
-      ? `${latestVal > prevVal ? '↑' : '↓'} ${Math.abs(+(latestVal - prevVal).toFixed(2))}${growthUnit}`
+      ? `${latestVal > prevVal ? '↑' : '↓'} ${Math.abs(+(gConv(latestVal) - gConv(prevVal)).toFixed(2))}${growthUnit}`
       : null;
 
   const sw = 64;
