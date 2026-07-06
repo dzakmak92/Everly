@@ -2,7 +2,7 @@ import React from 'react';
 import { Pressable, View } from 'react-native';
 import { Tabs } from 'expo-router';
 import { color, font, shadow } from '../../../src/theme/tokens';
-import { Home, Calendar, User, Grid, Plus } from '../../../src/components/icons';
+import { Home, Calendar, User, Settings, Plus } from '../../../src/components/icons';
 
 /** Raised center FAB used as the quick-add tab button. */
 function FabButton({ onPress }: { onPress?: (e: any) => void }) {
@@ -37,7 +37,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="calendar" options={{ title: 'Calendar', tabBarIcon: ({ color: c, size }) => <Calendar size={size} color={c as string} /> }} />
       <Tabs.Screen name="quick-add" options={{ title: '', tabBarButton: (p) => <FabButton onPress={p.onPress as any} /> }} />
       <Tabs.Screen name="family" options={{ title: 'Family', tabBarIcon: ({ color: c, size }) => <User size={size} color={c as string} /> }} />
-      <Tabs.Screen name="more" options={{ title: 'More', tabBarIcon: ({ color: c, size }) => <Grid size={size} color={c as string} /> }} />
+      <Tabs.Screen name="settings" options={{ title: 'Settings', tabBarIcon: ({ color: c, size }) => <Settings size={size} color={c as string} /> }} />
     </Tabs>
   );
 }

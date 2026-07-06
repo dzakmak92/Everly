@@ -96,7 +96,7 @@ export type TzContact = { id: string; name: string; tz: string; location?: strin
 export type SavedTip = { id: string; at: string; text: string };
 export type SupportContact = { id: string; name: string; role?: string; phone?: string };
 
-export type Caregiver = { id: string; name: string; role?: string };
+export type Caregiver = { id: string; name: string; role?: string; tz?: string; location?: string };
 /** Expense paidBy is 'me' or a caregiver id; splitPct = the other party's share. */
 export type Expense = { id: string; label: string; amount: number; paidBy: string; splitPct: number; settled: boolean; at: string };
 /** Weekly custody pattern: weekday 0(Sun)–6(Sat) → 'me' | caregiverId. */
@@ -209,7 +209,8 @@ type DataValue = {
   addMilestoneMedia: (milestoneId: string, items: MilestoneMedia[]) => void;
   removeMilestoneMedia: (milestoneId: string, mediaId: string) => void;
   caregivers: Caregiver[];
-  addCaregiver: (name: string, role?: string) => void;
+  addCaregiver: (name: string, role?: string, tz?: string, location?: string) => void;
+  updateCaregiver: (id: string, patch: Partial<Omit<Caregiver, 'id'>>) => void;
   deleteCaregiver: (id: string) => void;
   custody: Custody;
   setCustodyDay: (weekday: number, who: string) => void;
@@ -644,7 +645,14 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
     setMilestoneMedia((prev) => ({ ...prev, [milestoneId]: (prev[milestoneId] ?? []).filter((m) => m.id !== mediaId) }));
   }, []);
 
-  const addCaregiver = useCallback((name: string, role?: string) => setCaregivers((prev) => [...prev, { id: newId(), name: name.trim(), role: role?.trim() || undefined }]), []);
+  const addCaregiver = useCallback((name: string, role?: string, tz?: string, location?: string) => setCaregivers((prev) => [...prev, { id: newId(), name: name.trim(), role: role?.trim() || undefined, tz: tz?.trim() || undefined, location: location?.trim() || undefined }]), []);
+  const updateCaregiver = useCallback((id: string, patch: Partial<Omit<Caregiver, 'id'>>) => setCaregivers((prev) => prev.map((c) => (c.id === id ? {
+    ...c,
+    ...('name' in patch ? { name: patch.name?.trim() || c.name } : {}),
+    ...('role' in patch ? { role: patch.role?.trim() || undefined } : {}),
+    ...('tz' in patch ? { tz: patch.tz?.trim() || undefined } : {}),
+    ...('location' in patch ? { location: patch.location?.trim() || undefined } : {}),
+  } : c))), []);
   const deleteCaregiver = useCallback((id: string) => {
     setCaregivers((prev) => prev.filter((c) => c.id !== id));
     setCustody((prev) => { const next = { ...prev }; for (const k of Object.keys(next)) if (next[+k] === id) next[+k] = 'me'; return next; });
@@ -789,7 +797,7 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
       chores, addChore, toggleChore, deleteChore,
       milestones, addMilestone, deleteMilestone,
       milestoneMedia, addMilestoneMedia, removeMilestoneMedia,
-      caregivers, addCaregiver, deleteCaregiver,
+      caregivers, addCaregiver, updateCaregiver, deleteCaregiver,
       custody, setCustodyDay,
       expenses, addExpense, toggleExpenseSettled, deleteExpense,
       dueDate, setDueDate, checkins, addCheckin, upsertTodayCheckin, deleteCheckin, pregArchive, closePregnancy, dockSide, setDockSide,
