@@ -5,7 +5,7 @@ import { color, font, radius, shadow, fill, childToken } from '../../../src/them
 import { ChevronLeft, ChevronRight, Calendar, Shield, Activity, Heart, X, Search, BabyBean } from '../../../src/components/icons';
 import { Button, Field } from '../../../src/components/forms';
 import { useData, ENTRY_META, entryDetail, EntryKind, EventItem, Entry } from '../../../src/lib/store';
-import { useWeather, WeatherGlyph, searchCity, wxColor, type WxLocation, type DayWx } from '../../../src/lib/weather';
+import { useWeather, WeatherGlyph, wxLabel, searchCity, wxColor, type WxLocation, type DayWx } from '../../../src/lib/weather';
 import { useFeedback } from '../../../src/components/Feedback';
 import { DayTimeline, type TlItem } from '../../../src/components/DayTimeline';
 
@@ -213,24 +213,26 @@ export default function CalendarTab() {
             }}
           />
         )}
-      </View>
 
-      {/* Module selector pills — between the calendar and the selected-day section */}
-      {owners.length > 1 && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingHorizontal: 2 }}>
-          {owners.map((o) => {
-            const on = shown(o.key);
-            return (
-              <Pressable key={o.key} onPress={() => toggleOwner(o.key)} style={[{ flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: radius.pill, paddingVertical: 7, paddingLeft: 7, paddingRight: 13, backgroundColor: on ? o.dot : '#fff' }, shadow.card]}>
-                <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: on ? 'rgba(255,255,255,0.28)' : o.fill, alignItems: 'center', justifyContent: 'center' }}>
-                  <Text style={{ fontFamily: font.display700, fontSize: 10, color: on ? '#fff' : o.ink }}>{o.key === 'mumme' ? '♥' : o.label.charAt(0).toUpperCase()}</Text>
-                </View>
-                <Text style={{ fontFamily: font.body700, fontSize: 11.5, color: on ? '#fff' : color.muted }}>{o.label}</Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-      )}
+        {/* Whose-calendar filter — integrated as a footer legend inside the card */}
+        {owners.length > 1 && (
+          <View style={{ marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: color.hairline }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingHorizontal: 1, alignItems: 'center' }}>
+              {owners.map((o) => {
+                const on = shown(o.key);
+                return (
+                  <Pressable key={o.key} onPress={() => toggleOwner(o.key)} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: radius.pill, paddingVertical: 5, paddingLeft: 5, paddingRight: 12, backgroundColor: on ? o.dot : color.canvas, borderWidth: 1, borderColor: on ? o.dot : color.hairline }}>
+                    <View style={{ width: 19, height: 19, borderRadius: 9.5, backgroundColor: on ? 'rgba(255,255,255,0.3)' : o.fill, alignItems: 'center', justifyContent: 'center' }}>
+                      <Text style={{ fontFamily: font.display700, fontSize: 10, color: on ? '#fff' : o.ink }}>{o.key === 'mumme' ? '♥' : o.label.charAt(0).toUpperCase()}</Text>
+                    </View>
+                    <Text style={{ fontFamily: font.body700, fontSize: 11.5, color: on ? '#fff' : color.muted }}>{o.label}</Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </View>
+        )}
+      </View>
 
       {/* Selected-day header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4 }}>
@@ -349,12 +351,11 @@ function WeatherStrip({ wx, selKey, onSelect, onConfigure }: { wx: ReturnType<ty
   const today = new Date();
   const days = Array.from({ length: 7 }).map((_, i) => { const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + i); return { d, wx: wx.wxForDate(d) }; });
   const have = days.filter((x) => x.wx);
+  const t = wx.today;
   return (
     <View style={{ gap: 8 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4 }}>
-        <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 1.1, textTransform: 'uppercase', color: color.muted }}>
-          Forecast · {wx.location?.name}
-        </Text>
+        <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 1.1, textTransform: 'uppercase', color: color.muted }}>Weather</Text>
         <Pressable onPress={onConfigure} hitSlop={8}><Text style={{ fontFamily: font.body700, fontSize: 12, color: color.primary }}>Change</Text></Pressable>
       </View>
       {have.length === 0 ? (
@@ -362,25 +363,34 @@ function WeatherStrip({ wx, selKey, onSelect, onConfigure }: { wx: ReturnType<ty
           <Text style={{ fontFamily: font.body500, fontSize: 13, color: color.muted }}>{wx.loading ? 'Loading forecast…' : wx.error || 'No forecast available.'}</Text>
         </View>
       ) : (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingHorizontal: 4, paddingVertical: 2 }}>
-          {days.map(({ d, wx: w }, i) => {
-            const k = key(d.getFullYear(), d.getMonth(), d.getDate());
-            const sel = k === selKey;
-            const label = i === 0 ? 'Today' : d.toLocaleDateString(undefined, { weekday: 'short' });
-            return (
-              <Pressable key={k} onPress={() => onSelect(d)} style={[{ width: 74, borderRadius: radius.card, paddingVertical: 14, paddingHorizontal: 8, alignItems: 'center', gap: 8, backgroundColor: sel ? color.primary : '#fff' }, shadow.card]}>
-                <Text style={{ fontFamily: font.body700, fontSize: 12, color: sel ? '#fff' : color.inkSecondary }}>{label}</Text>
-                {w ? <WeatherGlyph code={w.code} size={32} color={sel ? '#fff' : undefined} /> : <Text style={{ fontFamily: font.body400, fontSize: 22, color: sel ? '#fff' : color.faint }}>·</Text>}
-                {w ? (
-                  <View style={{ alignItems: 'center' }}>
-                    <Text style={{ fontFamily: font.display700, fontSize: 16, color: sel ? '#fff' : color.ink }}>{w.tMax}°</Text>
-                    <Text style={{ fontFamily: font.body500, fontSize: 12, color: sel ? 'rgba(255,255,255,0.8)' : color.muted }}>{w.tMin}°</Text>
-                  </View>
-                ) : <Text style={{ fontFamily: font.body500, fontSize: 12, color: sel ? 'rgba(255,255,255,0.8)' : color.faint }}>—</Text>}
-              </Pressable>
-            );
-          })}
-        </ScrollView>
+        <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, paddingVertical: 13, paddingHorizontal: 14 }, shadow.card]}>
+          {/* Today summary */}
+          <Pressable onPress={() => onSelect(days[0].d)} style={{ flexDirection: 'row', alignItems: 'center', gap: 11, paddingBottom: 11, borderBottomWidth: 1, borderBottomColor: color.hairline }}>
+            {t ? <WeatherGlyph code={t.code} size={38} /> : null}
+            <View style={{ minWidth: 0 }}>
+              <Text style={{ fontFamily: font.display700, fontSize: 23, color: color.ink }}>{t ? `${t.tMax}°` : '—'}</Text>
+              {t ? <Text style={{ fontFamily: font.body500, fontSize: 11.5, color: color.muted, marginTop: 1 }}>{wxLabel(t.code)}</Text> : null}
+            </View>
+            <View style={{ marginLeft: 'auto', alignItems: 'flex-end' }}>
+              <Text style={{ fontFamily: font.body700, fontSize: 11.5, color: color.inkSecondary }} numberOfLines={1}>{wx.location?.name}</Text>
+              {t ? <Text style={{ fontFamily: font.body500, fontSize: 11, color: color.muted, marginTop: 2 }}>H:{t.tMax}° L:{t.tMin}°</Text> : null}
+            </View>
+          </Pressable>
+          {/* Mini 6-day strip */}
+          <View style={{ flexDirection: 'row', paddingTop: 10 }}>
+            {days.slice(1, 7).map(({ d, wx: w }) => {
+              const k = key(d.getFullYear(), d.getMonth(), d.getDate());
+              const sel = k === selKey;
+              return (
+                <Pressable key={k} onPress={() => onSelect(d)} style={{ flex: 1, alignItems: 'center', gap: 3, paddingVertical: 4, borderRadius: 10, backgroundColor: sel ? '#F0EEFA' : 'transparent' }}>
+                  <Text style={{ fontFamily: font.body700, fontSize: 9.5, color: sel ? color.primary : color.muted }}>{d.toLocaleDateString(undefined, { weekday: 'short' })}</Text>
+                  {w ? <WeatherGlyph code={w.code} size={17} /> : <Text style={{ fontFamily: font.body400, fontSize: 15, color: color.faint }}>·</Text>}
+                  <Text style={{ fontFamily: font.body700, fontSize: 11, color: color.ink }}>{w ? `${w.tMax}°` : '—'}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
       )}
     </View>
   );
