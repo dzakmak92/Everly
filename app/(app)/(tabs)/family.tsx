@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ScrollView, View, Text, Pressable, Modal } from 'react-native';
+import Svg, { Circle, Path, Text as SvgText } from 'react-native-svg';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, font, radius, shadow, childToken } from '../../../src/theme/tokens';
@@ -10,6 +11,61 @@ import { Silhouette } from '../../../src/components/ui';
 import { useData, CHILD_COLORS, type ChildColor } from '../../../src/lib/store';
 import { ageLabel, stageFrom, STAGE_LABEL } from '../../../src/lib/age';
 import { useFeedback } from '../../../src/components/Feedback';
+
+const TZ_PRESETS = ['Europe/Dublin', 'Europe/London', 'America/New_York', 'America/Chicago', 'America/Los_Angeles', 'Asia/Tokyo', 'Australia/Sydney'];
+const DIAL_COLORS = ['#2C8C7A', '#6B6FC9', '#B9902F', '#B5662E', '#567F39', '#2C5F90', '#B04070'];
+function fmtTime(tz: string, now: Date) {
+  try { return new Intl.DateTimeFormat([], { timeZone: tz, hour: 'numeric', minute: '2-digit', weekday: 'short' }).format(now); }
+  catch { return 'Invalid zone'; }
+}
+function localHourF(tz: string, now: Date): number | null {
+  try {
+    const parts = new Intl.DateTimeFormat([], { timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(now);
+    const h = parseInt(parts.find((p) => p.type === 'hour')?.value ?? '0', 10) % 24;
+    const m = parseInt(parts.find((p) => p.type === 'minute')?.value ?? '0', 10);
+    return h + m / 60;
+  } catch { return null; }
+}
+const tzAwake = (h: number | null) => h != null && ((h % 24) + 24) % 24 >= 7 && ((h % 24) + 24) % 24 < 22;
+type TzPerson = { key: string; name: string; tz: string; location?: string; color: string; initial: string; hour: number | null; onDelete?: () => void };
+
+/** 24-hour day/night dial: twilight bands + each person at their local hour. */
+function FamilyDial({ people }: { people: TzPerson[] }) {
+  const cx = 100, cy = 100, R = 80;
+  const ang = (h: number) => (h / 24) * 2 * Math.PI - Math.PI / 2;
+  const P = (r: number, a: number): [number, number] => [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+  const arc = (r: number, h0: number, h1: number) => {
+    const [x0, y0] = P(r, ang(h0)); const [x1, y1] = P(r, ang(h1));
+    const large = ((h1 - h0 + 24) % 24) > 12 ? 1 : 0;
+    return `M ${x0} ${y0} A ${r} ${r} 0 ${large} 1 ${x1} ${y1}`;
+  };
+  const bands: [number, number, string][] = [[21, 6, '#4C4680'], [6, 8, '#E8A57E'], [8, 17, '#F7CE86'], [17, 19, '#EC9A6A'], [19, 21, '#7E6BAE']];
+  const placed = people.filter((p) => p.hour != null);
+  const awakeN = placed.filter((p) => tzAwake(p.hour)).length;
+  return (
+    <Svg width={200} height={200} viewBox="0 0 200 200">
+      <Circle cx={cx} cy={cy} r={R} fill="none" stroke={color.hairline} strokeWidth={11} />
+      {bands.map(([h0, h1, c], i) => <Path key={i} d={arc(R, h0, h1)} fill="none" stroke={c} strokeWidth={11} strokeLinecap="round" />)}
+      {([[0, '0'], [6, '6'], [12, '12'], [18, '18']] as const).map(([h, label]) => {
+        const [x, y] = P(R - 19, ang(h));
+        return <SvgText key={h} x={x} y={y + 4} fontSize={12} fill={color.muted} textAnchor="middle" fontWeight="700">{label}</SvgText>;
+      })}
+      <SvgText x={cx} y={cy - 30} fontSize={13} textAnchor="middle">🌙</SvgText>
+      <SvgText x={cx} y={cy + 44} fontSize={15} textAnchor="middle">☀️</SvgText>
+      <SvgText x={cx} y={cy - 1} fontSize={24} fontWeight="700" fill={color.ink} textAnchor="middle">{String(awakeN)}</SvgText>
+      <SvgText x={cx} y={cy + 16} fontSize={10} fill={color.muted} textAnchor="middle">awake now</SvgText>
+      {placed.map((p) => {
+        const [x, y] = P(R, ang(p.hour as number));
+        return (
+          <React.Fragment key={p.key}>
+            <Circle cx={x} cy={y} r={12} fill={p.color} stroke="#fff" strokeWidth={3} />
+            <SvgText x={x} y={y + 4} fontSize={11} fontWeight="800" fill="#fff" textAnchor="middle">{p.initial}</SvgText>
+          </React.Fragment>
+        );
+      })}
+    </Svg>
+  );
+}
 
 const ROLES = ['Partner', 'Co-parent', 'Grandparent', 'Carer', 'Other'];
 const ROLE_STYLE: Record<string, { emoji: string; bg: string; fg: string }> = {
@@ -24,7 +80,7 @@ const roleStyle = (r?: string) => ROLE_STYLE[r ?? 'Other'] ?? ROLE_STYLE.Other;
 export default function Family() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { children, activeChild, setActiveChild, addChild, caregivers, addCaregiver, deleteCaregiver } = useData();
+  const { children, activeChild, setActiveChild, addChild, caregivers, addCaregiver, deleteCaregiver, tzContacts, addTzContact, deleteTzContact } = useData();
   const { toast } = useFeedback();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
@@ -37,6 +93,21 @@ export default function Family() {
   const [mName, setMName] = useState('');
   const [mRole, setMRole] = useState('Partner');
   const [mErr, setMErr] = useState('');
+
+  // Family around the world — live day/night dial.
+  const [now, setNow] = useState(new Date());
+  useEffect(() => { const id = setInterval(() => setNow(new Date()), 30000); return () => clearInterval(id); }, []);
+  const myTz = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { return 'UTC'; } })();
+  const [tzOpen, setTzOpen] = useState(false);
+  const [tName, setTName] = useState(''); const [tZone, setTZone] = useState(''); const [tLoc, setTLoc] = useState('');
+  const tzPeople: TzPerson[] = [
+    { key: 'you', name: 'You', tz: myTz, location: myTz, color: color.rose, initial: 'Y', hour: localHourF(myTz, now) },
+    ...tzContacts.map((c, i) => ({ key: c.id, name: c.name, tz: c.tz, location: c.location, color: DIAL_COLORS[i % DIAL_COLORS.length], initial: c.name.charAt(0).toUpperCase() || '·', hour: localHourF(c.tz, now), onDelete: () => deleteTzContact(c.id) })),
+  ];
+  function saveTz() {
+    if (tName.trim() && tZone.trim()) { addTzContact({ name: tName, tz: tZone, location: tLoc }); toast('Person added'); }
+    setTName(''); setTZone(''); setTLoc(''); setTzOpen(false);
+  }
 
   function openAdd() { setName(''); setBirth(''); setColorKey(CHILD_COLORS[children.length % CHILD_COLORS.length]); setError(''); setOpen(true); }
   function save() {
@@ -115,6 +186,55 @@ export default function Family() {
         })}
         <Button label="+ Add family member" variant="secondary" onPress={openMember} />
       </View>
+
+      {/* Family around the world — day/night dial for distant family & friends */}
+      <View style={{ gap: 10, marginTop: 6 }}>
+        <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: color.muted }}>Family around the world</Text>
+        <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 14, alignItems: 'center' }, shadow.card]}>
+          <FamilyDial people={tzPeople} />
+        </View>
+        {tzPeople.map((p) => (
+          <View key={p.key} style={[{ backgroundColor: '#fff', borderRadius: radius.cardSm, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 12 }, shadow.card]}>
+            <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: p.color, alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ fontFamily: font.display700, fontSize: 14, color: '#fff' }}>{p.initial}</Text>
+            </View>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={{ fontFamily: font.body700, fontSize: 14, color: color.ink }}>{p.name}</Text>
+              <Text style={{ fontFamily: font.body400, fontSize: 12, color: color.muted }}>{p.location || p.tz}</Text>
+            </View>
+            <View style={{ alignItems: 'flex-end' }}>
+              <Text style={{ fontFamily: font.body600, fontSize: 13, color: color.ink }}>{fmtTime(p.tz, now)}</Text>
+              <Text style={{ fontFamily: font.body500, fontSize: 11, color: tzAwake(p.hour) ? color.maternalTeal : color.muted }}>{tzAwake(p.hour) ? 'Awake' : 'Asleep'}</Text>
+            </View>
+            {p.onDelete && <Pressable onPress={p.onDelete} hitSlop={8} style={{ paddingLeft: 4 }}><Text style={{ fontFamily: font.body700, fontSize: 18, color: color.faint }}>×</Text></Pressable>}
+          </View>
+        ))}
+        <Button label="+ Add person" variant="secondary" onPress={() => setTzOpen(true)} />
+        <Text style={{ fontFamily: font.body400, fontSize: 11.5, color: color.muted, lineHeight: 17 }}>The ring is a 24-hour day/night clock — anyone on the bright arc is likely awake (7am–10pm local). Updates live.</Text>
+      </View>
+
+      {/* Add timezone person modal */}
+      <Modal visible={tzOpen} transparent animationType="fade" onRequestClose={() => setTzOpen(false)}>
+        <Pressable onPress={() => setTzOpen(false)} style={{ flex: 1, backgroundColor: 'rgba(40,18,50,0.35)', justifyContent: 'center', paddingHorizontal: 28 }}>
+          <Pressable onPress={() => {}} style={[{ backgroundColor: color.canvas, borderRadius: radius.card, padding: 20, gap: 14 }, shadow.card]}>
+            <Text style={{ fontFamily: font.display700, fontSize: 18, color: color.ink }}>Add person</Text>
+            <Field label="Name" value={tName} onChangeText={setTName} placeholder="e.g. Grandma" autoCapitalize="words" />
+            <Field label="Timezone (IANA)" value={tZone} onChangeText={setTZone} placeholder="Europe/London" />
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+              {TZ_PRESETS.map((p) => (
+                <Pressable key={p} onPress={() => setTZone(p)} style={{ paddingVertical: 6, paddingHorizontal: 10, borderRadius: radius.pill, backgroundColor: tZone === p ? color.primary : '#fff', borderWidth: 1, borderColor: tZone === p ? color.primary : color.hairline }}>
+                  <Text style={{ fontFamily: font.body500, fontSize: 11, color: tZone === p ? '#fff' : color.inkSecondary }}>{p.split('/')[1]?.replace('_', ' ')}</Text>
+                </Pressable>
+              ))}
+            </View>
+            <Field label="Location (optional)" value={tLoc} onChangeText={setTLoc} placeholder="e.g. London" autoCapitalize="words" />
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <Button label="Cancel" variant="secondary" onPress={() => setTzOpen(false)} style={{ flex: 1 }} />
+              <Button label="Add" onPress={saveTz} style={{ flex: 1 }} />
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
         <Pressable onPress={() => setOpen(false)} style={{ flex: 1, backgroundColor: 'rgba(40,18,50,0.35)', justifyContent: 'center', paddingHorizontal: 28 }}>

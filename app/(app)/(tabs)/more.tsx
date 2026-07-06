@@ -3,7 +3,7 @@ import { ScrollView, View, Text, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, font, radius, shadow } from '../../../src/theme/tokens';
-import { Clock, Calendar, Star, Settings, Shield, ChevronRight } from '../../../src/components/icons';
+import { Calendar, Star, Settings, Shield, ChevronRight } from '../../../src/components/icons';
 
 type Item = { label: string; sub: string; to: string; icon: React.ReactNode; bg: string };
 const Ic = (C: any, c: string) => <C size={19} color={c} />;
@@ -12,7 +12,6 @@ const SECTIONS: { title: string; items: Item[] }[] = [
   {
     title: 'Family & home',
     items: [
-      { label: 'Family timezones', sub: 'Keep distant family in sync', to: '/(app)/timezones', icon: Ic(Clock, '#2C5F90'), bg: '#DCEBFA' },
       { label: 'Kiosk mode', sub: 'A shared family wall display', to: '/(app)/kiosk', icon: Ic(Calendar, '#B5662E'), bg: '#FCE6D8' },
     ],
   },
