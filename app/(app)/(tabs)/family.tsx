@@ -141,21 +141,20 @@ export default function Family() {
             const sel = ch.id === activeChild?.id;
             return (
               <Pressable key={ch.id} onPress={() => router.push(`/(app)/child/${ch.id}` as any)}>
-                <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 14 }, shadow.card]}>
-                  <View style={{ width: 50, height: 50, borderRadius: 25, backgroundColor: t.fill, alignItems: 'center', justifyContent: 'center' }}>
-                    <Silhouette size={26} fill={t.stroke} />
+                <View style={[{ backgroundColor: '#fff', borderRadius: 12, paddingVertical: 8, paddingHorizontal: 11, flexDirection: 'row', alignItems: 'center', gap: 10 }, shadow.card]}>
+                  <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: t.fill, alignItems: 'center', justifyContent: 'center' }}>
+                    <Silhouette size={15} fill={t.stroke} />
                   </View>
-                  <View style={{ flex: 1 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <Text style={{ fontFamily: font.display700, fontSize: 18, color: color.ink }}>{ch.name}</Text>
-                      {sel && <View style={{ backgroundColor: t.fill, borderRadius: 999, paddingVertical: 2, paddingHorizontal: 8 }}><Text style={{ fontFamily: font.body700, fontSize: 10, color: t.stroke }}>ACTIVE</Text></View>}
-                    </View>
-                    <Text style={{ fontFamily: font.body400, fontSize: 13, color: color.muted, marginTop: 2 }}>
-                      {ch.birthDate ? `${ageLabel(ch.birthDate)} · ${STAGE_LABEL[stageFrom(ch.birthDate)]}` : 'No birth date'}
-                    </Text>
-                  </View>
-                  {!sel && <Pressable onPress={() => setActiveChild(ch.id)} hitSlop={8} style={{ paddingHorizontal: 6 }}><Text style={{ fontFamily: font.body700, fontSize: 12, color: color.primary }}>Set active</Text></Pressable>}
-                  <ChevronRight size={18} color={color.faint} />
+                  <Text style={{ flex: 1, fontFamily: font.body400, fontSize: 13.5, color: color.muted }} numberOfLines={1}>
+                    <Text style={{ fontFamily: font.display700, color: color.ink }}>{ch.name}</Text>
+                    {ch.birthDate ? `  ·  ${ageLabel(ch.birthDate)} · ${STAGE_LABEL[stageFrom(ch.birthDate)]}` : '  ·  No birth date'}
+                  </Text>
+                  {sel ? (
+                    <View style={{ backgroundColor: t.fill, borderRadius: 999, paddingVertical: 2, paddingHorizontal: 8 }}><Text style={{ fontFamily: font.body700, fontSize: 9, color: t.stroke }}>ACTIVE</Text></View>
+                  ) : (
+                    <Pressable onPress={() => setActiveChild(ch.id)} hitSlop={8} style={{ paddingHorizontal: 4 }}><Text style={{ fontFamily: font.body700, fontSize: 11.5, color: color.primary }}>Set active</Text></Pressable>
+                  )}
+                  <ChevronRight size={16} color={color.faint} />
                 </View>
               </Pressable>
             );
@@ -172,15 +171,15 @@ export default function Family() {
         ) : caregivers.map((cg) => {
           const rs = roleStyle(cg.role);
           return (
-            <View key={cg.id} style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 14 }, shadow.card]}>
-              <View style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: rs.bg, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ fontSize: 22 }}>{rs.emoji}</Text>
+            <View key={cg.id} style={[{ backgroundColor: '#fff', borderRadius: 12, paddingVertical: 8, paddingHorizontal: 11, flexDirection: 'row', alignItems: 'center', gap: 10 }, shadow.card]}>
+              <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: rs.bg, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ fontSize: 14 }}>{rs.emoji}</Text>
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: font.body700, fontSize: 16, color: color.ink }}>{cg.name}</Text>
-                <Text style={{ fontFamily: font.body400, fontSize: 12.5, color: color.muted, marginTop: 2 }}>{cg.role ?? 'Caregiver'}</Text>
-              </View>
-              <Pressable onPress={() => deleteCaregiver(cg.id)} hitSlop={8} style={{ paddingHorizontal: 4 }}><Text style={{ fontFamily: font.body700, fontSize: 20, color: color.faint }}>×</Text></Pressable>
+              <Text style={{ flex: 1, fontFamily: font.body400, fontSize: 13.5, color: color.muted }} numberOfLines={1}>
+                <Text style={{ fontFamily: font.body700, color: color.ink }}>{cg.name}</Text>
+                {`  ·  ${cg.role ?? 'Caregiver'}`}
+              </Text>
+              <Pressable onPress={() => deleteCaregiver(cg.id)} hitSlop={8} style={{ paddingHorizontal: 4 }}><Text style={{ fontFamily: font.body700, fontSize: 18, color: color.faint }}>×</Text></Pressable>
             </View>
           );
         })}
