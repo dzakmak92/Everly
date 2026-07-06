@@ -313,3 +313,66 @@ export const Pencil = ({ size = 18, color = '#9C9AB2', strokeWidth = 2 }: IconPr
     <Path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z" {...stroke(color, strokeWidth)} />
   </Svg>
 );
+
+export const Bell = ({ size = 18, color = '#6B6FC9' }: IconProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" {...stroke(color)} />
+    <Path d="M13.7 21a2 2 0 0 1-3.4 0" {...stroke(color)} />
+  </Svg>
+);
+
+export const Moon = ({ size = 18, color = '#6B6FC9' }: IconProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" {...stroke(color)} />
+  </Svg>
+);
+
+export const Ruler = ({ size = 18, color = '#2C8475' }: IconProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Path d="M3 9l6-6 12 12-6 6z" {...stroke(color)} />
+    <Path d="M9 6l1.5 1.5M12 3l1.5 1.5M6 9l1.5 1.5M15 6l1.5 1.5M9 12l1.5 1.5" {...stroke(color, 1.6)} />
+  </Svg>
+);
+
+export const Globe = ({ size = 18, color = '#B5662E' }: IconProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Circle cx={12} cy={12} r={9} {...stroke(color)} />
+    <Path d="M3 12h18M12 3c2.5 2.7 2.5 15.3 0 18M12 3c-2.5 2.7-2.5 15.3 0 18" {...stroke(color)} />
+  </Svg>
+);
+
+export const Lock = ({ size = 18, color = '#6F6E86' }: IconProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Rect x={5} y={11} width={14} height={10} rx={2} {...stroke(color)} />
+    <Path d="M8 11V7a4 4 0 0 1 8 0v4" {...stroke(color)} />
+  </Svg>
+);
+
+export const Mail = ({ size = 18, color = '#2C8475' }: IconProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Rect x={3} y={5} width={18} height={14} rx={2} {...stroke(color)} />
+    <Path d="M3 7l9 6 9-6" {...stroke(color)} />
+  </Svg>
+);
+
+export const LogOut = ({ size = 18, color = '#6F6E86' }: IconProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" {...stroke(color)} />
+    <Path d="M16 17l5-5-5-5M21 12H9" {...stroke(color)} />
+  </Svg>
+);
+
+export const Users = ({ size = 18, color = '#6B6FC9' }: IconProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" {...stroke(color)} />
+    <Circle cx={9} cy={7} r={4} {...stroke(color)} />
+    <Path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13A4 4 0 0 1 16 11" {...stroke(color)} />
+  </Svg>
+);
+
+export const CreditCard = ({ size = 18, color = '#C9A33B' }: IconProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Rect x={2} y={5} width={20} height={14} rx={2} {...stroke(color)} />
+    <Path d="M2 10h20" {...stroke(color)} />
+  </Svg>
+);

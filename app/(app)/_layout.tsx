@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import { Redirect, Stack } from 'expo-router';
 import { useSupabase } from '../../src/lib/supabase';
 import { DataProvider, useData } from '../../src/lib/store';
+import { SettingsProvider } from '../../src/lib/settings';
 import { Splash } from '../../src/components/forms';
 import { Onboarding } from '../../src/components/Onboarding';
 import { UpdateBanner } from '../../src/components/UpdateBanner';
@@ -37,9 +38,11 @@ export default function AppLayout() {
 
   return (
     <DataProvider>
-      <FeedbackProvider>
-        <Shell />
-      </FeedbackProvider>
+      <SettingsProvider>
+        <FeedbackProvider>
+          <Shell />
+        </FeedbackProvider>
+      </SettingsProvider>
     </DataProvider>
   );
 }
