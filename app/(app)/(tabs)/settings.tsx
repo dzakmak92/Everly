@@ -9,7 +9,7 @@ import { Silhouette } from '../../../src/components/ui';
 import Admin from '../admin';
 import { useSupabase, signOut, isAdmin } from '../../../src/lib/supabase';
 import { useData } from '../../../src/lib/store';
-import { useSettings, exportEverlyData, THEME_LABEL, UNITS_LABEL, DATEFMT_LABEL, WEEKSTART_LABEL, type ThemePref, type UnitsPref, type DateFmt, type WeekStart } from '../../../src/lib/settings';
+import { useSettings, exportEverlyData, THEME_LABEL, UNITS_LABEL, type ThemePref, type UnitsPref } from '../../../src/lib/settings';
 import { requestNotifPermission, syncNotifications } from '../../../src/lib/notifications';
 import { useFeedback } from '../../../src/components/Feedback';
 
@@ -142,8 +142,10 @@ export default function SettingsTab() {
   }
   function openLink(url: string, fallback: string) { Linking.openURL(url).catch(() => toast(fallback)); }
 
-  // Keep OS-scheduled reminders in sync with the saved preferences on open.
-  useEffect(() => { syncNotifications(prefs); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
+  // Re-sync OS-scheduled reminders whenever the notification prefs change —
+  // including after they hydrate from storage, so we never re-enable a reminder
+  // the user turned off.
+  useEffect(() => { syncNotifications({ notifReminders: prefs.notifReminders, notifDigest: prefs.notifDigest }); }, [prefs.notifReminders, prefs.notifDigest]);
   async function toggleNotif(key: 'notifReminders' | 'notifDigest') {
     const next = !prefs[key];
     if (next && Platform.OS !== 'web') {
@@ -151,7 +153,6 @@ export default function SettingsTab() {
       if (!ok) toast('Allow notifications in your device settings to get reminders');
     }
     setPref(key, next);
-    syncNotifications({ notifReminders: prefs.notifReminders, notifDigest: prefs.notifDigest, [key]: next });
   }
 
   // ── User settings page ──────────────────────────────────────────────────
@@ -180,8 +181,8 @@ export default function SettingsTab() {
       <Card>
         <Row first icon={<Bell size={16} color="#6B6FC9" />} bg="#E7E4FB" title="Notifications" sub="Reminders & weekly digest" onPress={() => setNotifOpen(true)} />
         <Row icon={<Moon size={16} color="#5B77B0" />} bg="#E0EEFB" title="Appearance" value={THEME_LABEL[prefs.theme]} onPress={() => setThemeOpen(true)} />
-        <Row icon={<Ruler size={16} color="#2C8475" />} bg="#D8F0E6" title="Units & formats" value={prefs.units === 'metric' ? 'Metric' : 'Imperial'} onPress={() => setUnitsOpen(true)} />
-        <Row icon={<Globe size={16} color="#B5662E" />} bg="#FCE6D8" title="Language" value="English" onPress={() => toast('More languages coming soon')} />
+        <Row icon={<Ruler size={16} color="#2C8475" />} bg="#D8F0E6" title="Units" value={prefs.units === 'metric' ? 'Metric' : 'Imperial'} onPress={() => setUnitsOpen(true)} />
+        <Row icon={<Globe size={16} color="#B5662E" />} bg="#FCE6D8" title="Language" value="English" />
       </Card>
 
       <SectionHeader>Privacy & data</SectionHeader>
@@ -200,15 +201,19 @@ export default function SettingsTab() {
       <Card>
         <Row first icon={<Info size={16} color="#5B77B0" />} bg="#E0EEFB" title="Help & FAQ" onPress={() => openLink('https://everly.app/help', 'Visit everly.app/help')} />
         <Row icon={<Mail size={16} color="#2C8475" />} bg="#D8F0E6" title="Contact support" onPress={() => openLink('mailto:support@everly.app', 'support@everly.app')} />
-        <Row icon={<Star size={16} color="#C9A33B" />} bg="#FBF1CE" title="Rate Everly" onPress={() => toast('Thanks! Opening the app store…')} />
+        <Row icon={<Star size={16} color="#C9A33B" />} bg="#FBF1CE" title="Rate Everly" onPress={() => openLink('https://everly.app', 'Thanks for your support!')} />
         <Row icon={<Info size={16} color="#6F6E86" />} bg="#EDECF5" title="About" sub={`Version ${APP_VERSION}`} onPress={() => setAboutOpen(true)} />
       </Card>
 
-      <SectionHeader>Developer</SectionHeader>
-      <Card>
-        <Row first icon={<Star size={16} color="#2C8475" />} bg="#D8F0E6" title="Load sample data" sub="Demo family + an active pregnancy" onPress={() => setConfirmSample(true)} />
-        <Row icon={<Shield size={16} color="#C9A33B" />} bg="#FBF1CE" title="Preview premium" sub="Unlock premium-gated screens" right={<Toggle on={demoPremium} onPress={() => setDemoPremium(!demoPremium)} />} />
-      </Card>
+      {admin && (
+        <>
+          <SectionHeader>Developer</SectionHeader>
+          <Card>
+            <Row first icon={<Star size={16} color="#2C8475" />} bg="#D8F0E6" title="Load sample data" sub="Replaces this device's data with a demo family" onPress={() => setConfirmSample(true)} />
+            <Row icon={<Shield size={16} color="#C9A33B" />} bg="#FBF1CE" title="Preview premium" sub="Unlock premium-gated screens" right={<Toggle on={demoPremium} onPress={() => setDemoPremium(!demoPremium)} />} />
+          </Card>
+        </>
+      )}
 
       <View style={{ marginTop: 16 }}>
         <Button label="Sign out" variant="secondary" onPress={onSignOut} loading={busy} />
@@ -235,7 +240,6 @@ export default function SettingsTab() {
                 );
               })}
             </View>
-            <Text style={{ textAlign: 'center', fontFamily: font.body600, fontSize: 10.5, color: '#b3a9c6', marginTop: 8, marginBottom: 2 }}>‹ swipe between User & Admin ›</Text>
           </>
         )}
       </View>
@@ -258,27 +262,14 @@ export default function SettingsTab() {
         <Text style={{ fontFamily: font.body400, fontSize: 11, color: color.muted }}>Dark theme rolls out screen-by-screen — your choice is saved now.</Text>
       </Sheet>
 
-      {/* Units & formats picker */}
-      <Sheet visible={unitsOpen} onClose={() => setUnitsOpen(false)} title="Units & formats">
-        <Text style={{ fontFamily: font.body700, fontSize: 10.5, letterSpacing: 0.8, textTransform: 'uppercase', color: color.muted }}>Measurement</Text>
+      {/* Units picker */}
+      <Sheet visible={unitsOpen} onClose={() => setUnitsOpen(false)} title="Units">
         <Card>
           {(['metric', 'imperial'] as UnitsPref[]).map((u, i) => (
-            <ChoiceRow key={u} first={i === 0} label={u === 'metric' ? 'Metric' : 'Imperial'} sub={UNITS_LABEL[u]} selected={prefs.units === u} onPress={() => setPref('units', u)} />
+            <ChoiceRow key={u} first={i === 0} label={u === 'metric' ? 'Metric' : 'Imperial'} sub={UNITS_LABEL[u]} selected={prefs.units === u} onPress={() => { setPref('units', u); setUnitsOpen(false); }} />
           ))}
         </Card>
-        <Text style={{ fontFamily: font.body700, fontSize: 10.5, letterSpacing: 0.8, textTransform: 'uppercase', color: color.muted }}>Date format</Text>
-        <Card>
-          {(['dmy', 'mdy', 'iso'] as DateFmt[]).map((d, i) => (
-            <ChoiceRow key={d} first={i === 0} label={DATEFMT_LABEL[d]} selected={prefs.dateFormat === d} onPress={() => setPref('dateFormat', d)} />
-          ))}
-        </Card>
-        <Text style={{ fontFamily: font.body700, fontSize: 10.5, letterSpacing: 0.8, textTransform: 'uppercase', color: color.muted }}>Week starts on</Text>
-        <Card>
-          {(['mon', 'sun'] as WeekStart[]).map((w, i) => (
-            <ChoiceRow key={w} first={i === 0} label={WEEKSTART_LABEL[w]} selected={prefs.weekStart === w} onPress={() => setPref('weekStart', w)} />
-          ))}
-        </Card>
-        <Button label="Done" onPress={() => setUnitsOpen(false)} />
+        <Text style={{ fontFamily: font.body400, fontSize: 11, color: color.muted }}>Applies to weight, height and volumes across the app.</Text>
       </Sheet>
 
       {/* Notifications */}
@@ -298,7 +289,6 @@ export default function SettingsTab() {
         <Card>
           <Row first title="Terms of Service" onPress={() => openLink('https://everly.app/terms', 'everly.app/terms')} />
           <Row title="Privacy Policy" onPress={() => openLink('https://everly.app/privacy', 'everly.app/privacy')} />
-          <Row title="Open-source licenses" onPress={() => toast('Licenses coming soon')} />
         </Card>
         <Button label="Close" variant="secondary" onPress={() => setAboutOpen(false)} />
       </Sheet>
