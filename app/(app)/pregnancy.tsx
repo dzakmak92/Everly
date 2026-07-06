@@ -15,6 +15,7 @@ import { useData, CHILD_COLORS, type ChildColor } from '../../src/lib/store';
 import { useFeedback } from '../../src/components/Feedback';
 import { childToken } from '../../src/theme/tokens';
 import { gestFromDueDate, weekContent, dueDateFromLmp, PREG_SYMPTOMS, MOODS } from '../../src/lib/pregnancy';
+import { useUnits } from '../../src/lib/units';
 
 const num = (s: string) => { const v = parseFloat(s); return isNaN(v) ? undefined : v; };
 
@@ -48,6 +49,7 @@ const SectionLabel = ({ children }: { children: React.ReactNode }) => (
 export default function Pregnancy() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const u = useUnits();
   const { dueDate, setDueDate, setMaternalBirth, addChild, setActiveChild, savedNames, checkins, addCheckin, deleteCheckin, pregArchive, closePregnancy } = useData();
   const { toast } = useFeedback();
   const archived = !dueDate ? (pregArchive[0] ?? null) : null;
@@ -195,7 +197,7 @@ export default function Pregnancy() {
                   <Text style={{ fontFamily: font.display700, fontSize: 19, color: color.ink, marginTop: 3 }}>Size of a {content.size.toLowerCase()}</Text>
                   {(content.lengthCm > 0 || content.weightG > 0) && (
                     <Text style={{ fontFamily: font.body400, fontSize: 13, color: color.inkSecondary, marginTop: 1 }}>
-                      {content.lengthCm > 0 ? `~${content.lengthCm} cm` : ''}{content.weightG > 0 ? ` · ~${content.weightG} g` : ''}
+                      {content.lengthCm > 0 ? `~${u.fmtLength(content.lengthCm, 0)}` : ''}{content.weightG > 0 ? ` · ~${u.fmtBabyWeight(content.weightG)}` : ''}
                     </Text>
                   )}
                 </View>

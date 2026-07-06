@@ -6,12 +6,14 @@ import { color, font, radius, shadow } from '../../src/theme/tokens';
 import { ChevronLeft, ChevronRight } from '../../src/components/icons';
 import { useData } from '../../src/lib/store';
 import { gestFromDueDate, weekContent, TRIMESTER_TIPS } from '../../src/lib/pregnancy';
+import { useUnits } from '../../src/lib/units';
 
 type Tab = 'baby' | 'body' | 'nutrition';
 
 export default function PregWeek() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const u = useUnits();
   const { dueDate } = useData();
   const gest = gestFromDueDate(dueDate ?? undefined);
   const [week, setWeek] = useState(gest?.week ?? 12);
@@ -58,7 +60,7 @@ export default function PregWeek() {
         <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 18 }, shadow.card]}>
           <Text style={{ fontFamily: font.display700, fontSize: 20, color: color.ink }}>Size of a {content.size.toLowerCase()}</Text>
           <Text style={{ fontFamily: font.body400, fontSize: 13, color: color.inkSecondary, marginTop: 2 }}>
-            {content.lengthCm > 0 ? `~${content.lengthCm} cm` : ''}{content.weightG > 0 ? ` · ~${content.weightG} g` : ''}
+            {content.lengthCm > 0 ? `~${u.fmtLength(content.lengthCm, 0)}` : ''}{content.weightG > 0 ? ` · ~${u.fmtBabyWeight(content.weightG)}` : ''}
           </Text>
           <Text style={{ fontFamily: font.body400, fontSize: 14, color: color.inkSecondary, marginTop: 8, lineHeight: 20 }}>{content.note}</Text>
         </View>

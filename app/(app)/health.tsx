@@ -8,6 +8,7 @@ import { Silhouette } from '../../src/components/ui';
 import { Shield, Syringe, Activity, Check, ChevronRight, ChevronLeft } from '../../src/components/icons';
 import { PremiumGate } from '../../src/components/PremiumGate';
 import { useData, type Child, type Vaccine, type Medication, type Growth } from '../../src/lib/store';
+import { useUnits } from '../../src/lib/units';
 
 const f = font;
 const c = color;
@@ -219,6 +220,7 @@ function DocIcon() {
 
 /* On-device summary: real, shareable health record (print → PDF on web). */
 function SummaryModal({ visible, onClose, children, vaccines, meds, growth }: { visible: boolean; onClose: () => void; children: Child[]; vaccines: Vaccine[]; meds: Medication[]; growth: Growth[] }) {
+  const u = useUnits();
   const canPrint = typeof window !== 'undefined' && typeof (window as any).print === 'function';
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -236,7 +238,7 @@ function SummaryModal({ visible, onClose, children, vaccines, meds, growth }: { 
                     <Text style={{ fontFamily: f.display700, fontSize: 15, color: c.ink }}>{ch.name}</Text>
                     <SummaryLine label="Vaccines" items={cv.map((v) => `${v.name} — ${v.givenDate ? `given ${shortDate(v.givenDate)}` : `due ${dueLabel(v.dueDate)}`}`)} />
                     <SummaryLine label="Medications" items={cm.map((m) => `${[m.name, m.dose].filter(Boolean).join(' ')}${m.schedule ? ` (${m.schedule})` : ''}${m.active ? '' : ' — paused'}`)} />
-                    <SummaryLine label="Growth" items={cg.slice(0, 5).map((g) => `${shortDate(g.at)}: ${[g.weightKg && `${g.weightKg}kg`, g.heightCm && `${g.heightCm}cm`].filter(Boolean).join(', ') || '—'}`)} />
+                    <SummaryLine label="Growth" items={cg.slice(0, 5).map((g) => `${shortDate(g.at)}: ${[g.weightKg && `${Math.round(u.weightFromKg(g.weightKg) * 10) / 10}${u.weightUnit}`, g.heightCm && `${Math.round(u.lengthFromCm(g.heightCm) * 10) / 10}${u.lengthUnit}`].filter(Boolean).join(', ') || '—'}`)} />
                   </View>
                 );
               })}

@@ -17,6 +17,7 @@ import {
   CHILD_COLORS, type ChildColor,
 } from '../../../src/lib/store';
 import { useFeedback } from '../../../src/components/Feedback';
+import { useUnits } from '../../../src/lib/units';
 
 const num = (s: string) => { const v = parseFloat(s); return isNaN(v) ? undefined : v; };
 const dateOf = (iso: string) =>
@@ -48,6 +49,7 @@ export default function ChildProfile() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const u = useUnits();
   const d = useData();
   const { toast } = useFeedback();
   const child = d.children.find((c) => c.id === id);
@@ -113,7 +115,7 @@ export default function ChildProfile() {
     if (modal === 'edit') { d.updateChild(child!.id, { name, birthDate: birth, color: colorKey }); ok = true; }
     else if (modal === 'vaccine' && name.trim()) { d.addVaccine({ childId: child!.id, name, dueDate: f1 }); ok = true; }
     else if (modal === 'med' && name.trim()) { d.addMedication({ childId: child!.id, name, dose: f1, schedule: f2 }); ok = true; }
-    else if (modal === 'growth') { const w = num(f1); const h = num(f2); if (w != null || h != null) { d.addGrowth({ childId: child!.id, weightKg: w, heightCm: h }); ok = true; } }
+    else if (modal === 'growth') { const w = num(f1); const h = num(f2); if (w != null || h != null) { d.addGrowth({ childId: child!.id, weightKg: w == null ? undefined : u.weightToKg(w), heightCm: h == null ? undefined : u.lengthToCm(h) }); ok = true; } }
     else if (modal === 'milestone' && name.trim()) { d.addMilestone({ childId: child!.id, title: name, date: f1 || new Date().toISOString().slice(0, 10), note: f2 }); ok = true; }
     if (ok) toast('Saved');
     setModal(null);
@@ -159,12 +161,12 @@ export default function ChildProfile() {
       <View style={{ paddingHorizontal: 20, paddingBottom: 18, flexDirection: 'row', gap: 8 }}>
         {isBaby ? (
           <>
-            <StatTile value={`${feeds}`} label="Feeds" sub={ml ? `${ml} ml` : 'none yet'} subColor={childToken.mint.stroke} />
+            <StatTile value={`${feeds}`} label="Feeds" sub={ml ? u.fmtBottle(ml) : 'none yet'} subColor={childToken.mint.stroke} />
             <StatTile value={sleepLabel} label="Sleep" sub={sleepCount ? `${sleepCount} naps` : 'none yet'} subColor={PERIWINKLE} />
             <StatTile
-              value={latestGrowth?.weightKg ? `${latestGrowth.weightKg}` : '—'}
+              value={latestGrowth?.weightKg ? `${Math.round(u.weightFromKg(latestGrowth.weightKg) * 10) / 10}` : '—'}
               label="Growth"
-              sub={latestGrowth?.weightKg ? 'kg latest' : 'add weight'}
+              sub={latestGrowth?.weightKg ? `${u.weightUnit} latest` : 'add weight'}
               subColor={color.gold}
             />
           </>
@@ -246,7 +248,7 @@ export default function ChildProfile() {
               <ListRow
                 chipBg={childToken.butter.fill}
                 icon={<ActivityIcon size={18} color={color.gold} />}
-                title={`${latestGrowth.weightKg ? `${latestGrowth.weightKg} kg` : ''}${latestGrowth.heightCm ? `${latestGrowth.weightKg ? '  ·  ' : ''}${latestGrowth.heightCm} cm` : ''}` || 'Measurement'}
+                title={`${latestGrowth.weightKg ? u.fmtWeight(latestGrowth.weightKg) : ''}${latestGrowth.heightCm ? `${latestGrowth.weightKg ? '  ·  ' : ''}${u.fmtLength(latestGrowth.heightCm)}` : ''}` || 'Measurement'}
                 sub={`latest · ${dateOf(latestGrowth.at)} · ${myGrowth.length} entr${myGrowth.length === 1 ? 'y' : 'ies'}`}
                 last
               />
@@ -372,8 +374,8 @@ export default function ChildProfile() {
               <Field label="Schedule (optional)" value={f2} onChangeText={setF2} placeholder="e.g. Daily 08:00" />
             </>}
             {modal === 'growth' && <>
-              <Field label="Weight (kg)" value={f1} onChangeText={setF1} placeholder="e.g. 6.4" />
-              <Field label="Height (cm, optional)" value={f2} onChangeText={setF2} placeholder="e.g. 62" />
+              <Field label={`Weight (${u.weightUnit})`} value={f1} onChangeText={setF1} placeholder={u.imperial ? 'e.g. 14' : 'e.g. 6.4'} />
+              <Field label={`Height (${u.lengthUnit}, optional)`} value={f2} onChangeText={setF2} placeholder={u.imperial ? 'e.g. 24' : 'e.g. 62'} />
             </>}
             {modal === 'milestone' && <>
               <Field label="Milestone" value={name} onChangeText={setName} placeholder="e.g. First smile" autoCapitalize="sentences" />
