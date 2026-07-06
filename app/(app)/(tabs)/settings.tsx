@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, Pressable, Modal, ScrollView, Platform, Share, Linking, useWindowDimensions, Animated, PanResponder } from 'react-native';
+import { View, Text, Pressable, Modal, ScrollView, Platform, Share, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, font, radius, shadow } from '../../../src/theme/tokens';
@@ -82,7 +82,6 @@ function Sheet({ visible, onClose, title, children }: { visible: boolean; onClos
 export default function SettingsTab() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
   const { session, profile } = useSupabase();
   const { prefs, setPref } = useSettings();
   const { clearAll, loadSampleData, demoPremium, setDemoPremium } = useData();
@@ -91,31 +90,26 @@ export default function SettingsTab() {
   const [admin, setAdmin] = useState(false);
   useEffect(() => { let a = true; isAdmin().then((v) => { if (a) setAdmin(v); }).catch(() => {}); return () => { a = false; }; }, []);
 
-  // User/Admin pager — a translate-based pager so both the tab buttons and a
-  // horizontal swipe move it reliably (RNW's ScrollView.scrollTo is flaky here).
+  // User/Admin switch. We render only the active page as its own full-height
+  // ScrollView (so vertical scrolling always works), switch instantly via the
+  // tab buttons, and add a passive touch-swipe on web that never blocks scroll.
   const [tab, setTab] = useState(0);
-  const [pagerW, setPagerW] = useState(width);
-  const tabRef = useRef(0);
-  const anim = useRef(new Animated.Value(0)).current;
-  function goTab(i: number) {
-    tabRef.current = i; setTab(i);
-    Animated.spring(anim, { toValue: -i * pagerW, useNativeDriver: false, speed: 16, bounciness: 3 }).start();
-  }
-  useEffect(() => { anim.setValue(-tabRef.current * pagerW); }, [pagerW, anim]);
-  const pan = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dx) > 14 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
-      onPanResponderMove: (_e, g) => anim.setValue(-tabRef.current * pagerW + g.dx),
-      onPanResponderRelease: (_e, g) => {
-        let i = tabRef.current;
-        if (g.dx < -48 && i < 1) i = 1;
-        else if (g.dx > 48 && i > 0) i = 0;
-        goTab(i);
-      },
-    }),
-  ).current;
-
-  const [pagerH, setPagerH] = useState(0);
+  function goTab(i: number) { setTab(i); }
+  const swipeRef = useRef<any>(null);
+  useEffect(() => {
+    if (Platform.OS !== 'web' || !admin) return;
+    const el = swipeRef.current;
+    if (!el || !el.addEventListener) return;
+    let x0 = 0, y0 = 0, t0 = 0;
+    const start = (e: any) => { const t = e.touches[0]; x0 = t.clientX; y0 = t.clientY; t0 = Date.now(); };
+    const end = (e: any) => {
+      const t = e.changedTouches[0]; const dx = t.clientX - x0, dy = t.clientY - y0;
+      if (Date.now() - t0 < 600 && Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.8) setTab(dx < 0 ? 1 : 0);
+    };
+    el.addEventListener('touchstart', start, { passive: true });
+    el.addEventListener('touchend', end, { passive: true });
+    return () => { el.removeEventListener('touchstart', start); el.removeEventListener('touchend', end); };
+  }, [admin]);
   const [busy, setBusy] = useState(false);
   const [themeOpen, setThemeOpen] = useState(false);
   const [unitsOpen, setUnitsOpen] = useState(false);
@@ -247,15 +241,8 @@ export default function SettingsTab() {
       </View>
 
       {admin ? (
-        <View
-          style={{ flex: 1, marginTop: 6, overflow: 'hidden' }}
-          onLayout={(e) => { setPagerW(e.nativeEvent.layout.width); setPagerH(e.nativeEvent.layout.height); }}
-          {...pan.panHandlers}
-        >
-          <Animated.View style={{ flexDirection: 'row', width: pagerW * 2, height: pagerH || undefined, transform: [{ translateX: anim }] }}>
-            <View style={{ width: pagerW, height: pagerH || undefined }}>{UserPage}</View>
-            <View style={{ width: pagerW, height: pagerH || undefined }}>{AdminPage}</View>
-          </Animated.View>
+        <View ref={swipeRef} style={{ flex: 1, marginTop: 6 }}>
+          {tab === 0 ? UserPage : AdminPage}
         </View>
       ) : (
         <View style={{ flex: 1, marginTop: 6 }}>{UserPage}</View>
