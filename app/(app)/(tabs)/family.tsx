@@ -27,7 +27,7 @@ function localHourF(tz: string, now: Date): number | null {
   } catch { return null; }
 }
 const tzAwake = (h: number | null) => h != null && ((h % 24) + 24) % 24 >= 7 && ((h % 24) + 24) % 24 < 22;
-type TzPerson = { key: string; name: string; tz: string; location?: string; color: string; initial: string; hour: number | null; onDelete?: () => void };
+type TzPerson = { key: string; name: string; tz?: string; location?: string; color: string; initial: string; hour: number | null; role?: string; isYou?: boolean; onEdit?: () => void; onDelete?: () => void };
 
 /** 24-hour day/night dial: twilight bands + each person at their local hour. */
 function FamilyDial({ people }: { people: TzPerson[] }) {
@@ -80,7 +80,7 @@ const roleStyle = (r?: string) => ROLE_STYLE[r ?? 'Other'] ?? ROLE_STYLE.Other;
 export default function Family() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { children, activeChild, setActiveChild, addChild, caregivers, addCaregiver, deleteCaregiver, tzContacts, addTzContact, deleteTzContact } = useData();
+  const { children, activeChild, setActiveChild, addChild, caregivers, addCaregiver, updateCaregiver, deleteCaregiver } = useData();
   const { toast } = useFeedback();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
@@ -88,26 +88,27 @@ export default function Family() {
   const [colorKey, setColorKey] = useState<ChildColor>(CHILD_COLORS[0]);
   const [error, setError] = useState('');
 
-  // Family member (partner, grandparent, carer…) modal.
+  // Family member (partner, grandparent, carer…) modal — add or edit.
   const [memberOpen, setMemberOpen] = useState(false);
+  const [mEditId, setMEditId] = useState<string | null>(null);
   const [mName, setMName] = useState('');
   const [mRole, setMRole] = useState('Partner');
+  const [mTz, setMTz] = useState('');
+  const [mLoc, setMLoc] = useState('');
   const [mErr, setMErr] = useState('');
 
   // Family around the world — live day/night dial.
   const [now, setNow] = useState(new Date());
   useEffect(() => { const id = setInterval(() => setNow(new Date()), 30000); return () => clearInterval(id); }, []);
   const myTz = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { return 'UTC'; } })();
-  const [tzOpen, setTzOpen] = useState(false);
-  const [tName, setTName] = useState(''); const [tZone, setTZone] = useState(''); const [tLoc, setTLoc] = useState('');
   const tzPeople: TzPerson[] = [
-    { key: 'you', name: 'You', tz: myTz, location: myTz, color: color.rose, initial: 'Y', hour: localHourF(myTz, now) },
-    ...tzContacts.map((c, i) => ({ key: c.id, name: c.name, tz: c.tz, location: c.location, color: DIAL_COLORS[i % DIAL_COLORS.length], initial: c.name.charAt(0).toUpperCase() || '·', hour: localHourF(c.tz, now), onDelete: () => deleteTzContact(c.id) })),
+    { key: 'you', name: 'You', tz: myTz, location: myTz.split('/')[1]?.replace('_', ' ') || myTz, color: color.rose, initial: 'Y', hour: localHourF(myTz, now), isYou: true },
+    ...caregivers.map((c, i) => ({
+      key: c.id, name: c.name, tz: c.tz, location: c.location, color: DIAL_COLORS[i % DIAL_COLORS.length],
+      initial: c.name.charAt(0).toUpperCase() || '·', hour: c.tz ? localHourF(c.tz, now) : null, role: c.role,
+      onEdit: () => openMember(c.id), onDelete: () => deleteCaregiver(c.id),
+    })),
   ];
-  function saveTz() {
-    if (tName.trim() && tZone.trim()) { addTzContact({ name: tName, tz: tZone, location: tLoc }); toast('Person added'); }
-    setTName(''); setTZone(''); setTLoc(''); setTzOpen(false);
-  }
 
   function openAdd() { setName(''); setBirth(''); setColorKey(CHILD_COLORS[children.length % CHILD_COLORS.length]); setError(''); setOpen(true); }
   function save() {
@@ -116,12 +117,17 @@ export default function Family() {
     setOpen(false);
     toast('Child added');
   }
-  function openMember() { setMName(''); setMRole('Partner'); setMErr(''); setMemberOpen(true); }
+  function openMember(id?: string) {
+    const cg = id ? caregivers.find((c) => c.id === id) : null;
+    setMEditId(cg?.id ?? null);
+    setMName(cg?.name ?? ''); setMRole(cg?.role ?? 'Partner'); setMTz(cg?.tz ?? ''); setMLoc(cg?.location ?? '');
+    setMErr(''); setMemberOpen(true);
+  }
   function saveMember() {
     if (!mName.trim()) { setMErr("Enter the person's name."); return; }
-    addCaregiver(mName, mRole);
+    if (mEditId) { updateCaregiver(mEditId, { name: mName, role: mRole, tz: mTz, location: mLoc }); toast('Saved'); }
+    else { addCaregiver(mName, mRole, mTz, mLoc); toast('Member added'); }
     setMemberOpen(false);
-    toast('Member added');
   }
 
   return (
@@ -163,77 +169,47 @@ export default function Family() {
         </>
       )}
 
-      {/* Family around the world — day/night dial for distant family & friends */}
+      {/* Family & caregivers — live day/night dial + editable member list */}
       <View style={{ gap: 10, marginTop: 6 }}>
-        <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: color.muted }}>Family around the world</Text>
+        <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: color.muted }}>Family &amp; caregivers</Text>
         <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 14, alignItems: 'center' }, shadow.card]}>
           <FamilyDial people={tzPeople} />
         </View>
-        {tzPeople.map((p) => (
-          <View key={p.key} style={[{ backgroundColor: '#fff', borderRadius: radius.cardSm, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 12 }, shadow.card]}>
-            <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: p.color, alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ fontFamily: font.display700, fontSize: 14, color: '#fff' }}>{p.initial}</Text>
+        {tzPeople.map((p) => {
+          const rs = roleStyle(p.role);
+          const avatar = (
+            <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: p.isYou ? p.color : rs.bg, alignItems: 'center', justifyContent: 'center' }}>
+              {p.isYou ? <Text style={{ fontFamily: font.display700, fontSize: 14, color: '#fff' }}>{p.initial}</Text> : <Text style={{ fontSize: 15 }}>{rs.emoji}</Text>}
             </View>
+          );
+          const info = (
             <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={{ fontFamily: font.body700, fontSize: 14, color: color.ink }}>{p.name}</Text>
-              <Text style={{ fontFamily: font.body400, fontSize: 12, color: color.muted }}>{p.location || p.tz}</Text>
-            </View>
-            <View style={{ alignItems: 'flex-end' }}>
-              <Text style={{ fontFamily: font.body600, fontSize: 13, color: color.ink }}>{fmtTime(p.tz, now)}</Text>
-              <Text style={{ fontFamily: font.body500, fontSize: 11, color: tzAwake(p.hour) ? color.maternalTeal : color.muted }}>{tzAwake(p.hour) ? 'Awake' : 'Asleep'}</Text>
-            </View>
-            {p.onDelete && <Pressable onPress={p.onDelete} hitSlop={8} style={{ paddingLeft: 4 }}><Text style={{ fontFamily: font.body700, fontSize: 18, color: color.faint }}>×</Text></Pressable>}
-          </View>
-        ))}
-        <Button label="+ Add person" variant="secondary" onPress={() => setTzOpen(true)} />
-        <Text style={{ fontFamily: font.body400, fontSize: 11.5, color: color.muted, lineHeight: 17 }}>The ring is a 24-hour day/night clock — anyone on the bright arc is likely awake (7am–10pm local). Updates live.</Text>
-      </View>
-
-      {/* Family & caregivers */}
-      <View style={{ gap: 10, marginTop: 6 }}>
-        <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: color.muted }}>Family &amp; caregivers</Text>
-        {caregivers.length === 0 ? (
-          <Text style={{ fontFamily: font.body400, fontSize: 13, color: color.muted }}>Add your partner, grandparents or a carer — they'll appear in co-parent and custody tools too.</Text>
-        ) : caregivers.map((cg) => {
-          const rs = roleStyle(cg.role);
-          return (
-            <View key={cg.id} style={[{ backgroundColor: '#fff', borderRadius: 12, paddingVertical: 8, paddingHorizontal: 11, flexDirection: 'row', alignItems: 'center', gap: 10 }, shadow.card]}>
-              <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: rs.bg, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ fontSize: 14 }}>{rs.emoji}</Text>
-              </View>
-              <Text style={{ flex: 1, fontFamily: font.body400, fontSize: 13.5, color: color.muted }} numberOfLines={1}>
-                <Text style={{ fontFamily: font.body700, color: color.ink }}>{cg.name}</Text>
-                {`  ·  ${cg.role ?? 'Caregiver'}`}
+              <Text style={{ fontFamily: font.body700, fontSize: 14, color: color.ink }} numberOfLines={1}>{p.name}</Text>
+              <Text style={{ fontFamily: font.body400, fontSize: 12, color: color.muted }} numberOfLines={1}>
+                {p.isYou ? (p.location || p.tz) : [p.role ?? 'Caregiver', p.location].filter(Boolean).join(' · ')}
               </Text>
-              <Pressable onPress={() => deleteCaregiver(cg.id)} hitSlop={8} style={{ paddingHorizontal: 4 }}><Text style={{ fontFamily: font.body700, fontSize: 18, color: color.faint }}>×</Text></Pressable>
+            </View>
+          );
+          return (
+            <View key={p.key} style={[{ backgroundColor: '#fff', borderRadius: radius.cardSm, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 12 }, shadow.card]}>
+              {p.onEdit ? (
+                <Pressable onPress={p.onEdit} style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, minWidth: 0 }}>{avatar}{info}</Pressable>
+              ) : (
+                <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, minWidth: 0 }}>{avatar}{info}</View>
+              )}
+              {p.tz && (
+                <View style={{ alignItems: 'flex-end' }}>
+                  <Text style={{ fontFamily: font.body600, fontSize: 13, color: color.ink }}>{fmtTime(p.tz, now)}</Text>
+                  <Text style={{ fontFamily: font.body500, fontSize: 11, color: tzAwake(p.hour) ? color.maternalTeal : color.muted }}>{tzAwake(p.hour) ? 'Awake' : 'Asleep'}</Text>
+                </View>
+              )}
+              {p.onDelete && <Pressable onPress={p.onDelete} hitSlop={8} style={{ paddingLeft: 4 }}><Text style={{ fontFamily: font.body700, fontSize: 18, color: color.faint }}>×</Text></Pressable>}
             </View>
           );
         })}
-        <Button label="+ Add family member" variant="secondary" onPress={openMember} />
+        <Button label="+ Add person" variant="secondary" onPress={() => openMember()} />
+        <Text style={{ fontFamily: font.body400, fontSize: 11.5, color: color.muted, lineHeight: 17 }}>Tap anyone to edit. The ring is a 24-hour day/night clock — anyone on the bright arc is likely awake (7am–10pm local). Add a timezone to place someone on it.</Text>
       </View>
-
-      {/* Add timezone person modal */}
-      <Modal visible={tzOpen} transparent animationType="fade" onRequestClose={() => setTzOpen(false)}>
-        <Pressable onPress={() => setTzOpen(false)} style={{ flex: 1, backgroundColor: 'rgba(40,18,50,0.35)', justifyContent: 'center', paddingHorizontal: 28 }}>
-          <Pressable onPress={() => {}} style={[{ backgroundColor: color.canvas, borderRadius: radius.card, padding: 20, gap: 14 }, shadow.card]}>
-            <Text style={{ fontFamily: font.display700, fontSize: 18, color: color.ink }}>Add person</Text>
-            <Field label="Name" value={tName} onChangeText={setTName} placeholder="e.g. Grandma" autoCapitalize="words" />
-            <Field label="Timezone (IANA)" value={tZone} onChangeText={setTZone} placeholder="Europe/London" />
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-              {TZ_PRESETS.map((p) => (
-                <Pressable key={p} onPress={() => setTZone(p)} style={{ paddingVertical: 6, paddingHorizontal: 10, borderRadius: radius.pill, backgroundColor: tZone === p ? color.primary : '#fff', borderWidth: 1, borderColor: tZone === p ? color.primary : color.hairline }}>
-                  <Text style={{ fontFamily: font.body500, fontSize: 11, color: tZone === p ? '#fff' : color.inkSecondary }}>{p.split('/')[1]?.replace('_', ' ')}</Text>
-                </Pressable>
-              ))}
-            </View>
-            <Field label="Location (optional)" value={tLoc} onChangeText={setTLoc} placeholder="e.g. London" autoCapitalize="words" />
-            <View style={{ flexDirection: 'row', gap: 10 }}>
-              <Button label="Cancel" variant="secondary" onPress={() => setTzOpen(false)} style={{ flex: 1 }} />
-              <Button label="Add" onPress={saveTz} style={{ flex: 1 }} />
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
 
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
         <Pressable onPress={() => setOpen(false)} style={{ flex: 1, backgroundColor: 'rgba(40,18,50,0.35)', justifyContent: 'center', paddingHorizontal: 28 }}>
@@ -266,7 +242,7 @@ export default function Family() {
       <Modal visible={memberOpen} transparent animationType="fade" onRequestClose={() => setMemberOpen(false)}>
         <Pressable onPress={() => setMemberOpen(false)} style={{ flex: 1, backgroundColor: 'rgba(40,18,50,0.35)', justifyContent: 'center', paddingHorizontal: 28 }}>
           <Pressable onPress={() => {}} style={[{ backgroundColor: color.canvas, borderRadius: radius.card, padding: 20, gap: 14 }, shadow.card]}>
-            <Text style={{ fontFamily: font.display700, fontSize: 18, color: color.ink }}>Add family member</Text>
+            <Text style={{ fontFamily: font.display700, fontSize: 18, color: color.ink }}>{mEditId ? 'Edit person' : 'Add person'}</Text>
             <Field label="Name" value={mName} onChangeText={(t) => { setMName(t); if (mErr) setMErr(''); }} placeholder="e.g. James" autoCapitalize="words" />
             <View style={{ gap: 8 }}>
               <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 0.8, textTransform: 'uppercase', color: color.muted }}>Relationship</Text>
@@ -281,11 +257,36 @@ export default function Family() {
                 })}
               </View>
             </View>
+            <View style={{ gap: 8 }}>
+              <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 0.8, textTransform: 'uppercase', color: color.muted }}>Timezone (optional)</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                {mTz !== '' && !TZ_PRESETS.includes(mTz) && (
+                  <View style={{ paddingVertical: 6, paddingHorizontal: 10, borderRadius: radius.pill, backgroundColor: color.primary, borderWidth: 1, borderColor: color.primary }}>
+                    <Text style={{ fontFamily: font.body500, fontSize: 11, color: '#fff' }}>{mTz.split('/')[1]?.replace('_', ' ') || mTz}</Text>
+                  </View>
+                )}
+                {TZ_PRESETS.map((p) => {
+                  const sel = mTz === p;
+                  return (
+                    <Pressable key={p} onPress={() => setMTz(sel ? '' : p)} style={{ paddingVertical: 6, paddingHorizontal: 10, borderRadius: radius.pill, backgroundColor: sel ? color.primary : '#fff', borderWidth: 1, borderColor: sel ? color.primary : color.hairline }}>
+                      <Text style={{ fontFamily: font.body500, fontSize: 11, color: sel ? '#fff' : color.inkSecondary }}>{p.split('/')[1]?.replace('_', ' ')}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+              <Text style={{ fontFamily: font.body400, fontSize: 11, color: color.muted }}>Adding a timezone places them on the day/night ring.</Text>
+            </View>
+            <Field label="Location (optional)" value={mLoc} onChangeText={setMLoc} placeholder="e.g. London" autoCapitalize="words" />
             <Notice text={mErr} />
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <Button label="Cancel" variant="secondary" onPress={() => setMemberOpen(false)} style={{ flex: 1 }} />
-              <Button label="Add" onPress={saveMember} style={{ flex: 1 }} />
+              <Button label={mEditId ? 'Save' : 'Add'} onPress={saveMember} style={{ flex: 1 }} />
             </View>
+            {mEditId && (
+              <Pressable onPress={() => { deleteCaregiver(mEditId); setMemberOpen(false); toast('Removed'); }} hitSlop={6} style={{ alignItems: 'center', paddingTop: 2 }}>
+                <Text style={{ fontFamily: font.body600, fontSize: 13, color: '#B04070' }}>Remove person</Text>
+              </Pressable>
+            )}
           </Pressable>
         </Pressable>
       </Modal>
