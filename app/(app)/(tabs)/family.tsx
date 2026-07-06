@@ -163,29 +163,6 @@ export default function Family() {
         </>
       )}
 
-      {/* Family & caregivers */}
-      <View style={{ gap: 10, marginTop: 6 }}>
-        <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: color.muted }}>Family &amp; caregivers</Text>
-        {caregivers.length === 0 ? (
-          <Text style={{ fontFamily: font.body400, fontSize: 13, color: color.muted }}>Add your partner, grandparents or a carer — they'll appear in co-parent and custody tools too.</Text>
-        ) : caregivers.map((cg) => {
-          const rs = roleStyle(cg.role);
-          return (
-            <View key={cg.id} style={[{ backgroundColor: '#fff', borderRadius: 12, paddingVertical: 8, paddingHorizontal: 11, flexDirection: 'row', alignItems: 'center', gap: 10 }, shadow.card]}>
-              <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: rs.bg, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ fontSize: 14 }}>{rs.emoji}</Text>
-              </View>
-              <Text style={{ flex: 1, fontFamily: font.body400, fontSize: 13.5, color: color.muted }} numberOfLines={1}>
-                <Text style={{ fontFamily: font.body700, color: color.ink }}>{cg.name}</Text>
-                {`  ·  ${cg.role ?? 'Caregiver'}`}
-              </Text>
-              <Pressable onPress={() => deleteCaregiver(cg.id)} hitSlop={8} style={{ paddingHorizontal: 4 }}><Text style={{ fontFamily: font.body700, fontSize: 18, color: color.faint }}>×</Text></Pressable>
-            </View>
-          );
-        })}
-        <Button label="+ Add family member" variant="secondary" onPress={openMember} />
-      </View>
-
       {/* Family around the world — day/night dial for distant family & friends */}
       <View style={{ gap: 10, marginTop: 6 }}>
         <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: color.muted }}>Family around the world</Text>
@@ -210,6 +187,29 @@ export default function Family() {
         ))}
         <Button label="+ Add person" variant="secondary" onPress={() => setTzOpen(true)} />
         <Text style={{ fontFamily: font.body400, fontSize: 11.5, color: color.muted, lineHeight: 17 }}>The ring is a 24-hour day/night clock — anyone on the bright arc is likely awake (7am–10pm local). Updates live.</Text>
+      </View>
+
+      {/* Family & caregivers */}
+      <View style={{ gap: 10, marginTop: 6 }}>
+        <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: color.muted }}>Family &amp; caregivers</Text>
+        {caregivers.length === 0 ? (
+          <Text style={{ fontFamily: font.body400, fontSize: 13, color: color.muted }}>Add your partner, grandparents or a carer — they'll appear in co-parent and custody tools too.</Text>
+        ) : caregivers.map((cg) => {
+          const rs = roleStyle(cg.role);
+          return (
+            <View key={cg.id} style={[{ backgroundColor: '#fff', borderRadius: 12, paddingVertical: 8, paddingHorizontal: 11, flexDirection: 'row', alignItems: 'center', gap: 10 }, shadow.card]}>
+              <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: rs.bg, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ fontSize: 14 }}>{rs.emoji}</Text>
+              </View>
+              <Text style={{ flex: 1, fontFamily: font.body400, fontSize: 13.5, color: color.muted }} numberOfLines={1}>
+                <Text style={{ fontFamily: font.body700, color: color.ink }}>{cg.name}</Text>
+                {`  ·  ${cg.role ?? 'Caregiver'}`}
+              </Text>
+              <Pressable onPress={() => deleteCaregiver(cg.id)} hitSlop={8} style={{ paddingHorizontal: 4 }}><Text style={{ fontFamily: font.body700, fontSize: 18, color: color.faint }}>×</Text></Pressable>
+            </View>
+          );
+        })}
+        <Button label="+ Add family member" variant="secondary" onPress={openMember} />
       </View>
 
       {/* Add timezone person modal */}
