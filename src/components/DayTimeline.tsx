@@ -90,7 +90,6 @@ function ClockTimeline({ items, unit }: { items: TlItem[]; unit: 'entry' | 'even
   ];
   const now = new Date(); const nowH = now.getHours() + now.getMinutes() / 60;
   const [nx, ny] = P(R, angle(nowH));
-  const [srx, sry] = P(R + 9, angle(6)); const [ssx, ssy] = P(R + 9, angle(18));
   const plural = unit === 'entry' ? 'entries' : 'events';
   return (
     <View style={{ alignItems: 'center', gap: 12 }}>
@@ -104,8 +103,6 @@ function ClockTimeline({ items, unit }: { items: TlItem[]; unit: 'entry' | 'even
         })}
         {/* 24-hour numbers */}
         {[0, 3, 6, 9, 12, 15, 18, 21].map((h) => { const [x, y] = P(R - 24, angle(h)); return <SvgText key={`n${h}`} x={x} y={y + 3.5} fontSize={9.5} fill="#8a8098" textAnchor="middle" fontWeight="800">{String(h)}</SvgText>; })}
-        <SvgText x={srx - 2} y={sry + 3} fontSize={11} textAnchor="middle">🌅</SvgText>
-        <SvgText x={ssx + 2} y={ssy + 3} fontSize={11} textAnchor="middle">🌇</SvgText>
         <SvgText x={cx} y={cy - 32} fontSize={13} textAnchor="middle">☀️</SvgText>
         <SvgText x={cx} y={cy + 44} fontSize={13} textAnchor="middle">🌙</SvgText>
         <SvgText x={cx} y={cy - 2} fontSize={26} fontWeight="800" fill={color.ink} textAnchor="middle">{String(items.length)}</SvgText>
