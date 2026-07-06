@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, font, radius, shadow } from '../../../src/theme/tokens';
 import { Button, Notice } from '../../../src/components/forms';
-import { ChevronRight, Star, Shield, Bell, Moon, Ruler, Globe, Lock, Mail, LogOut, Users, CreditCard, Check, Download, Info } from '../../../src/components/icons';
+import { ChevronRight, Star, Shield, Bell, Moon, Ruler, Globe, Mail, Users, CreditCard, Check, Download, Info } from '../../../src/components/icons';
 import { Silhouette } from '../../../src/components/ui';
 import { useSupabase, signOut, isAdmin } from '../../../src/lib/supabase';
 import { useData } from '../../../src/lib/store';
@@ -159,10 +159,9 @@ export default function SettingsTab() {
         <Row icon={<Globe size={16} color="#B5662E" />} bg="#FCE6D8" title="Language" value="English" onPress={() => toast('More languages coming soon')} />
       </Card>
 
-      <SectionHeader>Privacy & security</SectionHeader>
+      <SectionHeader>Privacy & data</SectionHeader>
       <Card>
-        <Row first icon={<Lock size={16} color="#6F6E86" />} bg="#EDECF5" title="App lock" sub="Require Face ID / passcode to open" right={<Toggle on={prefs.appLock} onPress={() => { setPref('appLock', !prefs.appLock); toast(!prefs.appLock ? 'App lock on' : 'App lock off'); }} />} />
-        <Row icon={<Download size={16} color="#6B6FC9" />} bg="#E7E4FB" title="Export my data" sub="Download an on-device JSON backup" onPress={onExport} />
+        <Row first icon={<Download size={16} color="#6B6FC9" />} bg="#E7E4FB" title="Export my data" sub="Download an on-device JSON backup" onPress={onExport} />
         <Row icon={<Shield size={16} color="#E98FB3" />} bg="#FBE0EA" title="Clear activity log" danger onPress={() => setConfirmWipe(true)} />
       </Card>
       <View style={{ backgroundColor: '#E7E4FB', borderRadius: 14, paddingVertical: 12, paddingHorizontal: 14, flexDirection: 'row', gap: 10, alignItems: 'flex-start', marginTop: 10 }}>
