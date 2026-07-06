@@ -306,3 +306,10 @@ export const LockGlyph = ({ size = 11 }: { size?: number }) => (
     <Path d="M9.7 10.5V9a2.3 2.3 0 0 1 4.6 0v1.5" stroke="#fff" strokeWidth={1.5} fill="none" />
   </Svg>
 );
+
+export const Pencil = ({ size = 18, color = '#9C9AB2', strokeWidth = 2 }: IconProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Path d="M12 20h9" {...stroke(color, strokeWidth)} />
+    <Path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z" {...stroke(color, strokeWidth)} />
+  </Svg>
+);

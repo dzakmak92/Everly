@@ -6,13 +6,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, font, radius, shadow, childToken } from '../../../src/theme/tokens';
 import { Button, Field, Notice } from '../../../src/components/forms';
 import { DateField } from '../../../src/components/DateField';
-import { ChevronRight } from '../../../src/components/icons';
+import { ChevronRight, Pencil } from '../../../src/components/icons';
 import { Silhouette } from '../../../src/components/ui';
 import { useData, CHILD_COLORS, type ChildColor } from '../../../src/lib/store';
 import { ageLabel, stageFrom, STAGE_LABEL } from '../../../src/lib/age';
+import { searchCities, resolveCity, type City } from '../../../src/lib/cities';
 import { useFeedback } from '../../../src/components/Feedback';
 
-const TZ_PRESETS = ['Europe/Dublin', 'Europe/London', 'America/New_York', 'America/Chicago', 'America/Los_Angeles', 'Asia/Tokyo', 'Australia/Sydney'];
 const DIAL_COLORS = ['#2C8C7A', '#6B6FC9', '#B9902F', '#B5662E', '#567F39', '#2C5F90', '#B04070'];
 function fmtTime(tz: string, now: Date) {
   try { return new Intl.DateTimeFormat([], { timeZone: tz, hour: 'numeric', minute: '2-digit', weekday: 'short' }).format(now); }
@@ -68,14 +68,6 @@ function FamilyDial({ people }: { people: TzPerson[] }) {
 }
 
 const ROLES = ['Partner', 'Co-parent', 'Grandparent', 'Carer', 'Other'];
-const ROLE_STYLE: Record<string, { emoji: string; bg: string; fg: string }> = {
-  Partner: { emoji: '🧑', bg: '#DCEBFA', fg: '#2C5F90' },
-  'Co-parent': { emoji: '👨‍👩‍👧', bg: '#E7E4FB', fg: '#6B6FC9' },
-  Grandparent: { emoji: '👵', bg: '#FBF1CE', fg: '#7A5C20' },
-  Carer: { emoji: '🧑‍🍼', bg: '#FBE0EA', fg: '#B04070' },
-  Other: { emoji: '👤', bg: '#D8F0E6', fg: '#2C8475' },
-};
-const roleStyle = (r?: string) => ROLE_STYLE[r ?? 'Other'] ?? ROLE_STYLE.Other;
 
 export default function Family() {
   const router = useRouter();
@@ -129,6 +121,9 @@ export default function Family() {
     else { addCaregiver(mName, mRole, mTz, mLoc); toast('Member added'); }
     setMemberOpen(false);
   }
+  function onCity(t: string) { setMLoc(t); const r = resolveCity(t); setMTz(r ? r.tz : ''); }
+  function pickCity(c: City) { setMLoc(c.city); setMTz(c.tz); }
+  const citySug = mLoc.trim().length >= 2 && !resolveCity(mLoc) ? searchCities(mLoc) : [];
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: color.canvas }} contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: 28, paddingHorizontal: 20, gap: 14 }} showsVerticalScrollIndicator={false}>
@@ -176,10 +171,9 @@ export default function Family() {
           <FamilyDial people={tzPeople} />
         </View>
         {tzPeople.map((p) => {
-          const rs = roleStyle(p.role);
           const avatar = (
-            <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: p.isYou ? p.color : rs.bg, alignItems: 'center', justifyContent: 'center' }}>
-              {p.isYou ? <Text style={{ fontFamily: font.display700, fontSize: 14, color: '#fff' }}>{p.initial}</Text> : <Text style={{ fontSize: 15 }}>{rs.emoji}</Text>}
+            <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: p.color, alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ fontFamily: font.display700, fontSize: 14, color: '#fff' }}>{p.initial}</Text>
             </View>
           );
           const info = (
@@ -203,7 +197,12 @@ export default function Family() {
                   <Text style={{ fontFamily: font.body500, fontSize: 11, color: tzAwake(p.hour) ? color.maternalTeal : color.muted }}>{tzAwake(p.hour) ? 'Awake' : 'Asleep'}</Text>
                 </View>
               )}
-              {p.onDelete && <Pressable onPress={p.onDelete} hitSlop={8} style={{ paddingLeft: 4 }}><Text style={{ fontFamily: font.body700, fontSize: 18, color: color.faint }}>×</Text></Pressable>}
+              {p.onEdit && (
+                <Pressable onPress={p.onEdit} hitSlop={8} style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: color.canvas, alignItems: 'center', justifyContent: 'center' }}>
+                  <Pencil size={15} color={color.primary} />
+                </Pressable>
+              )}
+              {p.onDelete && <Pressable onPress={p.onDelete} hitSlop={8} style={{ paddingLeft: 2 }}><Text style={{ fontFamily: font.body700, fontSize: 18, color: color.faint }}>×</Text></Pressable>}
             </View>
           );
         })}
@@ -258,25 +257,23 @@ export default function Family() {
               </View>
             </View>
             <View style={{ gap: 8 }}>
-              <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 0.8, textTransform: 'uppercase', color: color.muted }}>Timezone (optional)</Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-                {mTz !== '' && !TZ_PRESETS.includes(mTz) && (
-                  <View style={{ paddingVertical: 6, paddingHorizontal: 10, borderRadius: radius.pill, backgroundColor: color.primary, borderWidth: 1, borderColor: color.primary }}>
-                    <Text style={{ fontFamily: font.body500, fontSize: 11, color: '#fff' }}>{mTz.split('/')[1]?.replace('_', ' ') || mTz}</Text>
-                  </View>
-                )}
-                {TZ_PRESETS.map((p) => {
-                  const sel = mTz === p;
-                  return (
-                    <Pressable key={p} onPress={() => setMTz(sel ? '' : p)} style={{ paddingVertical: 6, paddingHorizontal: 10, borderRadius: radius.pill, backgroundColor: sel ? color.primary : '#fff', borderWidth: 1, borderColor: sel ? color.primary : color.hairline }}>
-                      <Text style={{ fontFamily: font.body500, fontSize: 11, color: sel ? '#fff' : color.inkSecondary }}>{p.split('/')[1]?.replace('_', ' ')}</Text>
+              <Field label="City (optional)" value={mLoc} onChangeText={onCity} placeholder="e.g. New York" autoCapitalize="words" />
+              {citySug.length > 0 && (
+                <View style={[{ backgroundColor: '#fff', borderRadius: radius.cardSm, overflow: 'hidden' }, shadow.card]}>
+                  {citySug.map((c, i) => (
+                    <Pressable key={`${c.city}-${c.tz}`} onPress={() => pickCity(c)} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10, paddingHorizontal: 12, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: color.hairline, backgroundColor: pressed ? '#FAF9FE' : '#fff' })}>
+                      <Text style={{ fontFamily: font.body600, fontSize: 13.5, color: color.ink }}>{c.city}</Text>
+                      <Text style={{ fontFamily: font.body400, fontSize: 11.5, color: color.muted }}>{c.country}</Text>
                     </Pressable>
-                  );
-                })}
-              </View>
-              <Text style={{ fontFamily: font.body400, fontSize: 11, color: color.muted }}>Adding a timezone places them on the day/night ring.</Text>
+                  ))}
+                </View>
+              )}
+              {mTz !== '' ? (
+                <Text style={{ fontFamily: font.body500, fontSize: 11.5, color: color.maternalTeal }}>✓ Local time {fmtTime(mTz, now)} — shown on the day/night ring</Text>
+              ) : (
+                <Text style={{ fontFamily: font.body400, fontSize: 11, color: color.muted }}>Pick a city to place them on the ring with their local time.</Text>
+              )}
             </View>
-            <Field label="Location (optional)" value={mLoc} onChangeText={setMLoc} placeholder="e.g. London" autoCapitalize="words" />
             <Notice text={mErr} />
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <Button label="Cancel" variant="secondary" onPress={() => setMemberOpen(false)} style={{ flex: 1 }} />
