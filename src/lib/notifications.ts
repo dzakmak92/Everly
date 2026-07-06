@@ -37,9 +37,11 @@ export async function notifPermissionGranted(): Promise<boolean> {
 export async function syncNotifications(prefs: Pick<Prefs, 'notifReminders' | 'notifDigest'>): Promise<void> {
   if (!supported) return;
   if (Platform.OS === 'android') {
+    // HIGH importance → the reminder pops as a heads-up banner with a sound.
     await Notifications.setNotificationChannelAsync('everly-reminders', {
       name: 'Reminders',
-      importance: Notifications.AndroidImportance.DEFAULT,
+      importance: Notifications.AndroidImportance.HIGH,
+      sound: 'default',
     });
   }
   await Notifications.cancelAllScheduledNotificationsAsync();
@@ -47,14 +49,14 @@ export async function syncNotifications(prefs: Pick<Prefs, 'notifReminders' | 'n
 
   if (prefs.notifReminders) {
     await Notifications.scheduleNotificationAsync({
-      content: { title: 'Everly', body: 'A gentle nudge to log today’s moments.' },
-      trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour: REMINDER_HOUR, minute: 0 },
+      content: { title: 'A quiet moment', body: 'A gentle moment to remember today. 🤍', sound: 'default' },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour: REMINDER_HOUR, minute: 0, channelId: 'everly-reminders' },
     });
   }
   if (prefs.notifDigest) {
     await Notifications.scheduleNotificationAsync({
-      content: { title: 'Your week with Everly', body: 'Your Sunday summary is ready.' },
-      trigger: { type: Notifications.SchedulableTriggerInputTypes.WEEKLY, weekday: DIGEST_WEEKDAY, hour: DIGEST_HOUR, minute: 0 },
+      content: { title: 'Your week, gathered', body: 'Your Sunday look-back is ready.', sound: 'default' },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.WEEKLY, weekday: DIGEST_WEEKDAY, hour: DIGEST_HOUR, minute: 0, channelId: 'everly-reminders' },
     });
   }
 }
