@@ -98,6 +98,7 @@ export default function SettingsTab() {
     if (i !== tab) setTab(i);
   }
 
+  const [pagerH, setPagerH] = useState(0);
   const [busy, setBusy] = useState(false);
   const [themeOpen, setThemeOpen] = useState(false);
   const [unitsOpen, setUnitsOpen] = useState(false);
@@ -248,10 +249,12 @@ export default function SettingsTab() {
       </View>
 
       {admin ? (
-        <ScrollView ref={pagerRef} horizontal pagingEnabled showsHorizontalScrollIndicator={false} onMomentumScrollEnd={onPage} scrollEventThrottle={16} style={{ flex: 1, marginTop: 6 }}>
-          <View style={{ width }}>{UserPage}</View>
-          <View style={{ width }}>{AdminPage}</View>
-        </ScrollView>
+        <View style={{ flex: 1, marginTop: 6 }} onLayout={(e) => setPagerH(e.nativeEvent.layout.height)}>
+          <ScrollView ref={pagerRef} horizontal pagingEnabled showsHorizontalScrollIndicator={false} onMomentumScrollEnd={onPage} scrollEventThrottle={16} style={{ flex: 1 }}>
+            <View style={{ width, height: pagerH || undefined }}>{UserPage}</View>
+            <View style={{ width, height: pagerH || undefined }}>{AdminPage}</View>
+          </ScrollView>
+        </View>
       ) : (
         <View style={{ flex: 1, marginTop: 6 }}>{UserPage}</View>
       )}
