@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ScrollView, View, Text, Pressable, Modal, TextInput, Linking, ActivityIndicator, Animated, Easing } from 'react-native';
+import { ScrollView, View, Text, Pressable, Modal, TextInput, Linking, ActivityIndicator, Animated, Easing, PanResponder } from 'react-native';
 import Svg, { Circle, Rect, Polyline, Polygon, Line as SvgLine, Text as SvgText } from 'react-native-svg';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -1927,6 +1927,14 @@ function AppointmentsCard({ accent, fill, items, allowTests, standard, onAdd, on
   const [result, setResult] = useState('');
   const [selKey, setSelKey] = useState<string | null>(null);
   const [month, setMonth] = useState(() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() }; });
+  const [weekOffset, setWeekOffset] = useState(0);
+  const goWeek = (delta: number) => setWeekOffset((o) => o + delta);
+  const weekPan = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dx) > 18 && Math.abs(g.dx) > Math.abs(g.dy) * 1.6,
+      onPanResponderRelease: (_e, g) => { if (g.dx <= -40) goWeek(1); else if (g.dx >= 40) goWeek(-1); },
+    }),
+  ).current;
 
   const now = Date.now();
   const sorted = [...items].sort((a, b) => a.at.localeCompare(b.at));
@@ -1960,8 +1968,11 @@ function AppointmentsCard({ accent, fill, items, allowTests, standard, onAdd, on
     setLocation(a.location ?? ''); setKind(a.kind ?? 'appointment'); setResult(a.result ?? ''); setAddOpen(true);
   };
 
-  // collapsed: the next 7 days
-  const week = Array.from({ length: 7 }, (_, i) => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + i); return d; });
+  // collapsed: a Monday-aligned week, navigable via arrows/swipe (weekOffset)
+  const weekStart = (() => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7) + weekOffset * 7); return d; })();
+  const week = Array.from({ length: 7 }, (_, i) => { const d = new Date(weekStart); d.setDate(weekStart.getDate() + i); return d; });
+  const weekLabel = weekOffset === 0 ? 'This week' : weekOffset === 1 ? 'Next week' : weekOffset === -1 ? 'Last week'
+    : `Week of ${weekStart.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}`;
   // expanded: a Monday-first month grid
   const first = new Date(month.y, month.m, 1);
   const gridStart = new Date(month.y, month.m, 1 - ((first.getDay() + 6) % 7));
@@ -1986,25 +1997,30 @@ function AppointmentsCard({ accent, fill, items, allowTests, standard, onAdd, on
 
       {!expanded ? (
         <>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 2 }}>
-            <Text style={{ fontFamily: font.body700, fontSize: 10, letterSpacing: 0.6, color: color.muted }}>THIS WEEK</Text>
-            {wx.location ? <Text style={{ fontFamily: font.body600, fontSize: 10, color: color.muted }}>{wx.location.name} · forecast</Text> : null}
-          </View>
-          <View style={{ flexDirection: 'row', gap: 4 }}>
-            {week.map((d) => {
-              const has = apptDays.has(apptDayKey(d));
-              const isToday = apptDayKey(d) === todayKey;
-              const w = wxOf(d);
-              return (
-                <View key={d.toISOString()} style={{ flex: 1, alignItems: 'center', paddingVertical: 6, borderRadius: 11, backgroundColor: isToday ? accent : has ? fill : color.canvas }}>
-                  <Text style={{ fontFamily: font.body700, fontSize: 8, color: isToday ? 'rgba(255,255,255,0.85)' : color.faint }}>{isToday ? 'TODAY' : WD_SHORT[d.getDay()].toUpperCase()}</Text>
-                  <Text style={{ fontFamily: font.display700, fontSize: 13, color: isToday ? '#fff' : has ? accent : color.ink, marginTop: 1 }}>{d.getDate()}</Text>
-                  {w ? <View style={{ marginTop: 3 }}><WeatherGlyph code={w.code} size={15} /></View> : null}
-                  {w ? <Text style={{ fontFamily: font.body700, fontSize: 8, color: isToday ? 'rgba(255,255,255,0.9)' : color.muted, marginTop: 1 }}>{w.tMax}°</Text> : null}
-                  <View style={{ width: 4, height: 4, borderRadius: 2, marginTop: 3, backgroundColor: isToday ? '#fff' : has ? accent : 'transparent' }} />
-                </View>
-              );
-            })}
+          <Pressable onPress={() => weekOffset !== 0 && setWeekOffset(0)} disabled={weekOffset === 0} style={{ alignItems: 'center' }}>
+            <Text style={{ fontFamily: font.body700, fontSize: 11.5, color: color.inkSecondary }}>
+              {weekLabel}{weekOffset !== 0 ? <Text style={{ color: accent }}>  · Today</Text> : null}
+            </Text>
+          </Pressable>
+          <View style={{ flexDirection: 'row', alignItems: 'stretch', gap: 4 }} {...weekPan.panHandlers}>
+            <Pressable onPress={() => goWeek(-1)} hitSlop={6} style={{ width: 22, borderRadius: 9, backgroundColor: color.canvas, alignItems: 'center', justifyContent: 'center' }}><ChevronLeft size={15} color={color.muted} /></Pressable>
+            <View style={{ flex: 1, flexDirection: 'row', gap: 4 }}>
+              {week.map((d) => {
+                const has = apptDays.has(apptDayKey(d));
+                const isToday = apptDayKey(d) === todayKey;
+                const w = wxOf(d);
+                return (
+                  <View key={d.toISOString()} style={{ flex: 1, alignItems: 'center', paddingVertical: 6, borderRadius: 11, backgroundColor: isToday ? accent : has ? fill : color.canvas }}>
+                    <Text style={{ fontFamily: font.body700, fontSize: 8, color: isToday ? 'rgba(255,255,255,0.85)' : color.faint }}>{isToday ? 'TODAY' : WD_SHORT[d.getDay()].toUpperCase()}</Text>
+                    <Text style={{ fontFamily: font.display700, fontSize: 13, color: isToday ? '#fff' : has ? accent : color.ink, marginTop: 1 }}>{d.getDate()}</Text>
+                    {w ? <View style={{ marginTop: 3 }}><WeatherGlyph code={w.code} size={15} /></View> : null}
+                    {w ? <Text style={{ fontFamily: font.body700, fontSize: 8, color: isToday ? 'rgba(255,255,255,0.9)' : color.muted, marginTop: 1 }}>{w.tMax}°</Text> : null}
+                    <View style={{ width: has ? 12 : 0, height: 4, borderRadius: 2, marginTop: 3, backgroundColor: isToday ? '#fff' : has ? accent : 'transparent' }} />
+                  </View>
+                );
+              })}
+            </View>
+            <Pressable onPress={() => goWeek(1)} hitSlop={6} style={{ width: 22, borderRadius: 9, backgroundColor: color.canvas, alignItems: 'center', justifyContent: 'center' }}><ChevronRight size={15} color={color.muted} /></Pressable>
           </View>
         </>
       ) : (
