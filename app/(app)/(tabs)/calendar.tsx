@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ScrollView, View, Text, Pressable, Modal, ActivityIndicator, Linking } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { ScrollView, View, Text, Pressable, Modal, ActivityIndicator, Linking, PanResponder } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, font, radius, shadow, fill, childToken } from '../../../src/theme/tokens';
 import { ChevronLeft, ChevronRight, Calendar, Shield, Activity, Heart, X, Search, BabyBean } from '../../../src/components/icons';
@@ -130,6 +130,23 @@ export default function CalendarTab() {
       return { y: v.y, m };
     });
   }
+  // Move the selected day (and view) by whole weeks — drives the Week rail.
+  function shiftWeek(delta: number) {
+    const d = new Date(sel.y, sel.m, sel.d);
+    d.setDate(d.getDate() + delta * 7);
+    setView({ y: d.getFullYear(), m: d.getMonth() });
+    setSel({ y: d.getFullYear(), m: d.getMonth(), d: d.getDate() });
+  }
+  // The Monday-aligned week containing the selected day.
+  const selDate = new Date(sel.y, sel.m, sel.d);
+  const weekStart = new Date(selDate); weekStart.setDate(selDate.getDate() - ((selDate.getDay() + 6) % 7));
+  const weekDates = Array.from({ length: 7 }, (_, i) => { const d = new Date(weekStart); d.setDate(weekStart.getDate() + i); return d; });
+  const weekLabel = (() => {
+    const t = new Date(); t.setHours(0, 0, 0, 0);
+    const inWeek = t >= weekStart && t <= weekDates[6];
+    const range = `${weekStart.getDate()} – ${weekDates[6].getDate()} ${weekDates[6].toLocaleDateString(undefined, { month: 'short' })}`;
+    return inWeek ? `This week · ${range}` : range;
+  })();
 
   function saveEvent() {
     if (!title.trim()) return;
@@ -194,15 +211,27 @@ export default function CalendarTab() {
           })}
         </View>
 
-        {mode === 'Month' || mode === 'Week' ? (
+        {mode === 'Month' ? (
           <MonthGrid
-            cells={mode === 'Week' ? weekCells(cells, sel, view) : cells}
+            cells={cells}
             view={view}
             selKey={selKey}
             todayKey={todayKey}
             dayMarks={dayMarks}
             wxForDate={wx.wxForDate}
             onSelect={(d) => setSel({ y: view.y, m: view.m, d })}
+          />
+        ) : mode === 'Week' ? (
+          <WeekRail
+            weekDates={weekDates}
+            label={weekLabel}
+            selKey={selKey}
+            todayKey={todayKey}
+            dayMarks={dayMarks}
+            wxForDate={wx.wxForDate}
+            onSelect={(d) => setSel({ y: d.getFullYear(), m: d.getMonth(), d: d.getDate() })}
+            onPrev={() => shiftWeek(-1)}
+            onNext={() => shiftWeek(1)}
           />
         ) : (
           <AgendaList
@@ -235,35 +264,14 @@ export default function CalendarTab() {
         )}
       </View>
 
-      {/* Selected-day header */}
+      {/* Selected-day header — date + add event */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4 }}>
         <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 1.1, textTransform: 'uppercase', color: color.muted }}>
           {selIsToday ? 'Today · ' : ''}{selDateLabel}
         </Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <WeatherChip wx={wx} selDate={new Date(sel.y, sel.m, sel.d)} onPress={() => setWxOpen(true)} />
-          <Pressable onPress={() => setAddOpen(true)} hitSlop={8}>
-            <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.primary }}>+ Event</Text>
-          </Pressable>
-        </View>
-      </View>
-
-      {/* Day timeline overview (ribbon / clock) — always visible */}
-      <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 16, gap: 12 }, shadow.card]}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Text style={{ fontFamily: font.body700, fontSize: 13, color: color.ink }}>Day overview</Text>
-          <View style={{ flexDirection: 'row', backgroundColor: color.canvas, borderRadius: radius.pill, padding: 3 }}>
-            {(['ribbon', 'clock'] as const).map((l) => {
-              const on = tlLayout === l;
-              return (
-                <Pressable key={l} onPress={() => setTlLayout(l)} style={{ paddingVertical: 5, paddingHorizontal: 12, borderRadius: radius.pill, backgroundColor: on ? color.primary : 'transparent' }}>
-                  <Text style={{ fontFamily: on ? font.body700 : font.body600, fontSize: 11.5, color: on ? '#fff' : color.muted }}>{l === 'ribbon' ? 'Line' : 'Clock'}</Text>
-                </Pressable>
-              );
-            })}
-          </View>
-        </View>
-        <DayTimeline items={dayItems} layout={tlLayout} unit="event" />
+        <Pressable onPress={() => setAddOpen(true)} hitSlop={8}>
+          <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.primary }}>+ Event</Text>
+        </Pressable>
       </View>
 
       {/* Events (colour-coded per child, editable) */}
@@ -300,6 +308,24 @@ export default function CalendarTab() {
         </View>
       )}
 
+      {/* Day timeline overview (ribbon / clock) — below the events */}
+      <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 16, gap: 12 }, shadow.card]}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Text style={{ fontFamily: font.body700, fontSize: 13, color: color.ink }}>Day overview</Text>
+          <View style={{ flexDirection: 'row', backgroundColor: color.canvas, borderRadius: radius.pill, padding: 3 }}>
+            {(['ribbon', 'clock'] as const).map((l) => {
+              const on = tlLayout === l;
+              return (
+                <Pressable key={l} onPress={() => setTlLayout(l)} style={{ paddingVertical: 5, paddingHorizontal: 12, borderRadius: radius.pill, backgroundColor: on ? color.primary : 'transparent' }}>
+                  <Text style={{ fontFamily: on ? font.body700 : font.body600, fontSize: 11.5, color: on ? '#fff' : color.muted }}>{l === 'ribbon' ? 'Line' : 'Clock'}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+        <DayTimeline items={dayItems} layout={tlLayout} unit="event" />
+      </View>
+
       {/* Add event modal */}
       <Modal visible={addOpen} transparent animationType="fade" onRequestClose={() => setAddOpen(false)}>
         <Pressable onPress={() => setAddOpen(false)} style={{ flex: 1, backgroundColor: 'rgba(40,18,50,0.35)', justifyContent: 'center', paddingHorizontal: 28 }}>
@@ -325,26 +351,6 @@ export default function CalendarTab() {
 }
 
 /* ── weather chip + location modal ──────────────────────────────────────── */
-
-function WeatherChip({ wx, selDate, onPress }: { wx: ReturnType<typeof useWeather>; selDate: Date; onPress: () => void }) {
-  if (!wx.location) {
-    return (
-      <Pressable onPress={onPress} hitSlop={8} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-        <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.muted }}>+ Weather</Text>
-      </Pressable>
-    );
-  }
-  const d: DayWx | null = wx.wxForDate(selDate) ?? wx.today;
-  return (
-    <Pressable onPress={onPress} hitSlop={8} style={[{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#fff', borderRadius: radius.pill, paddingVertical: 5, paddingHorizontal: 10 }, shadow.card]}>
-      {d ? <WeatherGlyph code={d.code} size={16} /> : null}
-      <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.inkSecondary }}>
-        {d ? `${d.tMax}°` : wx.location.name}
-      </Text>
-      <Text style={{ fontFamily: font.body400, fontSize: 11, color: color.muted }} numberOfLines={1}>{wx.location.name}</Text>
-    </Pressable>
-  );
-}
 
 function WeatherStrip({ wx, selKey, onSelect, onConfigure }: { wx: ReturnType<typeof useWeather>; selKey: string; onSelect: (d: Date) => void; onConfigure: () => void }) {
   const today = new Date();
@@ -472,13 +478,6 @@ const navBtn = {
 /* ── month / week grid ──────────────────────────────────────────────────── */
 
 // Trim the full month cell array down to the single week containing `sel`.
-function weekCells(cells: (number | null)[], sel: { d: number }, view: { y: number; m: number }) {
-  const idx = cells.findIndex((c) => c === sel.d);
-  if (idx < 0) return cells.slice(0, 7);
-  const start = Math.floor(idx / 7) * 7;
-  return cells.slice(start, start + 7);
-}
-
 // Calendar cell palette — a framed hairline grid with a soft weekend tint.
 const GRID_FRAME = '#E7E1EF';
 const GRID_LINE = '#EDE8F2';
@@ -521,7 +520,7 @@ function MonthGrid({
           const isWeekend = col >= 5;
           const lastRow = i >= (rows - 1) * 7;
           const cellBorder = { borderRightWidth: col === 6 ? 0 : 1, borderBottomWidth: lastRow ? 0 : 1, borderColor: GRID_LINE };
-          if (d === null) return <View key={`e${i}`} style={{ width: `${100 / 7}%`, height: 52, backgroundColor: isWeekend ? WEEKEND_BG : 'transparent', ...cellBorder }} />;
+          if (d === null) return <View key={`e${i}`} style={{ width: `${100 / 7}%`, height: 54, backgroundColor: isWeekend ? WEEKEND_BG : 'transparent', ...cellBorder }} />;
           const k = key(view.y, view.m, d);
           const isSel = k === selKey;
           const isToday = k === todayKey;
@@ -529,28 +528,86 @@ function MonthGrid({
           const dayWx = wxForDate(new Date(view.y, view.m, d));
           const cellBg = isToday ? TODAY_BG : isWeekend ? WEEKEND_BG : 'transparent';
           return (
-            <Pressable key={k} onPress={() => onSelect(d)} style={{ width: `${100 / 7}%`, height: 52, alignItems: 'center', paddingTop: 5, backgroundColor: cellBg, ...cellBorder }}>
-              {dayWx ? <View style={{ position: 'absolute', top: 3, right: 4 }}><WeatherGlyph code={dayWx.code} size={12} /></View> : null}
+            <Pressable key={k} onPress={() => onSelect(d)} style={{ width: `${100 / 7}%`, height: 54, backgroundColor: cellBg, ...cellBorder }}>
+              {/* number — top-left */}
               <View
                 style={{
-                  width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center',
+                  position: 'absolute', top: 4, left: 5, width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center',
                   backgroundColor: isToday ? color.primary : 'transparent',
                   borderWidth: isSel && !isToday ? 1.5 : 0, borderColor: color.primary,
                 }}
               >
-                <Text style={{ fontFamily: isToday ? font.body700 : font.body500, fontSize: 12.5, color: isToday ? '#fff' : isWeekend ? color.muted : color.ink }}>{d}</Text>
+                <Text style={{ fontFamily: isToday ? font.body700 : font.body600, fontSize: 12, color: isToday ? '#fff' : isWeekend ? color.muted : color.ink }}>{d}</Text>
               </View>
-              {/* Item markers — up to 3 colour bars, then a "+N" overflow */}
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, height: 6 }}>
-                {marks.slice(0, 3).map((c, idx) => (
-                  <View key={idx} style={{ width: 10, height: 4, borderRadius: 2, backgroundColor: c, marginHorizontal: 1.3 }} />
-                ))}
-                {marks.length > 3 ? <Text style={{ fontFamily: font.body700, fontSize: 8, color: '#8079a6', marginLeft: 1 }}>+{marks.length - 3}</Text> : null}
+              {/* weather — top-right corner */}
+              {dayWx ? <View style={{ position: 'absolute', top: 5, right: 5 }}><WeatherGlyph code={dayWx.code} size={12} /></View> : null}
+              {/* item markers — bottom-centre, up to 3 bars + "+N" */}
+              {marks.length > 0 && (
+                <View style={{ position: 'absolute', bottom: 5, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                  {marks.slice(0, 3).map((c, idx) => (
+                    <View key={idx} style={{ width: 9, height: 4, borderRadius: 2, backgroundColor: c, marginHorizontal: 1.2 }} />
+                  ))}
+                  {marks.length > 3 ? <Text style={{ fontFamily: font.body700, fontSize: 8, color: '#8079a6', marginLeft: 1 }}>+{marks.length - 3}</Text> : null}
+                </View>
+              )}
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+/* ── week rail — a swipeable 7-day column view (Week mode) ───────────────── */
+
+function WeekRail({ weekDates, label, selKey, todayKey, dayMarks, wxForDate, onSelect, onPrev, onNext }: {
+  weekDates: Date[];
+  label: string;
+  selKey: string;
+  todayKey: string;
+  dayMarks: Map<string, string[]>;
+  wxForDate: (d: Date) => DayWx | null;
+  onSelect: (d: Date) => void;
+  onPrev: () => void;
+  onNext: () => void;
+}) {
+  const pan = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dx) > 18 && Math.abs(g.dx) > Math.abs(g.dy) * 1.6,
+      onPanResponderRelease: (_e, g) => { if (g.dx <= -40) onNext(); else if (g.dx >= 40) onPrev(); },
+    }),
+  ).current;
+  const navPill = { width: 24, height: 24, borderRadius: 8, backgroundColor: color.canvas, alignItems: 'center' as const, justifyContent: 'center' as const };
+  return (
+    <View {...pan.panHandlers}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 10 }}>
+        <Pressable onPress={onPrev} hitSlop={8} style={navPill}><ChevronLeft size={15} color={color.muted} strokeWidth={2.5} /></Pressable>
+        <Text style={{ fontFamily: font.body700, fontSize: 12.5, color: color.ink }}>{label}</Text>
+        <Pressable onPress={onNext} hitSlop={8} style={navPill}><ChevronRight size={15} color={color.muted} strokeWidth={2.5} /></Pressable>
+      </View>
+      <View style={{ flexDirection: 'row', gap: 5 }}>
+        {weekDates.map((d) => {
+          const k = key(d.getFullYear(), d.getMonth(), d.getDate());
+          const isSel = k === selKey;
+          const isToday = k === todayKey;
+          const marks = dayMarks.get(k) ?? [];
+          const dayWx = wxForDate(d);
+          const isWeekend = ((d.getDay() + 6) % 7) >= 5;
+          const bg = isToday ? TODAY_BG : isSel ? '#fff' : isWeekend ? WEEKEND_BG : color.canvas;
+          return (
+            <Pressable key={k} onPress={() => onSelect(d)} style={{ flex: 1, alignItems: 'center', gap: 3, borderRadius: 12, paddingVertical: 8, paddingHorizontal: 2, minHeight: 100, backgroundColor: bg, borderWidth: isSel && !isToday ? 1.5 : 1, borderColor: isSel && !isToday ? color.primary : GRID_LINE }}>
+              <Text style={{ fontFamily: font.body700, fontSize: 8.5, color: isToday ? color.primary : color.faint }}>{isToday ? 'TODAY' : d.toLocaleDateString(undefined, { weekday: 'short' }).slice(0, 3).toUpperCase()}</Text>
+              <Text style={{ fontFamily: font.display700, fontSize: 15, color: isWeekend ? color.muted : color.ink }}>{d.getDate()}</Text>
+              {dayWx ? <WeatherGlyph code={dayWx.code} size={15} /> : <View style={{ height: 15 }} />}
+              <View style={{ marginTop: 2, gap: 3, width: '72%' }}>
+                {marks.slice(0, 4).map((c, idx) => <View key={idx} style={{ height: 5, borderRadius: 2, backgroundColor: c }} />)}
+                {marks.length > 4 ? <Text style={{ fontFamily: font.body700, fontSize: 8, color: '#8079a6', textAlign: 'center' }}>+{marks.length - 4}</Text> : null}
               </View>
             </Pressable>
           );
         })}
       </View>
+      <Text style={{ textAlign: 'center', fontFamily: font.body600, fontSize: 10, color: color.faint, marginTop: 9 }}>swipe or ‹ › to change week</Text>
     </View>
   );
 }
