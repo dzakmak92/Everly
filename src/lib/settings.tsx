@@ -84,3 +84,9 @@ export async function exportEverlyData(): Promise<string> {
   });
   return JSON.stringify({ app: 'Everly', exportedFields: keys.length, data }, null, 2);
 }
+
+/** Permanently remove every on-device Everly key (used on account deletion). */
+export async function wipeEverlyData(): Promise<void> {
+  const keys = (await AsyncStorage.getAllKeys()).filter((k) => k.startsWith('everly.'));
+  await Promise.all(keys.map((k) => AsyncStorage.removeItem(k)));
+}

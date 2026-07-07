@@ -3,13 +3,13 @@ import { View, Text, Pressable, Modal, ScrollView, Platform, Share, Linking } fr
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, font, radius, shadow } from '../../../src/theme/tokens';
-import { Button, Notice } from '../../../src/components/forms';
+import { Button, Notice, Field } from '../../../src/components/forms';
 import { ChevronRight, Star, Shield, Bell, Moon, Ruler, Globe, Mail, CreditCard, Check, Download, Info } from '../../../src/components/icons';
 import { Silhouette } from '../../../src/components/ui';
 import Admin from '../admin';
-import { useSupabase, signOut, isAdmin } from '../../../src/lib/supabase';
+import { useSupabase, signOut, isAdmin, deleteAccount } from '../../../src/lib/supabase';
 import { useData } from '../../../src/lib/store';
-import { useSettings, exportEverlyData, THEME_LABEL, UNITS_LABEL, type ThemePref, type UnitsPref } from '../../../src/lib/settings';
+import { useSettings, exportEverlyData, wipeEverlyData, THEME_LABEL, UNITS_LABEL, type ThemePref, type UnitsPref } from '../../../src/lib/settings';
 import { requestNotifPermission, syncNotifications } from '../../../src/lib/notifications';
 import { useFeedback } from '../../../src/components/Feedback';
 
@@ -117,6 +117,9 @@ export default function SettingsTab() {
   const [aboutOpen, setAboutOpen] = useState(false);
   const [confirmWipe, setConfirmWipe] = useState(false);
   const [confirmSample, setConfirmSample] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleteText, setDeleteText] = useState('');
+  const [deleting, setDeleting] = useState(false);
 
   const planKey = profile?.plan ?? 'free';
   const planLabel = PLAN_PILL[planKey] ?? 'Free';
@@ -124,6 +127,23 @@ export default function SettingsTab() {
   const email = session?.user?.email ?? '';
 
   async function onSignOut() { setBusy(true); await signOut(); setBusy(false); router.replace('/(auth)/welcome'); }
+
+  function openDelete() { setDeleteText(''); setConfirmDelete(true); }
+  async function onDeleteAccount() {
+    if (deleteText.trim().toUpperCase() !== 'DELETE') return;
+    setDeleting(true);
+    try {
+      await deleteAccount();     // removes the auth user + profile (server)
+      await wipeEverlyData();    // removes everything on this device
+    } catch {
+      setDeleting(false);
+      toast('Could not delete your account. Please try again.');
+      return;
+    }
+    setDeleting(false);
+    setConfirmDelete(false);
+    router.replace('/(auth)/welcome');
+  }
 
   async function onExport() {
     try {
@@ -218,6 +238,9 @@ export default function SettingsTab() {
       <View style={{ marginTop: 16 }}>
         <Button label="Sign out" variant="secondary" onPress={onSignOut} loading={busy} />
       </View>
+      <Pressable onPress={openDelete} hitSlop={8} style={({ pressed }) => ({ alignItems: 'center', paddingVertical: 16, marginTop: 2, opacity: pressed ? 0.6 : 1 })}>
+        <Text style={{ fontFamily: font.body700, fontSize: 13, color: '#C0436E' }}>Delete account</Text>
+      </Pressable>
     </ScrollView>
   );
 
@@ -309,6 +332,18 @@ export default function SettingsTab() {
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <Button label="Cancel" variant="secondary" onPress={() => setConfirmWipe(false)} style={{ flex: 1 }} />
           <Button label="Clear" onPress={() => { clearAll(); setConfirmWipe(false); toast('Activity log cleared'); }} style={{ flex: 1 }} />
+        </View>
+      </Sheet>
+
+      {/* Delete account */}
+      <Sheet visible={confirmDelete} onClose={() => !deleting && setConfirmDelete(false)} title="Delete account?">
+        <Text style={{ fontFamily: font.body400, fontSize: 13.5, lineHeight: 19, color: color.inkSecondary }}>
+          This permanently deletes your Everly account and wipes all data on this device — children, health records, milestones and activity. This <Text style={{ fontFamily: font.body700 }}>cannot be undone</Text>.
+        </Text>
+        <Field label={'Type DELETE to confirm'} value={deleteText} onChangeText={setDeleteText} placeholder="DELETE" autoCapitalize="none" />
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          <Button label="Cancel" variant="secondary" onPress={() => setConfirmDelete(false)} style={{ flex: 1 }} disabled={deleting} />
+          <Button label="Delete" onPress={onDeleteAccount} loading={deleting} disabled={deleteText.trim().toUpperCase() !== 'DELETE'} style={{ flex: 1 }} />
         </View>
       </Sheet>
     </View>
