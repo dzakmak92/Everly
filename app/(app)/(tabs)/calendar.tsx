@@ -1,5 +1,6 @@
-import React, { useState, useRef, useMemo } from 'react';
-import { ScrollView, View, Text, Pressable, Modal, ActivityIndicator, Linking, type NativeSyntheticEvent, type NativeScrollEvent } from 'react-native';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
+import { ScrollView, View, Text, Pressable, Modal, ActivityIndicator, Linking, PanResponder, type NativeSyntheticEvent, type NativeScrollEvent } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, font, radius, shadow, fill, childToken } from '../../../src/theme/tokens';
 import { ChevronLeft, ChevronRight, Calendar, Shield, Activity, Heart, X, Search, BabyBean } from '../../../src/components/icons';
@@ -84,6 +85,7 @@ export default function CalendarTab() {
   const [view, setView] = useState({ y: now.getFullYear(), m: now.getMonth() });
   const [sel, setSel] = useState({ y: now.getFullYear(), m: now.getMonth(), d: now.getDate() });
   const [mode, setMode] = useState<ViewMode>('Month');
+  const [centerToken, setCenterToken] = useState(0); // bumped to re-centre the Week rail
   const [addOpen, setAddOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [time, setTime] = useState('09:00');
@@ -105,7 +107,6 @@ export default function CalendarTab() {
   for (let i = 0; i < firstWeekday; i++) cells.push(null);
   for (let d = 1; d <= daysInMonth; d++) cells.push(d);
 
-  const monthLabel = new Date(view.y, view.m, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
   const todayKey = key(now.getFullYear(), now.getMonth(), now.getDate());
   const selIsToday = selKey === todayKey;
 
@@ -118,13 +119,15 @@ export default function CalendarTab() {
     ...selAppts.map((a) => ({ id: a.id, title: a.title, at: a.at, color: color.maternalTeal })),
   ].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
 
-  function shift(delta: number) {
-    setView((v) => {
-      const m = v.m + delta;
-      if (m < 0) return { y: v.y - 1, m: 11 };
-      if (m > 11) return { y: v.y + 1, m: 0 };
-      return { y: v.y, m };
-    });
+  // Change the shown month, keeping the SAME date selected (clamped to the new
+  // month's length). Bumps centerToken so the Week rail re-centres on it.
+  function changeMonth(delta: number) {
+    const first = new Date(view.y, view.m + delta, 1);
+    const y = first.getFullYear(), m = first.getMonth();
+    const d = Math.min(sel.d, new Date(y, m + 1, 0).getDate());
+    setView({ y, m });
+    setSel({ y, m, d });
+    setCenterToken((t) => t + 1);
   }
   // Select a day (updates the day detail + keeps the month in sync).
   function selectDay(d: Date) {
@@ -168,16 +171,8 @@ export default function CalendarTab() {
 
       {/* Calendar card */}
       <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, paddingTop: 20, paddingHorizontal: 18, paddingBottom: 16 }, shadow.card]}>
-        {/* Month nav */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-          <Pressable onPress={() => shift(-1)} hitSlop={10} style={navBtn}>
-            <ChevronLeft size={16} color={color.inkSecondary} strokeWidth={2.5} />
-          </Pressable>
-          <Text style={{ fontFamily: font.display700, fontSize: 17, color: color.ink }}>{monthLabel}</Text>
-          <Pressable onPress={() => shift(1)} hitSlop={10} style={navBtn}>
-            <ChevronRight size={16} color={color.inkSecondary} strokeWidth={2.5} />
-          </Pressable>
-        </View>
+        {/* Month nav — year above a swipeable month carousel (dimmed neighbours) */}
+        <MonthHeader view={view} onChange={changeMonth} />
 
         {mode === 'Month' ? (
           <MonthGrid
@@ -193,6 +188,7 @@ export default function CalendarTab() {
           <WeekRail
             days={railDays}
             selRailIndex={selRailIndex}
+            centerToken={centerToken}
             selKey={selKey}
             todayKey={todayKey}
             dayMarks={dayMarks}
@@ -279,7 +275,7 @@ export default function CalendarTab() {
             })}
           </View>
         </View>
-        <DayTimeline items={dayItems} layout={tlLayout} unit="event" />
+        <DayTimeline items={dayItems} layout={tlLayout} unit="event" isToday={selIsToday} />
       </View>
 
       {/* Add event modal */}
@@ -434,6 +430,35 @@ const navBtn = {
   justifyContent: 'center' as const,
 };
 
+/* ── month header — year above a swipeable month carousel (dimmed neighbours) ── */
+
+function MonthHeader({ view, onChange }: { view: { y: number; m: number }; onChange: (delta: number) => void }) {
+  const pan = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dx) > 12 && Math.abs(g.dx) > Math.abs(g.dy) * 1.4,
+      onMoveShouldSetPanResponderCapture: (_e, g) => Math.abs(g.dx) > 12 && Math.abs(g.dx) > Math.abs(g.dy) * 1.4,
+      onPanResponderRelease: (_e, g) => { if (g.dx <= -30) onChange(1); else if (g.dx >= 30) onChange(-1); },
+    }),
+  ).current;
+  const mName = (dm: number) => new Date(view.y, view.m + dm, 1).toLocaleDateString(undefined, { month: 'long' });
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 14 }}>
+      <Pressable onPress={() => onChange(-1)} hitSlop={8} style={navBtn}><ChevronLeft size={16} color={color.inkSecondary} strokeWidth={2.5} /></Pressable>
+      <View style={{ flex: 1, alignItems: 'center' }} {...pan.panHandlers}>
+        <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 2, color: color.muted, marginBottom: 1 }}>{view.y}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: 16, alignSelf: 'stretch', overflow: 'hidden' }}>
+          <Text numberOfLines={1} style={{ fontFamily: font.display700, fontSize: 18, color: color.faint }}>{mName(-1)}</Text>
+          <Text numberOfLines={1} style={{ fontFamily: font.display700, fontSize: 19, color: color.ink }}>{mName(0)}</Text>
+          <Text numberOfLines={1} style={{ fontFamily: font.display700, fontSize: 18, color: color.faint }}>{mName(1)}</Text>
+          <LinearGradient colors={['#fff', 'rgba(255,255,255,0)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 30 }} pointerEvents="none" />
+          <LinearGradient colors={['rgba(255,255,255,0)', '#fff']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 30 }} pointerEvents="none" />
+        </View>
+      </View>
+      <Pressable onPress={() => onChange(1)} hitSlop={8} style={navBtn}><ChevronRight size={16} color={color.inkSecondary} strokeWidth={2.5} /></Pressable>
+    </View>
+  );
+}
+
 /* ── month / week grid ──────────────────────────────────────────────────── */
 
 // Trim the full month cell array down to the single week containing `sel`.
@@ -521,9 +546,10 @@ function MonthGrid({
 const RAIL_GAP = 5;
 const RAIL_VISIBLE = 7;
 
-function WeekRail({ days, selRailIndex, selKey, todayKey, dayMarks, wxForDate, onSelectDay }: {
+function WeekRail({ days, selRailIndex, centerToken, selKey, todayKey, dayMarks, wxForDate, onSelectDay }: {
   days: Date[];
   selRailIndex: number;
+  centerToken: number;
   selKey: string;
   todayKey: string;
   dayMarks: Map<string, string[]>;
@@ -541,6 +567,14 @@ function WeekRail({ days, selRailIndex, selKey, todayKey, dayMarks, wxForDate, o
   const scrollToCentered = (centerIdx: number, animated: boolean, s = step) => {
     scRef.current?.scrollTo({ x: clampLeft(centerIdx - 3) * s, animated });
   };
+
+  // When the month header jumps the selected day (centerToken changes), glide
+  // the rail so the new selected day is centred.
+  useEffect(() => {
+    if (!didInit.current) return;
+    scRef.current?.scrollTo({ x: clampLeft(selRailIndex - 3) * step, animated: true });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [centerToken]);
 
   const onLayout = (e: NativeSyntheticEvent<{ layout: { width: number } }>) => {
     const w = e.nativeEvent.layout.width;
