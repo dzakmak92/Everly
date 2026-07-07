@@ -26,6 +26,17 @@ export async function signOut() {
   return supabase.auth.signOut();
 }
 
+/**
+ * Permanently delete the signed-in account (auth user + its `profiles` row via
+ * cascade). On-device data must be wiped separately by the caller. Throws if the
+ * server rejects the request.
+ */
+export async function deleteAccount() {
+  const { error } = await supabase.rpc('delete_account' as never);
+  if (error) throw error;
+  await supabase.auth.signOut();
+}
+
 export async function getSession() {
   const { data } = await supabase.auth.getSession();
   return data.session;
