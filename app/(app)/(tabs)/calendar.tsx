@@ -189,6 +189,7 @@ export default function CalendarTab() {
             days={railDays}
             selRailIndex={selRailIndex}
             centerToken={centerToken}
+            weekNum={isoWeek(new Date(sel.y, sel.m, sel.d))}
             selKey={selKey}
             todayKey={todayKey}
             dayMarks={dayMarks}
@@ -467,6 +468,16 @@ const GRID_FRAME = '#E7E1EF';
 const GRID_LINE = '#EDE8F2';
 const WEEKEND_BG = '#F4F1FA';
 const TODAY_BG = '#EDEBF9';
+const WEEKNUM_BG = '#F0EEFA';
+
+// ISO-8601 week number (weeks start Monday; week 1 holds the first Thursday).
+function isoWeek(d: Date): number {
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  t.setUTCDate(t.getUTCDate() - ((t.getUTCDay() + 6) % 7) + 3); // Thursday of this week
+  const firstThu = new Date(Date.UTC(t.getUTCFullYear(), 0, 4));
+  firstThu.setUTCDate(firstThu.getUTCDate() - ((firstThu.getUTCDay() + 6) % 7) + 3);
+  return 1 + Math.round((t.getTime() - firstThu.getTime()) / (7 * 86400000));
+}
 
 function MonthGrid({
   cells,
@@ -486,8 +497,24 @@ function MonthGrid({
   onSelect: (d: number) => void;
 }) {
   const rows = Math.ceil(cells.length / 7);
+  const firstWeekday = (new Date(view.y, view.m, 1).getDay() + 6) % 7;
+  const rowMonday = (r: number) => new Date(view.y, view.m, 1 - firstWeekday + r * 7);
   return (
-    <View>
+    <View style={{ flexDirection: 'row' }}>
+      {/* Week-number gutter (ISO week per row) */}
+      <View style={{ width: 24, marginRight: 5 }}>
+        <View style={{ marginBottom: 6 }}><Text style={{ fontSize: 10 }}> </Text></View>
+        <View style={{ paddingTop: 1 }}>
+          {Array.from({ length: rows }).map((_, r) => (
+            <View key={r} style={{ height: 54, alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ fontFamily: font.body700, fontSize: 9, color: color.faint }}>W{isoWeek(rowMonday(r))}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+
+      {/* Day headers + framed grid */}
+      <View style={{ flex: 1 }}>
       {/* Day headers (weekend dimmed) */}
       <View style={{ flexDirection: 'row', marginBottom: 6 }}>
         {WEEKDAYS.map((w, i) => (
@@ -537,6 +564,7 @@ function MonthGrid({
           );
         })}
       </View>
+      </View>
     </View>
   );
 }
@@ -546,10 +574,11 @@ function MonthGrid({
 const RAIL_GAP = 5;
 const RAIL_VISIBLE = 7;
 
-function WeekRail({ days, selRailIndex, centerToken, selKey, todayKey, dayMarks, wxForDate, onSelectDay }: {
+function WeekRail({ days, selRailIndex, centerToken, weekNum, selKey, todayKey, dayMarks, wxForDate, onSelectDay }: {
   days: Date[];
   selRailIndex: number;
   centerToken: number;
+  weekNum: number;
   selKey: string;
   todayKey: string;
   dayMarks: Map<string, string[]>;
@@ -648,7 +677,12 @@ function WeekRail({ days, selRailIndex, centerToken, selKey, todayKey, dayMarks,
         </View>
         <Pressable onPress={() => jumpWeek(1)} hitSlop={6} style={sideArrow}><ChevronRight size={16} color={color.muted} strokeWidth={2.5} /></Pressable>
       </View>
-      <Text style={{ textAlign: 'center', fontFamily: font.body600, fontSize: 10, color: color.faint, marginTop: 9 }}>scroll to glide through days · ‹ › jump a week</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 9 }}>
+        <View style={{ backgroundColor: WEEKNUM_BG, borderRadius: 999, paddingVertical: 3, paddingHorizontal: 11 }}>
+          <Text style={{ fontFamily: font.body700, fontSize: 10, color: color.primary }}>Week {weekNum}</Text>
+        </View>
+        <Text style={{ fontFamily: font.body600, fontSize: 10, color: color.faint }}>scroll to glide · ‹ › jump a week</Text>
+      </View>
     </View>
   );
 }
