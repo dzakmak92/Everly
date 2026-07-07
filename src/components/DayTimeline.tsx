@@ -23,12 +23,12 @@ function colorAt(h: number) {
 }
 
 /** Switchable day overview — a horizontal ribbon or a sunrise→sunset dial. */
-export function DayTimeline({ items, layout, unit = 'entry' }: { items: TlItem[]; layout: 'ribbon' | 'clock'; unit?: 'entry' | 'event' }) {
-  return layout === 'clock' ? <ClockTimeline items={items} unit={unit} /> : <RibbonTimeline items={items} />;
+export function DayTimeline({ items, layout, unit = 'entry', isToday = true }: { items: TlItem[]; layout: 'ribbon' | 'clock'; unit?: 'entry' | 'event'; isToday?: boolean }) {
+  return layout === 'clock' ? <ClockTimeline items={items} unit={unit} isToday={isToday} /> : <RibbonTimeline items={items} isToday={isToday} />;
 }
 
 /** Ribbon: a horizontal strip shaded by time of day (day/night gradient). */
-function RibbonTimeline({ items }: { items: TlItem[] }) {
+function RibbonTimeline({ items, isToday = true }: { items: TlItem[]; isToday?: boolean }) {
   const hrs = items.map((i) => { const d = new Date(i.at); return d.getHours() + d.getMinutes() / 60; });
   const lo = Math.max(0, Math.min(7, Math.floor(Math.min(...hrs))));
   const hi = Math.min(24, Math.max(20, Math.ceil(Math.max(...hrs))));
@@ -58,7 +58,7 @@ function RibbonTimeline({ items }: { items: TlItem[] }) {
       {ticks.map((h) => (
         <Text key={`t${h}`} style={{ position: 'absolute', top: 52, left: pct(h), marginLeft: -16, width: 32, textAlign: 'center', fontFamily: font.body600, fontSize: 9.5, color: color.faint }}>{h === 24 ? '24:00' : `${h}:00`}</Text>
       ))}
-      {nowH >= lo && nowH <= hi && (
+      {isToday && nowH >= lo && nowH <= hi && (
         <View style={{ position: 'absolute', top: 33, left: pct(nowH), width: 2, height: 19, marginLeft: -1, backgroundColor: color.rose }} />
       )}
       {items.map((it, i) => (
@@ -74,7 +74,7 @@ function RibbonTimeline({ items }: { items: TlItem[] }) {
 /** Clock: a sunrise→sunset dial. Sunrise on the left, noon at the top, sunset on
    the right, midnight at the bottom — day arc over the top, night below — with
    24-hour tick slots and time-of-day colour bands. */
-function ClockTimeline({ items, unit }: { items: TlItem[]; unit: 'entry' | 'event' }) {
+function ClockTimeline({ items, unit, isToday = true }: { items: TlItem[]; unit: 'entry' | 'event'; isToday?: boolean }) {
   const cx = 110, cy = 110, R = 86;
   // Map the hour so 6→left, 12→top, 18→right, 0→bottom.
   const angle = (h: number) => ((((h - 18) % 24) + 24) % 24) / 24 * 2 * Math.PI;
@@ -111,9 +111,9 @@ function ClockTimeline({ items, unit }: { items: TlItem[]; unit: 'entry' | 'even
           const d = new Date(it.at); const h = d.getHours() + d.getMinutes() / 60; const [x, y] = P(R, angle(h));
           return <Circle key={it.id} cx={x} cy={y} r={7} fill={it.color} stroke="#fff" strokeWidth={3} />;
         })}
-        {/* live "now" sun token */}
-        <Circle cx={nx} cy={ny} r={9} fill="#fff" stroke={color.rose} strokeWidth={2} />
-        <SvgText x={nx} y={ny + 3.5} fontSize={9} textAnchor="middle">☀️</SvgText>
+        {/* live "now" sun token — only meaningful on today */}
+        {isToday && <Circle cx={nx} cy={ny} r={9} fill="#fff" stroke={color.rose} strokeWidth={2} />}
+        {isToday && <SvgText x={nx} y={ny + 3.5} fontSize={9} textAnchor="middle">☀️</SvgText>}
       </Svg>
       {items.length > 0 ? (
         <View style={{ alignSelf: 'stretch', gap: 7 }}>
