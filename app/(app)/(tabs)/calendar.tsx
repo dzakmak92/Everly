@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { ScrollView, View, Text, Pressable, Modal, ActivityIndicator, Linking, PanResponder } from 'react-native';
+import React, { useState, useRef, useMemo } from 'react';
+import { ScrollView, View, Text, Pressable, Modal, ActivityIndicator, Linking, type NativeSyntheticEvent, type NativeScrollEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, font, radius, shadow, fill, childToken } from '../../../src/theme/tokens';
 import { ChevronLeft, ChevronRight, Calendar, Shield, Activity, Heart, X, Search, BabyBean } from '../../../src/components/icons';
@@ -17,6 +17,7 @@ const WEEKDAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 const VIEWS = ['Month', 'Week'] as const;
 type ViewMode = (typeof VIEWS)[number];
 const SWITCH_TRACK = '#E9E2D6'; // warm cream track for the Month/Week switch
+const RAIL_SPAN = 120; // days shown on each side of today in the Week rail wheel
 
 const EVENT_COLOR = color.primary; // periwinkle/lilac for scheduled events
 const ENTRY_COLOR = '#3FA98A'; // mint for logged entries
@@ -83,12 +84,6 @@ export default function CalendarTab() {
   const [view, setView] = useState({ y: now.getFullYear(), m: now.getMonth() });
   const [sel, setSel] = useState({ y: now.getFullYear(), m: now.getMonth(), d: now.getDate() });
   const [mode, setMode] = useState<ViewMode>('Month');
-  // Rolling 7-day window for the Week rail; starts on the Monday of today's week.
-  const [railStart, setRailStart] = useState(() => {
-    const d = new Date(); d.setHours(0, 0, 0, 0);
-    d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
-    return d;
-  });
   const [addOpen, setAddOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [time, setTime] = useState('09:00');
@@ -96,13 +91,13 @@ export default function CalendarTab() {
   const [tlLayout, setTlLayout] = useState<'ribbon' | 'clock'>('ribbon');
 
   const selKey = key(sel.y, sel.m, sel.d);
-  // Per-day markers (colour per item), used for the little bars under each day.
-  // Order: scheduled events, then Mum&Me appointments, then logged entries.
+  // Per-day markers (colour per item) — the calendar shows only *scheduled*
+  // things (events + Mum&Me appointments). Quick logs (feeding, diaper, …) live
+  // on the child's own tracking, not the shared calendar.
   const dayMarks = new Map<string, string[]>();
   const pushMark = (k: string, c: string) => { const a = dayMarks.get(k); if (a) a.push(c); else dayMarks.set(k, [c]); };
   events.filter((e) => shown(ownerOf(e.childId))).forEach((e) => pushMark(dkey(e.at), EVENT_COLOR));
   if (shown('mumme')) appts.forEach((a) => pushMark(dkey(a.at), APPT_COLOR));
-  entries.filter((e) => shown(ownerOf(e.childId))).forEach((e) => pushMark(dkey(e.at), ENTRY_COLOR));
 
   const firstWeekday = monIndex(new Date(view.y, view.m, 1).getDay());
   const daysInMonth = new Date(view.y, view.m + 1, 0).getDate();
@@ -115,7 +110,6 @@ export default function CalendarTab() {
   const selIsToday = selKey === todayKey;
 
   const selEvents = events.filter((e) => dkey(e.at) === selKey && shown(ownerOf(e.childId)));
-  const selEntries = entries.filter((e) => dkey(e.at) === selKey && shown(ownerOf(e.childId)));
   const selAppts = appts.filter((a) => dkey(a.at) === selKey && shown('mumme'));
 
   // Timed items (events + appointments) for the day-timeline overview.
@@ -132,24 +126,19 @@ export default function CalendarTab() {
       return { y: v.y, m };
     });
   }
-  // Slide the Week rail (and the selected day with it) by N days. Swipe → ±1
-  // (or more for a long drag); the flanking arrows jump a whole week (±7).
-  function shiftRail(days: number) {
-    setRailStart((prev) => { const d = new Date(prev); d.setDate(d.getDate() + days); return d; });
-    const s = new Date(sel.y, sel.m, sel.d); s.setDate(s.getDate() + days);
-    setSel({ y: s.getFullYear(), m: s.getMonth(), d: s.getDate() });
-    setView({ y: s.getFullYear(), m: s.getMonth() });
+  // Select a day (updates the day detail + keeps the month in sync).
+  function selectDay(d: Date) {
+    setSel({ y: d.getFullYear(), m: d.getMonth(), d: d.getDate() });
+    setView({ y: d.getFullYear(), m: d.getMonth() });
   }
-  // When entering Week mode, align the rail to the selected day's Monday-week.
-  useEffect(() => {
-    if (mode !== 'Week') return;
-    const d = new Date(sel.y, sel.m, sel.d); d.setHours(0, 0, 0, 0);
-    d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
-    setRailStart(d);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode]);
-  // The 7 days currently shown in the Week rail.
-  const weekDates = Array.from({ length: 7 }, (_, i) => { const d = new Date(railStart); d.setDate(railStart.getDate() + i); return d; });
+  // A wide, stable range of days for the Week rail so it can momentum-scroll
+  // (wheel-style) smoothly in either direction. Index 0 = RAIL_SPAN days ago.
+  const railDays = useMemo(() => {
+    const base = new Date(); base.setHours(0, 0, 0, 0); base.setDate(base.getDate() - RAIL_SPAN);
+    return Array.from({ length: RAIL_SPAN * 2 + 1 }, (_, i) => { const d = new Date(base); d.setDate(base.getDate() + i); return d; });
+  }, []);
+  const railBase = railDays[0];
+  const selRailIndex = Math.round((new Date(sel.y, sel.m, sel.d).getTime() - railBase.getTime()) / 86400000);
 
   function saveEvent() {
     if (!title.trim()) return;
@@ -202,13 +191,13 @@ export default function CalendarTab() {
           />
         ) : (
           <WeekRail
-            weekDates={weekDates}
+            days={railDays}
+            selRailIndex={selRailIndex}
             selKey={selKey}
             todayKey={todayKey}
             dayMarks={dayMarks}
             wxForDate={wx.wxForDate}
-            onSelect={(d) => setSel({ y: d.getFullYear(), m: d.getMonth(), d: d.getDate() })}
-            onShiftDays={shiftRail}
+            onSelectDay={selectDay}
           />
         )}
 
@@ -268,15 +257,10 @@ export default function CalendarTab() {
           : <ScheduleRow key={a.id} owner={o} title={a.title} at={a.at} location={a.location} sublabel="Mum&Me" onEdit={() => setEditId(a.id)} />;
       })}
 
-      {/* Logged entries (read-only) */}
-      {selEntries.map((e) => (
-        <EntryCard key={e.id} entry={e} />
-      ))}
-
       {/* Empty state */}
-      {selEvents.length === 0 && selEntries.length === 0 && selAppts.length === 0 && (
+      {selEvents.length === 0 && selAppts.length === 0 && (
         <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, padding: 20, alignItems: 'center' }, shadow.card]}>
-          <Text style={{ fontFamily: font.body500, fontSize: 14, color: color.muted }}>Nothing on this day.</Text>
+          <Text style={{ fontFamily: font.body500, fontSize: 14, color: color.muted }}>Nothing scheduled on this day.</Text>
         </View>
       )}
 
@@ -501,28 +485,27 @@ function MonthGrid({
           const isToday = k === todayKey;
           const marks = dayMarks.get(k) ?? [];
           const dayWx = wxForDate(new Date(view.y, view.m, d));
-          const cellBg = isToday ? TODAY_BG : isWeekend ? WEEKEND_BG : 'transparent';
+          const cellBg = isWeekend ? WEEKEND_BG : 'transparent';
+          const numColor = isToday ? '#fff' : isSel ? color.primary : isWeekend ? color.muted : color.ink;
           return (
             <Pressable key={k} onPress={() => onSelect(d)} style={{ width: `${100 / 7}%`, height: 54, backgroundColor: cellBg, ...cellBorder }}>
+              {/* whole-cell highlight — filled for today, outlined for the selected day */}
+              {isToday ? (
+                <View style={{ position: 'absolute', top: 3, left: 3, right: 3, bottom: 3, borderRadius: 9, backgroundColor: color.primary }} />
+              ) : isSel ? (
+                <View style={{ position: 'absolute', top: 3, left: 3, right: 3, bottom: 3, borderRadius: 9, borderWidth: 1.5, borderColor: color.primary }} />
+              ) : null}
               {/* number — top-left */}
-              <View
-                style={{
-                  position: 'absolute', top: 4, left: 5, width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center',
-                  backgroundColor: isToday ? color.primary : 'transparent',
-                  borderWidth: isSel && !isToday ? 1.5 : 0, borderColor: color.primary,
-                }}
-              >
-                <Text style={{ fontFamily: isToday ? font.body700 : font.body600, fontSize: 12, color: isToday ? '#fff' : isWeekend ? color.muted : color.ink }}>{d}</Text>
-              </View>
+              <Text style={{ position: 'absolute', top: 6, left: 8, fontFamily: isToday || isSel ? font.body700 : font.body600, fontSize: 12, color: numColor }}>{d}</Text>
               {/* weather — top-right corner */}
-              {dayWx ? <View style={{ position: 'absolute', top: 5, right: 5 }}><WeatherGlyph code={dayWx.code} size={12} /></View> : null}
+              {dayWx ? <View style={{ position: 'absolute', top: 6, right: 7 }}><WeatherGlyph code={dayWx.code} size={12} /></View> : null}
               {/* item markers — bottom-centre, up to 3 bars + "+N" */}
               {marks.length > 0 && (
                 <View style={{ position: 'absolute', bottom: 5, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
                   {marks.slice(0, 3).map((c, idx) => (
-                    <View key={idx} style={{ width: 9, height: 4, borderRadius: 2, backgroundColor: c, marginHorizontal: 1.2 }} />
+                    <View key={idx} style={{ width: 9, height: 4, borderRadius: 2, backgroundColor: isToday ? '#fff' : c, marginHorizontal: 1.2 }} />
                   ))}
-                  {marks.length > 3 ? <Text style={{ fontFamily: font.body700, fontSize: 8, color: '#8079a6', marginLeft: 1 }}>+{marks.length - 3}</Text> : null}
+                  {marks.length > 3 ? <Text style={{ fontFamily: font.body700, fontSize: 8, color: isToday ? '#fff' : '#8079a6', marginLeft: 1 }}>+{marks.length - 3}</Text> : null}
                 </View>
               )}
             </Pressable>
@@ -535,63 +518,103 @@ function MonthGrid({
 
 /* ── week rail — a swipeable 7-day column view (Week mode) ───────────────── */
 
-function WeekRail({ weekDates, selKey, todayKey, dayMarks, wxForDate, onSelect, onShiftDays }: {
-  weekDates: Date[];
+const RAIL_GAP = 5;
+const RAIL_VISIBLE = 7;
+
+function WeekRail({ days, selRailIndex, selKey, todayKey, dayMarks, wxForDate, onSelectDay }: {
+  days: Date[];
+  selRailIndex: number;
   selKey: string;
   todayKey: string;
   dayMarks: Map<string, string[]>;
   wxForDate: (d: Date) => DayWx | null;
-  onSelect: (d: Date) => void;
-  onShiftDays: (days: number) => void;
+  onSelectDay: (d: Date) => void;
 }) {
-  // Width of one day cell, measured on layout — lets a swipe map to a day count.
-  const cellW = useRef(48);
-  const pan = useRef(
-    PanResponder.create({
-      // Claim horizontal-dominant drags early — the capture variant lets the rail
-      // steal the gesture from the day-cell Pressables so a swipe always works.
-      onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dx) > 8 && Math.abs(g.dx) > Math.abs(g.dy) * 1.2,
-      onMoveShouldSetPanResponderCapture: (_e, g) => Math.abs(g.dx) > 8 && Math.abs(g.dx) > Math.abs(g.dy) * 1.2,
-      onPanResponderTerminationRequest: () => false,
-      onPanResponderRelease: (_e, g) => {
-        // Days moved is proportional to the drag distance; a flick moves ≥1.
-        let n = Math.round(-g.dx / cellW.current);
-        if (n === 0 && Math.abs(g.vx) > 0.2) n = g.vx < 0 ? 1 : -1;
-        if (n !== 0) onShiftDays(n);
-      },
-    }),
-  ).current;
+  const scRef = useRef<ScrollView>(null);
+  const [cellW, setCellW] = useState(48);
+  const lastX = useRef(0);
+  const didInit = useRef(false);
+  const idle = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const step = cellW + RAIL_GAP;
+
+  const clampLeft = (leftmost: number) => Math.max(0, Math.min(days.length - RAIL_VISIBLE, leftmost));
+  const scrollToCentered = (centerIdx: number, animated: boolean, s = step) => {
+    scRef.current?.scrollTo({ x: clampLeft(centerIdx - 3) * s, animated });
+  };
+
+  const onLayout = (e: NativeSyntheticEvent<{ layout: { width: number } }>) => {
+    const w = e.nativeEvent.layout.width;
+    const cw = (w - RAIL_GAP * (RAIL_VISIBLE - 1)) / RAIL_VISIBLE;
+    setCellW(cw);
+    if (!didInit.current) {
+      didInit.current = true;
+      const s = cw + RAIL_GAP;
+      lastX.current = clampLeft(selRailIndex - 3) * s;
+      requestAnimationFrame(() => scRef.current?.scrollTo({ x: lastX.current, animated: false }));
+    }
+  };
+
+  // Wheel settle: once scrolling has been idle briefly, the day nearest the
+  // centre of the rail becomes the selected day. Works for drag, fling & wheel.
+  const settleAt = (x: number) => {
+    const center = Math.max(0, Math.min(days.length - 1, Math.round(x / step) + 3));
+    onSelectDay(days[center]);
+  };
+  const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const x = e.nativeEvent.contentOffset.x;
+    lastX.current = x;
+    if (!didInit.current) return;
+    if (idle.current) clearTimeout(idle.current);
+    idle.current = setTimeout(() => settleAt(x), 130);
+  };
+  const jumpWeek = (dir: number) => {
+    const leftmost = Math.round(lastX.current / step);
+    scrollToCentered(clampLeft(leftmost + dir * 7) + 3, true);
+  };
+
   const sideArrow = { width: 24, borderRadius: 12, backgroundColor: color.canvas, alignItems: 'center' as const, justifyContent: 'center' as const, alignSelf: 'stretch' as const };
   return (
-    <View {...pan.panHandlers}>
-      {/* Arrows flank the day rail on each side (a whole week each) */}
+    <View>
       <View style={{ flexDirection: 'row', gap: 6, alignItems: 'stretch' }}>
-        <Pressable onPress={() => onShiftDays(-7)} hitSlop={6} style={sideArrow}><ChevronLeft size={16} color={color.muted} strokeWidth={2.5} /></Pressable>
-        <View onLayout={(e) => { cellW.current = e.nativeEvent.layout.width / 7; }} style={{ flex: 1, flexDirection: 'row', gap: 5 }}>
-          {weekDates.map((d) => {
-            const k = key(d.getFullYear(), d.getMonth(), d.getDate());
-            const isSel = k === selKey;
-            const isToday = k === todayKey;
-            const marks = dayMarks.get(k) ?? [];
-            const dayWx = wxForDate(d);
-            const isWeekend = ((d.getDay() + 6) % 7) >= 5;
-            const bg = isToday ? TODAY_BG : isSel ? '#fff' : isWeekend ? WEEKEND_BG : color.canvas;
-            return (
-              <Pressable key={k} onPress={() => onSelect(d)} style={{ flex: 1, alignItems: 'center', gap: 3, borderRadius: 12, paddingVertical: 8, paddingHorizontal: 2, minHeight: 100, backgroundColor: bg, borderWidth: isSel && !isToday ? 1.5 : 1, borderColor: isSel && !isToday ? color.primary : GRID_LINE }}>
-                <Text style={{ fontFamily: font.body700, fontSize: 8.5, color: isToday ? color.primary : color.faint }}>{isToday ? 'TODAY' : d.toLocaleDateString(undefined, { weekday: 'short' }).slice(0, 3).toUpperCase()}</Text>
-                <Text style={{ fontFamily: font.display700, fontSize: 15, color: isWeekend ? color.muted : color.ink }}>{d.getDate()}</Text>
-                {dayWx ? <WeatherGlyph code={dayWx.code} size={15} /> : <View style={{ height: 15 }} />}
-                <View style={{ marginTop: 2, gap: 3, width: '72%' }}>
-                  {marks.slice(0, 4).map((c, idx) => <View key={idx} style={{ height: 5, borderRadius: 2, backgroundColor: c }} />)}
-                  {marks.length > 4 ? <Text style={{ fontFamily: font.body700, fontSize: 8, color: '#8079a6', textAlign: 'center' }}>+{marks.length - 4}</Text> : null}
-                </View>
-              </Pressable>
-            );
-          })}
+        <Pressable onPress={() => jumpWeek(-1)} hitSlop={6} style={sideArrow}><ChevronLeft size={16} color={color.muted} strokeWidth={2.5} /></Pressable>
+        <View style={{ flex: 1 }} onLayout={onLayout}>
+          <ScrollView
+            ref={scRef}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            snapToInterval={step}
+            decelerationRate="normal"
+            scrollEventThrottle={16}
+            onScroll={onScroll}
+            contentContainerStyle={{ gap: RAIL_GAP }}
+          >
+            {days.map((d, i) => {
+              const k = key(d.getFullYear(), d.getMonth(), d.getDate());
+              const isSel = k === selKey;
+              const isToday = k === todayKey;
+              const marks = dayMarks.get(k) ?? [];
+              const dayWx = wxForDate(d);
+              const isWeekend = ((d.getDay() + 6) % 7) >= 5;
+              const bg = isToday ? color.primary : isSel ? '#fff' : isWeekend ? WEEKEND_BG : color.canvas;
+              const border = isToday ? color.primary : isSel ? color.primary : GRID_LINE;
+              const onWk = isToday;
+              return (
+                <Pressable key={i} onPress={() => { onSelectDay(d); scrollToCentered(i, true); }} style={{ width: cellW, alignItems: 'center', gap: 3, borderRadius: 12, paddingVertical: 8, paddingHorizontal: 2, minHeight: 100, backgroundColor: bg, borderWidth: isSel && !isToday ? 1.5 : 1, borderColor: border }}>
+                  <Text style={{ fontFamily: font.body700, fontSize: 8.5, color: onWk ? 'rgba(255,255,255,0.85)' : isSel ? color.primary : color.faint }}>{isToday ? 'TODAY' : d.toLocaleDateString(undefined, { weekday: 'short' }).slice(0, 3).toUpperCase()}</Text>
+                  <Text style={{ fontFamily: font.display700, fontSize: 15, color: onWk ? '#fff' : isWeekend ? color.muted : color.ink }}>{d.getDate()}</Text>
+                  {dayWx ? <WeatherGlyph code={dayWx.code} size={15} /> : <View style={{ height: 15 }} />}
+                  <View style={{ marginTop: 2, gap: 3, width: '72%' }}>
+                    {marks.slice(0, 4).map((c, idx) => <View key={idx} style={{ height: 5, borderRadius: 2, backgroundColor: onWk ? '#fff' : c }} />)}
+                    {marks.length > 4 ? <Text style={{ fontFamily: font.body700, fontSize: 8, color: onWk ? '#fff' : '#8079a6', textAlign: 'center' }}>+{marks.length - 4}</Text> : null}
+                  </View>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
         </View>
-        <Pressable onPress={() => onShiftDays(7)} hitSlop={6} style={sideArrow}><ChevronRight size={16} color={color.muted} strokeWidth={2.5} /></Pressable>
+        <Pressable onPress={() => jumpWeek(1)} hitSlop={6} style={sideArrow}><ChevronRight size={16} color={color.muted} strokeWidth={2.5} /></Pressable>
       </View>
-      <Text style={{ textAlign: 'center', fontFamily: font.body600, fontSize: 10, color: color.faint, marginTop: 9 }}>swipe day-by-day · ‹ › jump a week</Text>
+      <Text style={{ textAlign: 'center', fontFamily: font.body600, fontSize: 10, color: color.faint, marginTop: 9 }}>scroll to glide through days · ‹ › jump a week</Text>
     </View>
   );
 }
