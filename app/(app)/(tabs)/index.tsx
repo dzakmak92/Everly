@@ -2014,22 +2014,25 @@ function AppointmentsCard({ accent, fill, items, allowTests, standard, onAdd, on
             <Text style={{ fontFamily: font.display700, fontSize: 14, color: color.ink }}>{MONTH_NAMES[month.m]} {month.y}</Text>
             <Pressable hitSlop={10} onPress={() => setMonth((s) => ({ y: s.m === 11 ? s.y + 1 : s.y, m: (s.m + 1) % 12 }))}><ChevronRight size={16} color={color.muted} /></Pressable>
           </View>
-          <View style={{ flexDirection: 'row' }}>
+          <View style={{ flexDirection: 'row', marginBottom: 2 }}>
             {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((l, i) => <Text key={i} style={{ flex: 1, textAlign: 'center', fontFamily: font.body700, fontSize: 9, color: color.faint }}>{l}</Text>)}
           </View>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-            {cells.map((d) => {
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', borderWidth: 1, borderColor: '#E7E1EF', borderRadius: 12, overflow: 'hidden' }}>
+            {cells.map((d, i) => {
               const k = apptDayKey(d);
               const out = d.getMonth() !== month.m;
               const has = apptDays.has(k);
               const sel = k === selectedKey;
               const isToday = k === todayKey;
+              const col = i % 7; const isWeekend = col >= 5; const lastRow = i >= 35;
+              const cellBorder = { borderRightWidth: col === 6 ? 0 : 1, borderBottomWidth: lastRow ? 0 : 1, borderColor: '#EDE8F2' };
+              const cellBg = isToday && !sel ? '#EDEBF9' : isWeekend ? '#F4F1FA' : 'transparent';
               return (
-                <Pressable key={k} onPress={() => { setSelKey(k); setDate(k); }} style={{ width: `${100 / 7}%`, aspectRatio: 1, alignItems: 'center', justifyContent: 'center' }}>
-                  <View style={{ width: 30, height: 30, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: sel ? accent : has ? fill : 'transparent', borderWidth: isToday && !sel ? 1.5 : 0, borderColor: accent }}>
-                    <Text style={{ fontFamily: isToday ? font.display700 : font.display700, fontSize: 12, color: sel ? '#fff' : isToday ? accent : out ? color.faint : color.inkSecondary }}>{d.getDate()}</Text>
+                <Pressable key={k} onPress={() => { setSelKey(k); setDate(k); }} style={{ width: `${100 / 7}%`, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: cellBg, ...cellBorder }}>
+                  <View style={{ width: 28, height: 28, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: sel ? accent : 'transparent', borderWidth: isToday && !sel ? 1.5 : 0, borderColor: accent }}>
+                    <Text style={{ fontFamily: font.display700, fontSize: 12, color: sel ? '#fff' : isToday ? accent : out ? color.faint : color.inkSecondary }}>{d.getDate()}</Text>
                   </View>
-                  <View style={{ width: 4, height: 4, borderRadius: 2, marginTop: 2, backgroundColor: has && !sel ? accent : 'transparent' }} />
+                  <View style={{ width: has ? 10 : 0, height: 4, borderRadius: 2, marginTop: 3, backgroundColor: has && !sel ? accent : 'transparent' }} />
                 </Pressable>
               );
             })}

@@ -89,10 +89,13 @@ export default function CalendarTab() {
   const [tlLayout, setTlLayout] = useState<'ribbon' | 'clock'>('ribbon');
 
   const selKey = key(sel.y, sel.m, sel.d);
-  // Day-membership sets, filtered by the module selector.
-  const entryDays = new Set(entries.filter((e) => shown(ownerOf(e.childId))).map((e) => dkey(e.at)));
-  const eventDays = new Set(events.filter((e) => shown(ownerOf(e.childId))).map((e) => dkey(e.at)));
-  const apptDays = new Set(shown('mumme') ? appts.map((a) => dkey(a.at)) : []);
+  // Per-day markers (colour per item), used for the little bars under each day.
+  // Order: scheduled events, then Mum&Me appointments, then logged entries.
+  const dayMarks = new Map<string, string[]>();
+  const pushMark = (k: string, c: string) => { const a = dayMarks.get(k); if (a) a.push(c); else dayMarks.set(k, [c]); };
+  events.filter((e) => shown(ownerOf(e.childId))).forEach((e) => pushMark(dkey(e.at), EVENT_COLOR));
+  if (shown('mumme')) appts.forEach((a) => pushMark(dkey(a.at), APPT_COLOR));
+  entries.filter((e) => shown(ownerOf(e.childId))).forEach((e) => pushMark(dkey(e.at), ENTRY_COLOR));
 
   const firstWeekday = monIndex(new Date(view.y, view.m, 1).getDay());
   const daysInMonth = new Date(view.y, view.m + 1, 0).getDate();
@@ -197,9 +200,7 @@ export default function CalendarTab() {
             view={view}
             selKey={selKey}
             todayKey={todayKey}
-            entryDays={entryDays}
-            eventDays={eventDays}
-            apptDays={apptDays}
+            dayMarks={dayMarks}
             wxForDate={wx.wxForDate}
             onSelect={(d) => setSel({ y: view.y, m: view.m, d })}
           />
@@ -478,14 +479,18 @@ function weekCells(cells: (number | null)[], sel: { d: number }, view: { y: numb
   return cells.slice(start, start + 7);
 }
 
+// Calendar cell palette — a framed hairline grid with a soft weekend tint.
+const GRID_FRAME = '#E7E1EF';
+const GRID_LINE = '#EDE8F2';
+const WEEKEND_BG = '#F4F1FA';
+const TODAY_BG = '#EDEBF9';
+
 function MonthGrid({
   cells,
   view,
   selKey,
   todayKey,
-  entryDays,
-  eventDays,
-  apptDays,
+  dayMarks,
   wxForDate,
   onSelect,
 }: {
@@ -493,12 +498,11 @@ function MonthGrid({
   view: { y: number; m: number };
   selKey: string;
   todayKey: string;
-  entryDays: Set<string>;
-  eventDays: Set<string>;
-  apptDays: Set<string>;
+  dayMarks: Map<string, string[]>;
   wxForDate: (d: Date) => DayWx | null;
   onSelect: (d: number) => void;
 }) {
+  const rows = Math.ceil(cells.length / 7);
   return (
     <View>
       {/* Day headers (weekend dimmed) */}
@@ -510,46 +514,38 @@ function MonthGrid({
         ))}
       </View>
 
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+      {/* Framed hairline grid */}
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', borderWidth: 1, borderColor: GRID_FRAME, borderRadius: 12, overflow: 'hidden' }}>
         {cells.map((d, i) => {
-          const isWeekend = i % 7 >= 5;
-          if (d === null) return <View key={`e${i}`} style={{ width: `${100 / 7}%`, height: 46 }} />;
+          const col = i % 7;
+          const isWeekend = col >= 5;
+          const lastRow = i >= (rows - 1) * 7;
+          const cellBorder = { borderRightWidth: col === 6 ? 0 : 1, borderBottomWidth: lastRow ? 0 : 1, borderColor: GRID_LINE };
+          if (d === null) return <View key={`e${i}`} style={{ width: `${100 / 7}%`, height: 52, backgroundColor: isWeekend ? WEEKEND_BG : 'transparent', ...cellBorder }} />;
           const k = key(view.y, view.m, d);
           const isSel = k === selKey;
           const isToday = k === todayKey;
-          const hasEntry = entryDays.has(k);
-          const hasEvent = eventDays.has(k);
-          const hasAppt = apptDays.has(k);
+          const marks = dayMarks.get(k) ?? [];
           const dayWx = wxForDate(new Date(view.y, view.m, d));
+          const cellBg = isToday ? TODAY_BG : isWeekend ? WEEKEND_BG : 'transparent';
           return (
-            <Pressable key={k} onPress={() => onSelect(d)} style={{ width: `${100 / 7}%`, height: 52, alignItems: 'center', justifyContent: 'flex-start', paddingTop: 1 }}>
+            <Pressable key={k} onPress={() => onSelect(d)} style={{ width: `${100 / 7}%`, height: 52, alignItems: 'center', paddingTop: 5, backgroundColor: cellBg, ...cellBorder }}>
+              {dayWx ? <View style={{ position: 'absolute', top: 3, right: 4 }}><WeatherGlyph code={dayWx.code} size={12} /></View> : null}
               <View
                 style={{
-                  width: 30,
-                  height: 30,
-                  borderRadius: 15,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: isToday ? color.primary : isSel ? color.canvas : 'transparent',
-                  borderWidth: isSel && !isToday ? 1.5 : 0,
-                  borderColor: color.primary,
+                  width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center',
+                  backgroundColor: isToday ? color.primary : 'transparent',
+                  borderWidth: isSel && !isToday ? 1.5 : 0, borderColor: color.primary,
                 }}
               >
-                <Text
-                  style={{
-                    fontFamily: isToday ? font.body700 : font.body500,
-                    fontSize: 13,
-                    color: isToday ? '#fff' : isWeekend ? color.muted : color.ink,
-                  }}
-                >
-                  {d}
-                </Text>
+                <Text style={{ fontFamily: isToday ? font.body700 : font.body500, fontSize: 12.5, color: isToday ? '#fff' : isWeekend ? color.muted : color.ink }}>{d}</Text>
               </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 1, height: 16 }}>
-                {dayWx ? <WeatherGlyph code={dayWx.code} size={13} /> : null}
-                {hasEvent ? <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: EVENT_COLOR }} /> : null}
-                {hasAppt ? <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: APPT_COLOR }} /> : null}
-                {hasEntry ? <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: ENTRY_COLOR }} /> : null}
+              {/* Item markers — up to 3 colour bars, then a "+N" overflow */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, height: 6 }}>
+                {marks.slice(0, 3).map((c, idx) => (
+                  <View key={idx} style={{ width: 10, height: 4, borderRadius: 2, backgroundColor: c, marginHorizontal: 1.3 }} />
+                ))}
+                {marks.length > 3 ? <Text style={{ fontFamily: font.body700, fontSize: 8, color: '#8079a6', marginLeft: 1 }}>+{marks.length - 3}</Text> : null}
               </View>
             </Pressable>
           );
