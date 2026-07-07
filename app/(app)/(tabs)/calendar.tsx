@@ -14,8 +14,9 @@ import { DayTimeline, type TlItem } from '../../../src/components/DayTimeline';
 
 // Monday-start header letters; index 5,6 (Sat, Sun) are weekend → dimmed.
 const WEEKDAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-const VIEWS = ['Month', 'Week', 'Agenda'] as const;
+const VIEWS = ['Month', 'Week'] as const;
 type ViewMode = (typeof VIEWS)[number];
+const SWITCH_TRACK = '#E9E2D6'; // warm cream track for the Month/Week switch
 
 const EVENT_COLOR = color.primary; // periwinkle/lilac for scheduled events
 const ENTRY_COLOR = '#3FA98A'; // mint for logged entries
@@ -117,11 +118,6 @@ export default function CalendarTab() {
     ...selAppts.map((a) => ({ id: a.id, title: a.title, at: a.at, color: color.maternalTeal })),
   ].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
 
-  // Agenda mode: upcoming events in the viewed month (and beyond), sorted ascending.
-  const agendaEvents = [...events]
-    .filter((e) => new Date(e.at) >= new Date(now.getFullYear(), now.getMonth(), now.getDate()) && shown(ownerOf(e.childId)))
-    .sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
-
   function shift(delta: number) {
     setView((v) => {
       const m = v.m + delta;
@@ -141,12 +137,6 @@ export default function CalendarTab() {
   const selDate = new Date(sel.y, sel.m, sel.d);
   const weekStart = new Date(selDate); weekStart.setDate(selDate.getDate() - ((selDate.getDay() + 6) % 7));
   const weekDates = Array.from({ length: 7 }, (_, i) => { const d = new Date(weekStart); d.setDate(weekStart.getDate() + i); return d; });
-  const weekLabel = (() => {
-    const t = new Date(); t.setHours(0, 0, 0, 0);
-    const inWeek = t >= weekStart && t <= weekDates[6];
-    const range = `${weekStart.getDate()} – ${weekDates[6].getDate()} ${weekDates[6].toLocaleDateString(undefined, { month: 'short' })}`;
-    return inWeek ? `This week · ${range}` : range;
-  })();
 
   function saveEvent() {
     if (!title.trim()) return;
@@ -159,8 +149,9 @@ export default function CalendarTab() {
     toast('Event added');
   }
 
-  const selDateLabel = new Date(sel.y, sel.m, sel.d)
-    .toLocaleDateString(undefined, { month: 'long', day: 'numeric' });
+  // "24 July" for the add-event bar.
+  const addDayLabel = new Date(sel.y, sel.m, sel.d)
+    .toLocaleDateString(undefined, { day: 'numeric', month: 'long' });
 
   return (
     <ScrollView
@@ -186,31 +177,6 @@ export default function CalendarTab() {
           </Pressable>
         </View>
 
-        {/* View-mode pills */}
-        <View style={{ flexDirection: 'row', gap: 6, marginBottom: 14 }}>
-          {VIEWS.map((v) => {
-            const active = mode === v;
-            return (
-              <Pressable
-                key={v}
-                onPress={() => setMode(v)}
-                style={{
-                  backgroundColor: active ? color.primary : color.canvas,
-                  borderRadius: radius.pill,
-                  paddingVertical: 6,
-                  paddingHorizontal: 16,
-                  borderWidth: active ? 0 : 1,
-                  borderColor: color.hairline,
-                }}
-              >
-                <Text style={{ fontFamily: active ? font.body700 : font.body600, fontSize: 11, color: active ? '#fff' : color.inkSecondary }}>
-                  {v}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-
         {mode === 'Month' ? (
           <MonthGrid
             cells={cells}
@@ -221,10 +187,9 @@ export default function CalendarTab() {
             wxForDate={wx.wxForDate}
             onSelect={(d) => setSel({ y: view.y, m: view.m, d })}
           />
-        ) : mode === 'Week' ? (
+        ) : (
           <WeekRail
             weekDates={weekDates}
-            label={weekLabel}
             selKey={selKey}
             todayKey={todayKey}
             dayMarks={dayMarks}
@@ -233,20 +198,11 @@ export default function CalendarTab() {
             onPrev={() => shiftWeek(-1)}
             onNext={() => shiftWeek(1)}
           />
-        ) : (
-          <AgendaList
-            events={agendaEvents}
-            onSelect={(e) => {
-              const d = new Date(e.at);
-              setView({ y: d.getFullYear(), m: d.getMonth() });
-              setSel({ y: d.getFullYear(), m: d.getMonth(), d: d.getDate() });
-            }}
-          />
         )}
 
-        {/* Whose-calendar filter — integrated as a footer legend inside the card */}
-        {owners.length > 1 && (
-          <View style={{ marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: color.hairline }}>
+        {/* Footer: whose-calendar filters (full width) + Month/Week switch below */}
+        <View style={{ marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: color.hairline }}>
+          {owners.length > 1 && (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingHorizontal: 1, alignItems: 'center' }}>
               {owners.map((o) => {
                 const on = shown(o.key);
@@ -260,19 +216,23 @@ export default function CalendarTab() {
                 );
               })}
             </ScrollView>
+          )}
+          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: owners.length > 1 ? 12 : 0 }}>
+            <ModeSwitch mode={mode} onChange={setMode} />
           </View>
-        )}
+        </View>
       </View>
 
-      {/* Selected-day header — date + add event */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4 }}>
-        <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 1.1, textTransform: 'uppercase', color: color.muted }}>
-          {selIsToday ? 'Today · ' : ''}{selDateLabel}
+      {/* Add-event bar for the tapped day */}
+      <Pressable
+        onPress={() => setAddOpen(true)}
+        style={{ borderWidth: 1.5, borderColor: '#CFC7DE', borderStyle: 'dashed', backgroundColor: '#FAF8FD', borderRadius: 14, paddingVertical: 13, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+      >
+        <Text style={{ fontFamily: font.body700, fontSize: 15, color: color.primary }}>+</Text>
+        <Text style={{ fontFamily: font.body700, fontSize: 12.5, color: color.primary }}>
+          {selIsToday ? 'Add event today' : `Add event on ${addDayLabel}`}
         </Text>
-        <Pressable onPress={() => setAddOpen(true)} hitSlop={8}>
-          <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.primary }}>+ Event</Text>
-        </Pressable>
-      </View>
+      </Pressable>
 
       {/* Events (colour-coded per child, editable) */}
       {selEvents.map((ev) => {
@@ -560,9 +520,8 @@ function MonthGrid({
 
 /* ── week rail — a swipeable 7-day column view (Week mode) ───────────────── */
 
-function WeekRail({ weekDates, label, selKey, todayKey, dayMarks, wxForDate, onSelect, onPrev, onNext }: {
+function WeekRail({ weekDates, selKey, todayKey, dayMarks, wxForDate, onSelect, onPrev, onNext }: {
   weekDates: Date[];
-  label: string;
   selKey: string;
   todayKey: string;
   dayMarks: Map<string, string[]>;
@@ -577,71 +536,56 @@ function WeekRail({ weekDates, label, selKey, todayKey, dayMarks, wxForDate, onS
       onPanResponderRelease: (_e, g) => { if (g.dx <= -40) onNext(); else if (g.dx >= 40) onPrev(); },
     }),
   ).current;
-  const navPill = { width: 24, height: 24, borderRadius: 8, backgroundColor: color.canvas, alignItems: 'center' as const, justifyContent: 'center' as const };
+  const sideArrow = { width: 24, borderRadius: 12, backgroundColor: color.canvas, alignItems: 'center' as const, justifyContent: 'center' as const, alignSelf: 'stretch' as const };
   return (
     <View {...pan.panHandlers}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 10 }}>
-        <Pressable onPress={onPrev} hitSlop={8} style={navPill}><ChevronLeft size={15} color={color.muted} strokeWidth={2.5} /></Pressable>
-        <Text style={{ fontFamily: font.body700, fontSize: 12.5, color: color.ink }}>{label}</Text>
-        <Pressable onPress={onNext} hitSlop={8} style={navPill}><ChevronRight size={15} color={color.muted} strokeWidth={2.5} /></Pressable>
-      </View>
-      <View style={{ flexDirection: 'row', gap: 5 }}>
-        {weekDates.map((d) => {
-          const k = key(d.getFullYear(), d.getMonth(), d.getDate());
-          const isSel = k === selKey;
-          const isToday = k === todayKey;
-          const marks = dayMarks.get(k) ?? [];
-          const dayWx = wxForDate(d);
-          const isWeekend = ((d.getDay() + 6) % 7) >= 5;
-          const bg = isToday ? TODAY_BG : isSel ? '#fff' : isWeekend ? WEEKEND_BG : color.canvas;
-          return (
-            <Pressable key={k} onPress={() => onSelect(d)} style={{ flex: 1, alignItems: 'center', gap: 3, borderRadius: 12, paddingVertical: 8, paddingHorizontal: 2, minHeight: 100, backgroundColor: bg, borderWidth: isSel && !isToday ? 1.5 : 1, borderColor: isSel && !isToday ? color.primary : GRID_LINE }}>
-              <Text style={{ fontFamily: font.body700, fontSize: 8.5, color: isToday ? color.primary : color.faint }}>{isToday ? 'TODAY' : d.toLocaleDateString(undefined, { weekday: 'short' }).slice(0, 3).toUpperCase()}</Text>
-              <Text style={{ fontFamily: font.display700, fontSize: 15, color: isWeekend ? color.muted : color.ink }}>{d.getDate()}</Text>
-              {dayWx ? <WeatherGlyph code={dayWx.code} size={15} /> : <View style={{ height: 15 }} />}
-              <View style={{ marginTop: 2, gap: 3, width: '72%' }}>
-                {marks.slice(0, 4).map((c, idx) => <View key={idx} style={{ height: 5, borderRadius: 2, backgroundColor: c }} />)}
-                {marks.length > 4 ? <Text style={{ fontFamily: font.body700, fontSize: 8, color: '#8079a6', textAlign: 'center' }}>+{marks.length - 4}</Text> : null}
-              </View>
-            </Pressable>
-          );
-        })}
+      {/* Arrows flank the day rail on each side */}
+      <View style={{ flexDirection: 'row', gap: 6, alignItems: 'stretch' }}>
+        <Pressable onPress={onPrev} hitSlop={6} style={sideArrow}><ChevronLeft size={16} color={color.muted} strokeWidth={2.5} /></Pressable>
+        <View style={{ flex: 1, flexDirection: 'row', gap: 5 }}>
+          {weekDates.map((d) => {
+            const k = key(d.getFullYear(), d.getMonth(), d.getDate());
+            const isSel = k === selKey;
+            const isToday = k === todayKey;
+            const marks = dayMarks.get(k) ?? [];
+            const dayWx = wxForDate(d);
+            const isWeekend = ((d.getDay() + 6) % 7) >= 5;
+            const bg = isToday ? TODAY_BG : isSel ? '#fff' : isWeekend ? WEEKEND_BG : color.canvas;
+            return (
+              <Pressable key={k} onPress={() => onSelect(d)} style={{ flex: 1, alignItems: 'center', gap: 3, borderRadius: 12, paddingVertical: 8, paddingHorizontal: 2, minHeight: 100, backgroundColor: bg, borderWidth: isSel && !isToday ? 1.5 : 1, borderColor: isSel && !isToday ? color.primary : GRID_LINE }}>
+                <Text style={{ fontFamily: font.body700, fontSize: 8.5, color: isToday ? color.primary : color.faint }}>{isToday ? 'TODAY' : d.toLocaleDateString(undefined, { weekday: 'short' }).slice(0, 3).toUpperCase()}</Text>
+                <Text style={{ fontFamily: font.display700, fontSize: 15, color: isWeekend ? color.muted : color.ink }}>{d.getDate()}</Text>
+                {dayWx ? <WeatherGlyph code={dayWx.code} size={15} /> : <View style={{ height: 15 }} />}
+                <View style={{ marginTop: 2, gap: 3, width: '72%' }}>
+                  {marks.slice(0, 4).map((c, idx) => <View key={idx} style={{ height: 5, borderRadius: 2, backgroundColor: c }} />)}
+                  {marks.length > 4 ? <Text style={{ fontFamily: font.body700, fontSize: 8, color: '#8079a6', textAlign: 'center' }}>+{marks.length - 4}</Text> : null}
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
+        <Pressable onPress={onNext} hitSlop={6} style={sideArrow}><ChevronRight size={16} color={color.muted} strokeWidth={2.5} /></Pressable>
       </View>
       <Text style={{ textAlign: 'center', fontFamily: font.body600, fontSize: 10, color: color.faint, marginTop: 9 }}>swipe or ‹ › to change week</Text>
     </View>
   );
 }
 
-/* ── agenda list (inside card) ──────────────────────────────────────────── */
+/* ── Month/Week switch (S1 — flanking labels, cream track) ───────────────── */
 
-function AgendaList({ events, onSelect }: { events: EventItem[]; onSelect: (e: EventItem) => void }) {
-  if (events.length === 0) {
-    return (
-      <View style={{ paddingVertical: 24, alignItems: 'center' }}>
-        <Text style={{ fontFamily: font.body500, fontSize: 14, color: color.muted }}>No upcoming events.</Text>
-      </View>
-    );
-  }
+function ModeSwitch({ mode, onChange }: { mode: ViewMode; onChange: (m: ViewMode) => void }) {
+  const week = mode === 'Week';
   return (
-    <View style={{ gap: 10, paddingTop: 4 }}>
-      {events.map((ev) => {
-        const d = new Date(ev.at);
-        const day = d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
-        return (
-          <Pressable key={ev.id} onPress={() => onSelect(ev)} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <View style={{ width: 40, height: 40, backgroundColor: fill.lilac, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}>
-              <Calendar size={18} color={EVENT_COLOR} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: font.body700, fontSize: 14, color: color.ink, marginBottom: 2 }}>{ev.title}</Text>
-              <Text style={{ fontFamily: font.body400, fontSize: 12, color: color.muted }}>
-                {day} · {timeOf(ev.at)}
-              </Text>
-            </View>
-            <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: EVENT_COLOR }} />
-          </Pressable>
-        );
-      })}
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+      <Pressable onPress={() => onChange('Month')} hitSlop={6}>
+        <Text style={{ fontFamily: font.body700, fontSize: 11, color: week ? color.muted : color.ink }}>Month</Text>
+      </Pressable>
+      <Pressable onPress={() => onChange(week ? 'Month' : 'Week')} style={{ width: 44, height: 25, borderRadius: 999, backgroundColor: SWITCH_TRACK, justifyContent: 'center' }}>
+        <View style={{ position: 'absolute', top: 3, left: week ? 22 : 3, width: 19, height: 19, borderRadius: 999, backgroundColor: '#fff', shadowColor: '#000', shadowOpacity: 0.22, shadowRadius: 3, shadowOffset: { width: 0, height: 2 }, elevation: 2 }} />
+      </Pressable>
+      <Pressable onPress={() => onChange('Week')} hitSlop={6}>
+        <Text style={{ fontFamily: font.body700, fontSize: 11, color: week ? color.ink : color.muted }}>Week</Text>
+      </Pressable>
     </View>
   );
 }
