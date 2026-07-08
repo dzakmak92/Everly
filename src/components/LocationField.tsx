@@ -71,7 +71,7 @@ export function LocationField({ label = 'Location', value, onChange, placeholder
         </View>
       )}
       {/* inline interactive map */}
-      <View style={{ marginTop: 2, borderRadius: 14, overflow: 'hidden', borderWidth: 1, borderColor: color.hairline }}>
+      <View style={{ marginTop: 2, borderRadius: 14, overflow: 'hidden', borderWidth: 1, borderColor: color.hairline, minHeight: 260, backgroundColor: '#E8ECEF' }}>
         <MapPicker lat={center.lat} lon={center.lon} height={260} onPick={onMapPick} />
       </View>
       <Text style={{ fontFamily: font.body500, fontSize: 10.5, color: color.muted, textAlign: 'center' }}>Tap or drag the pin to set the exact spot.</Text>
