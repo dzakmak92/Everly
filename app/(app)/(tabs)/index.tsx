@@ -29,6 +29,7 @@ import { DayTimeline } from '../../../src/components/DayTimeline';
 import { useFeedback } from '../../../src/components/Feedback';
 import { useWeather, WeatherGlyph, wxLabel, searchCity, type WxLocation } from '../../../src/lib/weather';
 import { useBackClose } from '../../../src/lib/useBackClose';
+import { SwipePager } from '../../../src/components/SwipePager';
 import {
   useData, entriesOn, entryDetail, ENTRY_META, quickLogKinds, MOOD_LABELS, CHILD_COLORS,
   type EntryKind, type FeedSide, type DiaperType, type Child, type Lochia, type ChildColor, type PregArchive, type PregStatus,
@@ -195,6 +196,10 @@ export default function Today() {
   // The reserved rail keeps content inset; padding hugs the rail edge, breathes on the other.
   const padStart = dockSide === 'right' ? 20 : 10;
   const padEnd = dockSide === 'right' ? 10 : 20;
+  // Keep the header switch aligned with the content column so it never sits over the rail.
+  const railW = showDock ? 60 : 0;
+  const hdrPadLeft = 20 + (dockSide === 'left' ? railW : 0);
+  const hdrPadRight = 20 + (dockSide === 'right' ? railW : 0);
   const railProps = {
     children, activeId: activeChild?.id, isYou, hasJourney, activeCat,
     youLabel: youStatusLabel(dueDate, maternalBirth),
@@ -209,7 +214,7 @@ export default function Today() {
   return (
     <View style={{ flex: 1, backgroundColor: color.canvas }}>
       {/* Fixed header — the Today/Insights switch replaces the old logo + greeting */}
-      <View style={{ paddingTop: insets.top + 14, paddingHorizontal: 20, gap: 10 }}>
+      <View style={{ paddingTop: insets.top + 14, paddingLeft: hdrPadLeft, paddingRight: hdrPadRight, gap: 10 }}>
         <HomeTabs tab={homeTab} setTab={setHomeTab} />
         {/* Inside a module the module's own title sits below the switch. */}
         {homeTab === 'today' && !onOverview && (
@@ -227,25 +232,38 @@ export default function Today() {
         )}
       </View>
 
-      {/* Content + reserved rail */}
+      {/* Content + reserved rail (the rail stays put; the content column swipes) */}
       <View style={{ flex: 1, flexDirection: 'row' }}>
-        {homeTab === 'insights' ? (
-          <View style={{ flex: 1 }}><InsightsScreen embedded /></View>
-        ) : (<>
         {showDock && dockSide === 'left' && <RailDock {...railProps} side="left" onMirror={() => setDockSide('right')} />}
     {activeCat ? (
       <View style={{ flex: 1 }}><CategoryView cat={activeCat} /></View>
+    ) : isYou ? (
+      // Mum&Me — swipe left/right between Pregnancy and Postpartum. Insights via the top switch.
+      <View style={{ flex: 1 }}>
+        {homeTab === 'today' && (
+          <View style={{ paddingTop: 10, paddingBottom: 10, paddingLeft: padStart, paddingRight: padEnd, backgroundColor: color.canvas }}>
+            <PhaseTabs phase={phase} setPhase={setPhase} />
+          </View>
+        )}
+        {homeTab === 'insights' ? (
+          <InsightsScreen embedded />
+        ) : (
+          <SwipePager index={phase === 'postpartum' ? 1 : 0} onIndexChange={(i) => setPhase(i === 1 ? 'postpartum' : 'pregnancy')}>
+            <ScrollView style={{ flex: 1, backgroundColor: color.canvas }} contentContainerStyle={{ paddingTop: 4, paddingBottom: 28, paddingLeft: padStart, paddingRight: padEnd, gap: 16 }} showsVerticalScrollIndicator={false}>
+              <MaternityView phase="pregnancy" setPhase={setPhase} dueDate={dueDate} maternalBirth={maternalBirth} pregAppts={pregAppts} matAppts={matAppts} pregArchive={pregArchive} onArrived={openHandoff} onStartPregnancy={openDuePicker} />
+            </ScrollView>
+            <ScrollView style={{ flex: 1, backgroundColor: color.canvas }} contentContainerStyle={{ paddingTop: 4, paddingBottom: 28, paddingLeft: padStart, paddingRight: padEnd, gap: 16 }} showsVerticalScrollIndicator={false}>
+              <MaternityView phase="postpartum" setPhase={setPhase} dueDate={dueDate} maternalBirth={maternalBirth} pregAppts={pregAppts} matAppts={matAppts} pregArchive={pregArchive} onArrived={openHandoff} onStartPregnancy={openDuePicker} />
+            </ScrollView>
+          </SwipePager>
+        )}
+      </View>
     ) : (
-    <View style={{ flex: 1 }}>
-      {/* Pregnancy / Postpartum tabs stay pinned above the scroll in Mum&Me */}
-      {!onOverview && isYou && (
-        <View style={{ paddingTop: 10, paddingBottom: 10, paddingLeft: padStart, paddingRight: padEnd, backgroundColor: color.canvas }}>
-          <PhaseTabs phase={phase} setPhase={setPhase} />
-        </View>
-      )}
+    // Overview / child — swipe left/right between Today and Insights.
+    <SwipePager index={homeTab === 'insights' ? 1 : 0} onIndexChange={(i) => setHomeTab(i === 1 ? 'insights' : 'today')}>
     <ScrollView
       style={{ flex: 1, backgroundColor: color.canvas }}
-      contentContainerStyle={{ paddingTop: !onOverview && isYou ? 4 : 10, paddingBottom: 28, paddingLeft: padStart, paddingRight: padEnd, gap: 16 }}
+      contentContainerStyle={{ paddingTop: 10, paddingBottom: 28, paddingLeft: padStart, paddingRight: padEnd, gap: 16 }}
       showsVerticalScrollIndicator={false}
     >
 
@@ -260,21 +278,6 @@ export default function Today() {
           now={now}
           onSelectChild={(id) => { setShowOverview(false); setPerson(id); setActiveChild(id); }}
           onSelectYou={() => { setShowOverview(false); setPerson('you'); }}
-        />
-      )}
-
-      {/* ── You (maternity) view ──────────────────────────────────────────── */}
-      {!onOverview && isYou && (
-        <MaternityView
-          phase={phase}
-          setPhase={setPhase}
-          dueDate={dueDate}
-          maternalBirth={maternalBirth}
-          pregAppts={pregAppts}
-          matAppts={matAppts}
-          pregArchive={pregArchive}
-          onArrived={openHandoff}
-          onStartPregnancy={openDuePicker}
         />
       )}
 
@@ -356,6 +359,14 @@ export default function Today() {
       </View>
 
       </>}
+    </ScrollView>
+    <InsightsScreen embedded />
+    </SwipePager>
+    )}
+        {showDock && dockSide === 'right' && <RailDock {...railProps} side="right" onMirror={() => setDockSide('left')} />}
+      </View>
+
+      {/* Modals — rendered once at the root so every tab and page can open them */}
 
       {/* Detail modal */}
       <Modal visible={kind !== null} transparent animationType="fade" onRequestClose={() => setKind(null)}>
@@ -472,12 +483,6 @@ export default function Today() {
           </Pressable>
         </Pressable>
       </Modal>
-    </ScrollView>
-    </View>
-    )}
-        {showDock && dockSide === 'right' && <RailDock {...railProps} side="right" onMirror={() => setDockSide('left')} />}
-        </>)}
-      </View>
     </View>
   );
 }
