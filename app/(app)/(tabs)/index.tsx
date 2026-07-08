@@ -83,6 +83,10 @@ export default function Today() {
   const multiModule = children.length + (hasJourney ? 1 : 0) >= 2;
   const [showOverview, setShowOverview] = useState(true);
   const onOverview = multiModule && showOverview && !activeCat;
+  // The Today/Insights switch belongs to the home root only: the family overview,
+  // or — when there's a single child and no journey — that child's own home.
+  // It is hidden once you drill into a member, into Mum&Me, or into a category.
+  const atHome = !activeCat && (onOverview || (!multiModule && !isYou));
   // Today timeline layout (horizontal ribbon ↔ 24h dial).
   const [tlLayout, setTlLayout] = useState<'ribbon' | 'clock'>('ribbon');
 
@@ -90,7 +94,8 @@ export default function Today() {
   // switch sits where the app logo + greeting used to be. Phone/browser Back
   // from Insights returns to Today instead of leaving the app.
   const [homeTab, setHomeTab] = useState<'today' | 'insights'>('today');
-  useBackClose(homeTab === 'insights', () => setHomeTab('today'));
+  // Only intercept Back while Insights is actually on screen (home root).
+  useBackClose(atHome && homeTab === 'insights', () => setHomeTab('today'));
 
   // Mum&Me phase tab — default to where she is: pregnancy while expecting,
   // postpartum once the baby has arrived.
@@ -213,11 +218,11 @@ export default function Today() {
   const goOverview = () => { setActiveCat(null); setShowOverview(true); };
   return (
     <View style={{ flex: 1, backgroundColor: color.canvas }}>
-      {/* Fixed header — the Today/Insights switch replaces the old logo + greeting */}
+      {/* Fixed header — Today/Insights switch on the home root, module title once you drill in */}
       <View style={{ paddingTop: insets.top + 14, paddingLeft: hdrPadLeft, paddingRight: hdrPadRight, gap: 10 }}>
-        <HomeTabs tab={homeTab} setTab={setHomeTab} />
-        {/* Inside a module the module's own title sits below the switch. */}
-        {homeTab === 'today' && !onOverview && (
+        {atHome ? (
+          <HomeTabs tab={homeTab} setTab={setHomeTab} />
+        ) : (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 2 }}>
             {multiModule && (
               <Pressable onPress={goOverview} hitSlop={8} accessibilityLabel="Back to family overview" style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 2, opacity: pressed ? 0.6 : 1 })}>
@@ -238,29 +243,25 @@ export default function Today() {
     {activeCat ? (
       <View style={{ flex: 1 }}><CategoryView cat={activeCat} /></View>
     ) : isYou ? (
-      // Mum&Me — swipe left/right between Pregnancy and Postpartum. Insights via the top switch.
+      // Mum&Me — a module page (not the home root): its own Pregnancy/Postpartum
+      // switch, swipeable left/right. No Today/Insights here.
       <View style={{ flex: 1 }}>
-        {homeTab === 'today' && (
-          <View style={{ paddingTop: 10, paddingBottom: 10, paddingLeft: padStart, paddingRight: padEnd, backgroundColor: color.canvas }}>
-            <PhaseTabs phase={phase} setPhase={setPhase} />
-          </View>
-        )}
-        {homeTab === 'insights' ? (
-          <InsightsScreen embedded />
-        ) : (
-          <SwipePager index={phase === 'postpartum' ? 1 : 0} onIndexChange={(i) => setPhase(i === 1 ? 'postpartum' : 'pregnancy')}>
-            <ScrollView style={{ flex: 1, backgroundColor: color.canvas }} contentContainerStyle={{ paddingTop: 4, paddingBottom: 28, paddingLeft: padStart, paddingRight: padEnd, gap: 16 }} showsVerticalScrollIndicator={false}>
-              <MaternityView phase="pregnancy" setPhase={setPhase} dueDate={dueDate} maternalBirth={maternalBirth} pregAppts={pregAppts} matAppts={matAppts} pregArchive={pregArchive} onArrived={openHandoff} onStartPregnancy={openDuePicker} />
-            </ScrollView>
-            <ScrollView style={{ flex: 1, backgroundColor: color.canvas }} contentContainerStyle={{ paddingTop: 4, paddingBottom: 28, paddingLeft: padStart, paddingRight: padEnd, gap: 16 }} showsVerticalScrollIndicator={false}>
-              <MaternityView phase="postpartum" setPhase={setPhase} dueDate={dueDate} maternalBirth={maternalBirth} pregAppts={pregAppts} matAppts={matAppts} pregArchive={pregArchive} onArrived={openHandoff} onStartPregnancy={openDuePicker} />
-            </ScrollView>
-          </SwipePager>
-        )}
+        <View style={{ paddingTop: 10, paddingBottom: 10, paddingLeft: padStart, paddingRight: padEnd, backgroundColor: color.canvas }}>
+          <PhaseTabs phase={phase} setPhase={setPhase} />
+        </View>
+        <SwipePager index={phase === 'postpartum' ? 1 : 0} onIndexChange={(i) => setPhase(i === 1 ? 'postpartum' : 'pregnancy')}>
+          <ScrollView style={{ flex: 1, backgroundColor: color.canvas }} contentContainerStyle={{ paddingTop: 4, paddingBottom: 28, paddingLeft: padStart, paddingRight: padEnd, gap: 16 }} showsVerticalScrollIndicator={false}>
+            <MaternityView phase="pregnancy" setPhase={setPhase} dueDate={dueDate} maternalBirth={maternalBirth} pregAppts={pregAppts} matAppts={matAppts} pregArchive={pregArchive} onArrived={openHandoff} onStartPregnancy={openDuePicker} />
+          </ScrollView>
+          <ScrollView style={{ flex: 1, backgroundColor: color.canvas }} contentContainerStyle={{ paddingTop: 4, paddingBottom: 28, paddingLeft: padStart, paddingRight: padEnd, gap: 16 }} showsVerticalScrollIndicator={false}>
+            <MaternityView phase="postpartum" setPhase={setPhase} dueDate={dueDate} maternalBirth={maternalBirth} pregAppts={pregAppts} matAppts={matAppts} pregArchive={pregArchive} onArrived={openHandoff} onStartPregnancy={openDuePicker} />
+          </ScrollView>
+        </SwipePager>
       </View>
     ) : (
-    // Overview / child — swipe left/right between Today and Insights.
-    <SwipePager index={homeTab === 'insights' ? 1 : 0} onIndexChange={(i) => setHomeTab(i === 1 ? 'insights' : 'today')}>
+    // Overview / child. At the home root this swipes Today ↔ Insights; once you
+    // drill into a member the Insights page drops away (single scroll, no switch).
+    <SwipePager index={atHome && homeTab === 'insights' ? 1 : 0} onIndexChange={(i) => { if (atHome) setHomeTab(i === 1 ? 'insights' : 'today'); }}>
     <ScrollView
       style={{ flex: 1, backgroundColor: color.canvas }}
       contentContainerStyle={{ paddingTop: 10, paddingBottom: 28, paddingLeft: padStart, paddingRight: padEnd, gap: 16 }}
@@ -360,7 +361,7 @@ export default function Today() {
 
       </>}
     </ScrollView>
-    <InsightsScreen embedded />
+    {atHome ? <InsightsScreen embedded /> : null}
     </SwipePager>
     )}
         {showDock && dockSide === 'right' && <RailDock {...railProps} side="right" onMirror={() => setDockSide('left')} />}
