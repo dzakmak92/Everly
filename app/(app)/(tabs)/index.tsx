@@ -2195,7 +2195,7 @@ function AppointmentsCard({ accent, fill, items, allowTests, standard, onAdd, on
             <View style={{ flex: 1.5 }}><DateField label="Date" value={date} onChangeText={setDate} /></View>
             <View style={{ flex: 1 }}><Field label="Time" value={time} onChangeText={setTime} placeholder="09:00" /></View>
           </View>
-          <LocationField label="Location (optional)" value={location} onChange={setLocation} />
+          <LocationField label="Location (optional)" value={location} onChange={setLocation} defaultCenter={wx.location ? { lat: wx.location.lat, lon: wx.location.lon } : undefined} />
           {location.trim() ? <Text style={{ fontFamily: font.body400, fontSize: 10.5, color: color.muted, marginTop: -3 }}>📍 Tap the location later to open it in Maps.</Text> : null}
           {allowTests && kind === 'test' && <Field label="Result (optional)" value={result} onChangeText={setResult} placeholder="e.g. Normal" autoCapitalize="sentences" />}
           <View style={{ flexDirection: 'row', gap: 8 }}>

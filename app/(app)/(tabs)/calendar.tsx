@@ -58,7 +58,7 @@ export default function CalendarTab() {
   const insets = useSafeAreaInsets();
   const {
     entries, events, addEvent, updateEvent, deleteEvent, activeChild, children,
-    pregAppts, updatePregAppt, deletePregAppt, matAppts, updateMatAppt, deleteMatAppt,
+    pregAppts, addPregAppt, updatePregAppt, deletePregAppt, matAppts, addMatAppt, updateMatAppt, deleteMatAppt,
     dueDate, maternalBirth,
   } = useData();
   const wx = useWeather();
@@ -91,7 +91,7 @@ export default function CalendarTab() {
   const [addOpen, setAddOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [time, setTime] = useState('09:00');
-  const [evtChild, setEvtChild] = useState<string | undefined>(undefined); // "for whom"
+  const [evtOwner, setEvtOwner] = useState<string>(''); // "for whom": 'mumme' or a child id
   const [evtLoc, setEvtLoc] = useState('');
   const [wxOpen, setWxOpen] = useState(false);
   const [tlLayout, setTlLayout] = useState<'ribbon' | 'clock'>('clock');
@@ -167,14 +167,21 @@ export default function CalendarTab() {
 
   function openAdd() {
     setTitle(''); setTime('09:00'); setEvtLoc('');
-    setEvtChild(activeChild?.id ?? children[0]?.id);
+    setEvtOwner(activeChild?.id ?? children[0]?.id ?? (hasMumme ? 'mumme' : ''));
     setAddOpen(true);
   }
   function saveEvent() {
     if (!title.trim()) return;
     const [hh, mm] = time.split(':').map((x) => parseInt(x, 10));
     const at = new Date(sel.y, sel.m, sel.d, isNaN(hh) ? 9 : hh, isNaN(mm) ? 0 : mm).toISOString();
-    addEvent({ title, at, childId: evtChild, location: evtLoc.trim() || undefined });
+    const loc = evtLoc.trim() || undefined;
+    if (evtOwner === 'mumme') {
+      // Route to the right Mum&Me list by phase (postpartum → maternal appt).
+      if (maternalBirth && !dueDate) addMatAppt({ title, at, kind: 'appointment' });
+      else addPregAppt({ title, at, kind: 'appointment', location: loc });
+    } else {
+      addEvent({ title, at, childId: evtOwner || undefined, location: loc });
+    }
     setTitle('');
     setTime('09:00');
     setEvtLoc('');
@@ -319,25 +326,25 @@ export default function CalendarTab() {
             </Text>
             <Field label="Title" value={title} onChangeText={setTitle} placeholder="e.g. 6-month checkup" autoCapitalize="sentences" />
             <Field label="Time (HH:MM)" value={time} onChangeText={setTime} placeholder="09:00" />
-            {children.length > 0 && (
+            {owners.length > 0 && (
               <View style={{ gap: 6 }}>
                 <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.inkSecondary }}>For whom</Text>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 7 }}>
-                  {children.map((c) => {
-                    const on = evtChild === c.id; const t = childToken[c.color]; const ink = CHILD_INK[c.color] ?? color.primary;
+                  {owners.map((o) => {
+                    const on = evtOwner === o.key;
                     return (
-                      <Pressable key={c.id} onPress={() => setEvtChild(c.id)} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: radius.pill, paddingVertical: 6, paddingLeft: 6, paddingRight: 12, backgroundColor: on ? t.stroke : '#fff', borderWidth: 1, borderColor: on ? t.stroke : color.hairline }}>
-                        <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: on ? 'rgba(255,255,255,0.3)' : t.fill, alignItems: 'center', justifyContent: 'center' }}>
-                          <Text style={{ fontFamily: font.display700, fontSize: 10, color: on ? '#fff' : ink }}>{c.name.charAt(0).toUpperCase()}</Text>
+                      <Pressable key={o.key} onPress={() => setEvtOwner(o.key)} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: radius.pill, paddingVertical: 6, paddingLeft: 6, paddingRight: 12, backgroundColor: on ? o.dot : '#fff', borderWidth: 1, borderColor: on ? o.dot : color.hairline }}>
+                        <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: on ? 'rgba(255,255,255,0.3)' : o.fill, alignItems: 'center', justifyContent: 'center' }}>
+                          <Text style={{ fontFamily: font.display700, fontSize: 10, color: on ? '#fff' : o.ink }}>{o.key === 'mumme' ? '♥' : o.label.charAt(0).toUpperCase()}</Text>
                         </View>
-                        <Text style={{ fontFamily: font.body700, fontSize: 12, color: on ? '#fff' : color.muted }}>{c.name}</Text>
+                        <Text style={{ fontFamily: font.body700, fontSize: 12, color: on ? '#fff' : color.muted }}>{o.label}</Text>
                       </Pressable>
                     );
                   })}
                 </View>
               </View>
             )}
-            <LocationField label="Location (optional)" value={evtLoc} onChange={setEvtLoc} />
+            <LocationField label="Location (optional)" value={evtLoc} onChange={setEvtLoc} defaultCenter={wx.location ? { lat: wx.location.lat, lon: wx.location.lon } : undefined} />
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <Button label="Cancel" variant="secondary" onPress={() => setAddOpen(false)} style={{ flex: 1 }} />
               <Button label="Add" onPress={saveEvent} style={{ flex: 1 }} />

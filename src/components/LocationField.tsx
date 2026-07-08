@@ -1,22 +1,28 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, TextInput, Pressable, ActivityIndicator } from 'react-native';
 import { color, font, radius } from '../theme/tokens';
-import { searchPlace, type Place } from '../lib/places';
+import { searchPlace, reverseGeocode, type Place } from '../lib/places';
+import MapPicker from './MapPicker';
 
 /**
- * Location input with live address search (Nominatim). Typing shows real place
- * suggestions; picking one stores its full address so the map pin is precise.
- * If the search is unreachable, it still works as a plain text field.
+ * Location input with live address search + an inline interactive map. Type to
+ * get real place suggestions, or tap/drag the pin on the map to pick the exact
+ * spot (reverse-geocoded to an address). Stores the address string so the map
+ * pin is precise; degrades to a plain text field when the search is offline.
  */
-export function LocationField({ label = 'Location', value, onChange, placeholder }: {
+export function LocationField({ label = 'Location', value, onChange, placeholder, defaultCenter }: {
   label?: string; value: string; onChange: (v: string) => void; placeholder?: string;
+  defaultCenter?: { lat: number; lon: number };
 }) {
   const [results, setResults] = useState<Place[]>([]);
   const [busy, setBusy] = useState(false);
   const [focused, setFocused] = useState(false);
+  const [center, setCenter] = useState<{ lat: number; lon: number }>(defaultCenter ?? { lat: 51.5074, lon: -0.1278 });
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const skip = useRef(false); // don't re-search the value we just picked
+  const skip = useRef(false); // don't re-search a value we just set
+  const geocodedInitial = useRef(false);
 
+  // search-as-you-type
   useEffect(() => {
     if (skip.current) { skip.current = false; return; }
     if (timer.current) clearTimeout(timer.current);
@@ -29,7 +35,15 @@ export function LocationField({ label = 'Location', value, onChange, placeholder
     return () => { if (timer.current) clearTimeout(timer.current); };
   }, [value, focused]);
 
-  const pick = (p: Place) => { skip.current = true; onChange(p.name); setResults([]); setFocused(false); };
+  // if editing an event that already has a location, centre the map on it once
+  useEffect(() => {
+    if (geocodedInitial.current || !value.trim()) return;
+    geocodedInitial.current = true;
+    searchPlace(value).then((rs) => { if (rs[0]) setCenter({ lat: rs[0].lat, lon: rs[0].lon }); }).catch(() => {});
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const pick = (p: Place) => { skip.current = true; onChange(p.name); setResults([]); setFocused(false); setCenter({ lat: p.lat, lon: p.lon }); };
+  const onMapPick = (lat: number, lon: number) => { reverseGeocode(lat, lon).then((addr) => { if (addr) { skip.current = true; onChange(addr); } }).catch(() => {}); };
 
   return (
     <View style={{ gap: 6 }}>
@@ -56,6 +70,11 @@ export function LocationField({ label = 'Location', value, onChange, placeholder
           ))}
         </View>
       )}
+      {/* inline interactive map */}
+      <View style={{ marginTop: 2, borderRadius: 14, overflow: 'hidden', borderWidth: 1, borderColor: color.hairline }}>
+        <MapPicker lat={center.lat} lon={center.lon} height={260} onPick={onMapPick} />
+      </View>
+      <Text style={{ fontFamily: font.body500, fontSize: 10.5, color: color.muted, textAlign: 'center' }}>Tap or drag the pin to set the exact spot.</Text>
     </View>
   );
 }
