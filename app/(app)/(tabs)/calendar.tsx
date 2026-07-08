@@ -6,6 +6,7 @@ import { color, font, radius, shadow, fill, childToken } from '../../../src/them
 import { ChevronLeft, ChevronRight, Calendar, Shield, Activity, Heart, X, Search, BabyBean } from '../../../src/components/icons';
 import { Button, Field } from '../../../src/components/forms';
 import { LocationField } from '../../../src/components/LocationField';
+import { useBackClose } from '../../../src/lib/useBackClose';
 import { useData, ENTRY_META, entryDetail, EntryKind, EventItem, Entry } from '../../../src/lib/store';
 import { useWeather, WeatherGlyph, wxLabel, searchCity, wxColor, type WxLocation, type DayWx } from '../../../src/lib/weather';
 import { useFeedback } from '../../../src/components/Feedback';
@@ -95,6 +96,9 @@ export default function CalendarTab() {
   const [evtLoc, setEvtLoc] = useState('');
   const [wxOpen, setWxOpen] = useState(false);
   const [tlLayout, setTlLayout] = useState<'ribbon' | 'clock'>('clock');
+  // Phone/browser Back closes an open popup first, before navigating.
+  useBackClose(addOpen, () => setAddOpen(false));
+  useBackClose(wxOpen, () => setWxOpen(false));
 
   const selKey = key(sel.y, sel.m, sel.d);
   // Per-day markers (colour per item) — the calendar shows only *scheduled*
@@ -319,7 +323,8 @@ export default function CalendarTab() {
       {/* Add event modal */}
       <Modal visible={addOpen} transparent animationType="fade" onRequestClose={() => setAddOpen(false)}>
         <Pressable onPress={() => setAddOpen(false)} style={{ flex: 1, backgroundColor: 'rgba(40,18,50,0.35)', justifyContent: 'center', paddingHorizontal: 28 }}>
-          <Pressable onPress={() => {}} style={[{ backgroundColor: color.canvas, borderRadius: radius.card, padding: 20, gap: 14 }, shadow.card]}>
+          <Pressable onPress={() => {}} style={[{ backgroundColor: color.canvas, borderRadius: radius.card, maxHeight: '88%', overflow: 'hidden' }, shadow.card]}>
+          <ScrollView contentContainerStyle={{ padding: 20, gap: 14 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             <Text style={{ fontFamily: font.display700, fontSize: 18, color: color.ink }}>New event</Text>
             <Text style={{ fontFamily: font.body400, fontSize: 13, color: color.muted }}>
               {new Date(sel.y, sel.m, sel.d).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}
@@ -349,6 +354,7 @@ export default function CalendarTab() {
               <Button label="Cancel" variant="secondary" onPress={() => setAddOpen(false)} style={{ flex: 1 }} />
               <Button label="Add" onPress={saveEvent} style={{ flex: 1 }} />
             </View>
+          </ScrollView>
           </Pressable>
         </Pressable>
       </Modal>
