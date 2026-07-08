@@ -20,15 +20,16 @@ export function SwipePager({ index, onIndexChange, children, style }: {
   const pages = React.Children.toArray(children);
   const count = pages.length;
   const scRef = useRef<ScrollView>(null);
-  const [pageW, setPageW] = useState(0);
+  const [size, setSize] = useState({ w: 0, h: 0 });
+  const pageW = size.w;
   const shown = useRef(index);
   const didInit = useRef(false);
   const idle = useRef<ReturnType<typeof setTimeout> | null>(null);
   const clamp = (i: number) => Math.max(0, Math.min(count - 1, i));
 
-  const onLayout = (e: NativeSyntheticEvent<{ layout: { width: number } }>) => {
-    const w = e.nativeEvent.layout.width;
-    if (w > 0 && w !== pageW) setPageW(w);
+  const onLayout = (e: NativeSyntheticEvent<{ layout: { width: number; height: number } }>) => {
+    const { width: w, height: h } = e.nativeEvent.layout;
+    if (w > 0 && (w !== size.w || h !== size.h)) setSize({ w, h });
   };
 
   // First layout: jump (no animation) to the controlled page.
@@ -77,8 +78,12 @@ export function SwipePager({ index, onIndexChange, children, style }: {
           onScroll={onScroll}
           style={{ flex: 1 }}
         >
+          {/* Each page is pinned to the pager's measured size. The fixed height is
+              essential: a vertical ScrollView only scrolls when its height is
+              bounded, and nested inside this horizontal scroller it otherwise
+              stretches to its full content height and never clips. */}
           {pages.map((child, i) => (
-            <View key={i} style={{ width: pageW }}>{child}</View>
+            <View key={i} style={{ width: size.w, height: size.h }}>{child}</View>
           ))}
         </ScrollView>
       )}
