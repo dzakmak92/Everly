@@ -19,6 +19,15 @@ export async function searchPlace(q: string): Promise<Place[]> {
     .filter((p) => p.name && !Number.isNaN(p.lat) && !Number.isNaN(p.lon));
 }
 
+/** Reverse-geocode a coordinate the user dropped on the map into an address. */
+export async function reverseGeocode(lat: number, lon: number): Promise<string> {
+  const url = `https://nominatim.openstreetmap.org/reverse?format=json&zoom=18&lat=${lat}&lon=${lon}`;
+  const res = await fetch(url, { headers: { Accept: 'application/json' } });
+  if (!res.ok) throw new Error('Reverse geocode failed');
+  const json = await res.json();
+  return String(json?.display_name ?? '');
+}
+
 /** A precise maps link for a stored location string (drops a pin at that place). */
 export const mapsLink = (location: string) =>
   `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`;

@@ -82,14 +82,21 @@ function MediaStrip({ items, onAdd, onOpen, onRemove }: { items: MediaRef[]; onA
   return (
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
       {items.map((m) => (
-        <Pressable key={m.id} onPress={() => onOpen(m)} onLongPress={() => onRemove?.(m)} delayLongPress={400} style={{ width: 62, height: 62, borderRadius: 10, overflow: 'hidden', backgroundColor: '#ECE8F2' }}>
-          {m.thumb ? <Image source={{ uri: m.thumb }} style={{ width: '100%', height: '100%' }} resizeMode="cover" /> : null}
-          {m.kind === 'video' ? (
-            <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.18)' }}>
-              <Text style={{ color: '#fff', fontSize: 18 }}>▶</Text>
-            </View>
+        <View key={m.id} style={{ width: 62, height: 62 }}>
+          <Pressable onPress={() => onOpen(m)} onLongPress={() => onRemove?.(m)} delayLongPress={400} style={{ width: 62, height: 62, borderRadius: 10, overflow: 'hidden', backgroundColor: '#ECE8F2' }}>
+            {m.thumb ? <Image source={{ uri: m.thumb }} style={{ width: '100%', height: '100%' }} resizeMode="cover" /> : null}
+            {m.kind === 'video' ? (
+              <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.18)' }}>
+                <Text style={{ color: '#fff', fontSize: 18 }}>▶</Text>
+              </View>
+            ) : null}
+          </Pressable>
+          {onRemove ? (
+            <Pressable onPress={() => onRemove(m)} hitSlop={6} accessibilityLabel="Remove" style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: 10, backgroundColor: 'rgba(40,18,50,0.72)', alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: '#fff' }}>
+              <Text style={{ color: '#fff', fontSize: 12, fontFamily: font.body700, lineHeight: 14 }}>×</Text>
+            </Pressable>
           ) : null}
-        </Pressable>
+        </View>
       ))}
       <Pressable onPress={onAdd} accessibilityLabel="Add photo or video" style={{ width: 62, height: 62, borderRadius: 10, borderWidth: 1.5, borderStyle: 'dashed', borderColor: color.faint, alignItems: 'center', justifyContent: 'center', gap: 2 }}>
         <Camera size={17} color={color.muted} />

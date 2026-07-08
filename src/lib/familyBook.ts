@@ -384,7 +384,13 @@ export function assembleBookPages(
     .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
 
   const anyMedia = (id: string) => mediaByMilestone[id] ?? [];
-  const heroMedia = list.map((m) => anyMedia(m.id)[0]).find(Boolean);
+  // Cover photo — chosen so it never duplicates a content page. Prefer a spare
+  // photo from a milestone that has more than one; otherwise borrow the most
+  // recent milestone's photo. The chosen photo is then excluded from content.
+  let heroMedia: BookMedia | undefined;
+  for (const m of list) { const ms = anyMedia(m.id); if (ms.length > 1) { heroMedia = ms[ms.length - 1]; break; } }
+  if (!heroMedia) { for (let i = list.length - 1; i >= 0; i--) { const ms = anyMedia(list[i].id); if (ms[0]) { heroMedia = ms[0]; break; } } }
+  const contentMedia = (id: string) => (heroMedia ? anyMedia(id).filter((x) => x !== heroMedia) : anyMedia(id));
   const coverYear = yearOf(child.birthDate) || yearOf(list[0]?.date);
 
   // Exactly one milestone gets the signature birth page: prefer a birth-titled
@@ -402,7 +408,7 @@ export function assembleBookPages(
   // template assignment for the non-signature milestones, in order (media-aware)
   const nonSig = list.filter((m) => !isBirthPage(m) && !isFirstBirthday(m));
   const tplByMilestone = new Map<string, TemplateName>();
-  const assigned = assignTemplates(nonSig.map((m) => anyMedia(m.id).length));
+  const assigned = assignTemplates(nonSig.map((m) => contentMedia(m.id).length));
   nonSig.forEach((m, i) => tplByMilestone.set(m.id, assigned[i]));
 
   let pageNo = 1;
@@ -424,7 +430,7 @@ export function assembleBookPages(
       kicker: ageWords(ad, m.date),
       badge: badgeFor(ad),
       tint,
-      media: anyMedia(m.id),
+      media: contentMedia(m.id),
       n: pageNo,
     };
     if (isBirthPage(m)) pages.push(pageBirth(ctx, longDate(m.date)));
