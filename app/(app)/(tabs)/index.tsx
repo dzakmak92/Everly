@@ -5,18 +5,16 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, font, radius, shadow, childToken } from '../../../src/theme/tokens';
 import { Button, Field } from '../../../src/components/forms';
-import { Logo } from '../../../src/components/Logo';
 import {
   ChevronRight, Bottle, Syringe,
   Heart, Calendar as CalIcon, Activity, Smile, Shield, CheckCircle, Star, Leaf, X, Plus, ChevronLeft, Check,
-  HeartPulse, StarOutline, BarChart, User,
+  HeartPulse, StarOutline, User,
 } from '../../../src/components/icons';
 import { EntryIcon } from '../../../src/components/EntryIcon';
 import { Silhouette, ProgressBar } from '../../../src/components/ui';
 import { DateField } from '../../../src/components/DateField';
 import { LocationField } from '../../../src/components/LocationField';
 import { DurationField } from '../../../src/components/DurationField';
-import { useSupabase } from '../../../src/lib/supabase';
 import { ageLabel, stageFrom } from '../../../src/lib/age';
 import {
   gestFromDueDate, weekContent, MOODS, PREG_SYMPTOMS, RED_FLAGS_CALL_NOW, RED_FLAGS_CALL_SOON, expectedSymptoms, dueDateFromLmp, TRIMESTER_TIPS, BABY_NAMES,
@@ -30,6 +28,7 @@ import { childRhythm, nextFeed, napWindow, childNudges, pregnancyNudges, fmtDur,
 import { DayTimeline } from '../../../src/components/DayTimeline';
 import { useFeedback } from '../../../src/components/Feedback';
 import { useWeather, WeatherGlyph, wxLabel, searchCity, type WxLocation } from '../../../src/lib/weather';
+import { useBackClose } from '../../../src/lib/useBackClose';
 import {
   useData, entriesOn, entryDetail, ENTRY_META, quickLogKinds, MOOD_LABELS, CHILD_COLORS,
   type EntryKind, type FeedSide, type DiaperType, type Child, type Lochia, type ChildColor, type PregArchive, type PregStatus,
@@ -49,12 +48,6 @@ const todayISO = () => {
 const apptDateLabel = (iso: string) =>
   new Date(iso).toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 
-function greeting() {
-  const h = new Date().getHours();
-  if (h < 12) return 'Good morning';
-  if (h < 18) return 'Good afternoon';
-  return 'Good evening';
-}
 const timeOf = (iso: string) => new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 const dayTimeOf = (iso: string) => new Date(iso).toLocaleString(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' });
 function agoLabel(iso: string) {
@@ -69,7 +62,6 @@ export default function Today() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const u = useUnits();
-  const { session, profile } = useSupabase();
   const {
     entries, addEntry, deleteEntry, children, activeChild, setActiveChild, events, vaccines,
     dueDate, setDueDate, maternalBirth, setMaternalBirth, pregAppts, matAppts,
@@ -92,6 +84,12 @@ export default function Today() {
   const onOverview = multiModule && showOverview && !activeCat;
   // Today timeline layout (horizontal ribbon ↔ 24h dial).
   const [tlLayout, setTlLayout] = useState<'ribbon' | 'clock'>('ribbon');
+
+  // Home is two tabs — Today (the family / module views) and Insights. The
+  // switch sits where the app logo + greeting used to be. Phone/browser Back
+  // from Insights returns to Today instead of leaving the app.
+  const [homeTab, setHomeTab] = useState<'today' | 'insights'>('today');
+  useBackClose(homeTab === 'insights', () => setHomeTab('today'));
 
   // Mum&Me phase tab — default to where she is: pregnancy while expecting,
   // postpartum once the baby has arrived.
@@ -152,9 +150,6 @@ export default function Today() {
   // Quick-log options adapt to the active child's life-stage.
   const quick = quickLogKinds(activeChild?.birthDate ? stageFrom(activeChild.birthDate) : 'newborn');
 
-  const rawName = profile?.name || session?.user?.email?.split('@')[0] || 'there';
-  const name = rawName.charAt(0).toUpperCase() + rawName.slice(1);
-
   // Everything below is scoped to the active child so switching pills changes the view.
   const cid = activeChild?.id;
   const forChild = <T extends { childId?: string }>(list: T[]) => (cid ? list.filter((x) => x.childId === cid) : list);
@@ -213,19 +208,11 @@ export default function Today() {
   const goOverview = () => { setActiveCat(null); setShowOverview(true); };
   return (
     <View style={{ flex: 1, backgroundColor: color.canvas }}>
-      {/* Fixed header — the rail runs from just beneath this down to the bottom */}
-      <View style={{ paddingTop: insets.top + 14, paddingHorizontal: 20, gap: 8 }}>
-        {onOverview ? (
-          // Family overview is the home — the app logo + a light greeting.
-          <>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: 2 }}>
-              <Logo width={22} height={26} />
-              <Text style={{ fontFamily: font.display700, fontSize: 19, color: color.ink }}>Everly</Text>
-            </View>
-            <Text style={{ fontFamily: font.display700, fontSize: 20, color: color.ink, paddingHorizontal: 2, marginTop: 2 }}>{greeting()}, {name}</Text>
-          </>
-        ) : (
-          // Inside a module the module's own title replaces the app logo/title.
+      {/* Fixed header — the Today/Insights switch replaces the old logo + greeting */}
+      <View style={{ paddingTop: insets.top + 14, paddingHorizontal: 20, gap: 10 }}>
+        <HomeTabs tab={homeTab} setTab={setHomeTab} />
+        {/* Inside a module the module's own title sits below the switch. */}
+        {homeTab === 'today' && !onOverview && (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 2 }}>
             {multiModule && (
               <Pressable onPress={goOverview} hitSlop={8} accessibilityLabel="Back to family overview" style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 2, opacity: pressed ? 0.6 : 1 })}>
@@ -242,6 +229,9 @@ export default function Today() {
 
       {/* Content + reserved rail */}
       <View style={{ flex: 1, flexDirection: 'row' }}>
+        {homeTab === 'insights' ? (
+          <View style={{ flex: 1 }}><InsightsScreen embedded /></View>
+        ) : (<>
         {showDock && dockSide === 'left' && <RailDock {...railProps} side="left" onMirror={() => setDockSide('right')} />}
     {activeCat ? (
       <View style={{ flex: 1 }}><CategoryView cat={activeCat} /></View>
@@ -486,6 +476,7 @@ export default function Today() {
     </View>
     )}
         {showDock && dockSide === 'right' && <RailDock {...railProps} side="right" onMirror={() => setDockSide('left')} />}
+        </>)}
       </View>
     </View>
   );
@@ -632,7 +623,6 @@ const RAIL_ICON = '#6F6E86';
 const RAIL_CATS: { key: string; label: string; to: string; icon: (c: string) => React.ReactNode }[] = [
   { key: 'health', label: 'Health records', to: '/(app)/health', icon: (c) => <HeartPulse size={19} color={c} /> },
   { key: 'timeline', label: 'Timeline', to: '/(app)/timeline', icon: (c) => <StarOutline size={19} color={c} /> },
-  { key: 'insights', label: 'Insights', to: '/(app)/insights', icon: (c) => <BarChart size={19} color={c} /> },
   { key: 'routines', label: 'Routines & chores', to: '/(app)/routines', icon: (c) => <CheckCircle size={18} color={c} /> },
   { key: 'coparent', label: 'Co-parent', to: '/(app)/coparent', icon: (c) => <User size={18} color={c} /> },
 ];
@@ -674,18 +664,16 @@ function RailDock({
           showsVerticalScrollIndicator={false}
         >
           {/* More categories on top (mirrored order) */}
-          {RAIL_CATS.filter((cat) => cat.key !== 'insights').slice().reverse().map((cat) => renderCat(cat, cat.key === activeCat, onNavigate))}
+          {RAIL_CATS.slice().reverse().map((cat) => renderCat(cat, cat.key === activeCat, onNavigate))}
 
           <View style={{ width: 24, height: 1, backgroundColor: color.hairline, marginVertical: 2 }} />
 
-          {/* Modules below: add, insights, children, then Mum&Me at the very bottom */}
+          {/* Modules below: add, children, then Mum&Me at the very bottom */}
           <Pressable onPress={onAdd} accessibilityLabel="Add a family member">
             <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: color.canvas, alignItems: 'center', justifyContent: 'center' }}>
               <Plus size={17} color={color.muted} />
             </View>
           </Pressable>
-
-          {RAIL_CATS.filter((cat) => cat.key === 'insights').map((cat) => renderCat(cat, cat.key === activeCat, onNavigate))}
 
           {children.slice().reverse().map((ch) => {
             const t = childToken[ch.color];
@@ -841,6 +829,22 @@ const archWeekOf = (a: { dueDate: string; bornDate: string }) =>
   Math.max(0, Math.floor((280 - Math.round((ppTime(a.dueDate) - ppTime(a.bornDate)) / PP_MS)) / 7));
 
 /** Pregnancy / Postpartum segmented toggle (pinned above the Mum&Me scroll). */
+/** Home switch — Today ↔ Insights, styled like the Mum&Me phase segmented pill. */
+function HomeTabs({ tab, setTab }: { tab: 'today' | 'insights'; setTab: (t: 'today' | 'insights') => void }) {
+  return (
+    <View style={{ flexDirection: 'row', backgroundColor: '#EFEDF8', borderRadius: radius.pill, padding: 3 }}>
+      {(['today', 'insights'] as const).map((t) => {
+        const on = t === tab;
+        return (
+          <Pressable key={t} onPress={() => setTab(t)} style={{ flex: 1, paddingVertical: 9, borderRadius: radius.pill, alignItems: 'center', backgroundColor: on ? color.primary : 'transparent' }}>
+            <Text style={{ fontFamily: on ? font.body700 : font.body600, fontSize: 13, color: on ? '#fff' : color.inkSecondary }}>{t === 'today' ? 'Today' : 'Insights'}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
 function PhaseTabs({ phase, setPhase }: { phase: 'pregnancy' | 'postpartum'; setPhase: (p: 'pregnancy' | 'postpartum') => void }) {
   return (
     <View style={{ flexDirection: 'row', backgroundColor: '#EFEDF8', borderRadius: radius.pill, padding: 3 }}>
