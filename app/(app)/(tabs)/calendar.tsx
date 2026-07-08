@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, font, radius, shadow, fill, childToken } from '../../../src/theme/tokens';
 import { ChevronLeft, ChevronRight, Calendar, Shield, Activity, Heart, X, Search, BabyBean } from '../../../src/components/icons';
 import { Button, Field } from '../../../src/components/forms';
+import { LocationField } from '../../../src/components/LocationField';
 import { useData, ENTRY_META, entryDetail, EntryKind, EventItem, Entry } from '../../../src/lib/store';
 import { useWeather, WeatherGlyph, wxLabel, searchCity, wxColor, type WxLocation, type DayWx } from '../../../src/lib/weather';
 import { useFeedback } from '../../../src/components/Feedback';
@@ -90,6 +91,8 @@ export default function CalendarTab() {
   const [addOpen, setAddOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [time, setTime] = useState('09:00');
+  const [evtChild, setEvtChild] = useState<string | undefined>(undefined); // "for whom"
+  const [evtLoc, setEvtLoc] = useState('');
   const [wxOpen, setWxOpen] = useState(false);
   const [tlLayout, setTlLayout] = useState<'ribbon' | 'clock'>('clock');
 
@@ -99,7 +102,9 @@ export default function CalendarTab() {
   // on the child's own tracking, not the shared calendar.
   const dayMarks = new Map<string, string[]>();
   const pushMark = (k: string, c: string) => { const a = dayMarks.get(k); if (a) a.push(c); else dayMarks.set(k, [c]); };
-  events.filter((e) => shown(ownerOf(e.childId))).forEach((e) => pushMark(dkey(e.at), EVENT_COLOR));
+  // Each event takes its owner's (child's) theme colour; Mum&Me appts are rose.
+  const eventColor = (childId?: string) => ownerMeta(ownerOf(childId))?.dot ?? EVENT_COLOR;
+  events.filter((e) => shown(ownerOf(e.childId))).forEach((e) => pushMark(dkey(e.at), eventColor(e.childId)));
   if (shown('mumme')) appts.forEach((a) => pushMark(dkey(a.at), APPT_COLOR));
 
   const todayKey = key(now.getFullYear(), now.getMonth(), now.getDate());
@@ -110,8 +115,8 @@ export default function CalendarTab() {
 
   // Timed items (events + appointments) for the day-timeline overview.
   const dayItems: TlItem[] = [
-    ...selEvents.map((e) => ({ id: e.id, title: e.title, at: e.at, color: color.primary })),
-    ...selAppts.map((a) => ({ id: a.id, title: a.title, at: a.at, color: color.maternalTeal })),
+    ...selEvents.map((e) => ({ id: e.id, title: e.title, at: e.at, color: eventColor(e.childId) })),
+    ...selAppts.map((a) => ({ id: a.id, title: a.title, at: a.at, color: APPT_COLOR })),
   ].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
 
   // Show a specific month, keeping the SAME date selected (clamped to the new
@@ -160,13 +165,19 @@ export default function CalendarTab() {
   const railBase = railDays[0];
   const selRailIndex = Math.round((new Date(sel.y, sel.m, sel.d).getTime() - railBase.getTime()) / 86400000);
 
+  function openAdd() {
+    setTitle(''); setTime('09:00'); setEvtLoc('');
+    setEvtChild(activeChild?.id ?? children[0]?.id);
+    setAddOpen(true);
+  }
   function saveEvent() {
     if (!title.trim()) return;
     const [hh, mm] = time.split(':').map((x) => parseInt(x, 10));
     const at = new Date(sel.y, sel.m, sel.d, isNaN(hh) ? 9 : hh, isNaN(mm) ? 0 : mm).toISOString();
-    addEvent({ title, at, childId: activeChild?.id });
+    addEvent({ title, at, childId: evtChild, location: evtLoc.trim() || undefined });
     setTitle('');
     setTime('09:00');
+    setEvtLoc('');
     setAddOpen(false);
     toast('Event added');
   }
@@ -242,7 +253,7 @@ export default function CalendarTab() {
 
       {/* Add-event bar for the tapped day */}
       <Pressable
-        onPress={() => setAddOpen(true)}
+        onPress={openAdd}
         style={{ borderWidth: 1.5, borderColor: '#CFC7DE', borderStyle: 'dashed', backgroundColor: '#FAF8FD', borderRadius: 14, paddingVertical: 13, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }}
       >
         <Text style={{ fontFamily: font.body700, fontSize: 15, color: color.primary }}>+</Text>
@@ -308,6 +319,25 @@ export default function CalendarTab() {
             </Text>
             <Field label="Title" value={title} onChangeText={setTitle} placeholder="e.g. 6-month checkup" autoCapitalize="sentences" />
             <Field label="Time (HH:MM)" value={time} onChangeText={setTime} placeholder="09:00" />
+            {children.length > 0 && (
+              <View style={{ gap: 6 }}>
+                <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.inkSecondary }}>For whom</Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 7 }}>
+                  {children.map((c) => {
+                    const on = evtChild === c.id; const t = childToken[c.color]; const ink = CHILD_INK[c.color] ?? color.primary;
+                    return (
+                      <Pressable key={c.id} onPress={() => setEvtChild(c.id)} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: radius.pill, paddingVertical: 6, paddingLeft: 6, paddingRight: 12, backgroundColor: on ? t.stroke : '#fff', borderWidth: 1, borderColor: on ? t.stroke : color.hairline }}>
+                        <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: on ? 'rgba(255,255,255,0.3)' : t.fill, alignItems: 'center', justifyContent: 'center' }}>
+                          <Text style={{ fontFamily: font.display700, fontSize: 10, color: on ? '#fff' : ink }}>{c.name.charAt(0).toUpperCase()}</Text>
+                        </View>
+                        <Text style={{ fontFamily: font.body700, fontSize: 12, color: on ? '#fff' : color.muted }}>{c.name}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+            )}
+            <LocationField label="Location (optional)" value={evtLoc} onChange={setEvtLoc} />
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <Button label="Cancel" variant="secondary" onPress={() => setAddOpen(false)} style={{ flex: 1 }} />
               <Button label="Add" onPress={saveEvent} style={{ flex: 1 }} />
@@ -571,15 +601,19 @@ function MonthGrid({
               ) : null}
               {/* number — top-left */}
               <Text style={{ position: 'absolute', top: 6, left: 8, fontFamily: isToday || isSel ? font.body700 : font.body600, fontSize: 12, color: numColor }}>{d}</Text>
-              {/* weather — top-right corner */}
-              {dayWx ? <View style={{ position: 'absolute', top: 6, right: 7 }}><WeatherGlyph code={dayWx.code} size={12} /></View> : null}
-              {/* item markers — bottom-centre, up to 3 bars + "+N" */}
+              {/* weather — top-right corner (white backing on the filled today cell so it stays readable) */}
+              {dayWx ? (
+                <View style={[{ position: 'absolute', top: 5, right: 5 }, isToday ? { backgroundColor: 'rgba(255,255,255,0.92)', borderRadius: 8, padding: 1.5 } : null]}>
+                  <WeatherGlyph code={dayWx.code} size={12} />
+                </View>
+              ) : null}
+              {/* item markers — stacked vertically, bottom-centre, up to 3 + "+N" */}
               {marks.length > 0 && (
-                <View style={{ position: 'absolute', bottom: 5, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                <View style={{ position: 'absolute', bottom: 4, left: 0, right: 0, alignItems: 'center', gap: 2 }}>
                   {marks.slice(0, 3).map((c, idx) => (
-                    <View key={idx} style={{ width: 9, height: 4, borderRadius: 2, backgroundColor: isToday ? '#fff' : c, marginHorizontal: 1.2 }} />
+                    <View key={idx} style={{ width: '48%', height: 3, borderRadius: 2, backgroundColor: isToday ? '#fff' : c }} />
                   ))}
-                  {marks.length > 3 ? <Text style={{ fontFamily: font.body700, fontSize: 8, color: isToday ? '#fff' : '#8079a6', marginLeft: 1 }}>+{marks.length - 3}</Text> : null}
+                  {marks.length > 3 ? <Text style={{ fontFamily: font.body700, fontSize: 8, color: isToday ? '#fff' : '#8079a6' }}>+{marks.length - 3}</Text> : null}
                 </View>
               )}
             </Pressable>
@@ -845,7 +879,7 @@ function ScheduleEditForm({ owner, title, at, location, sublabel, onSave, onCanc
       <Text style={{ fontFamily: font.body700, fontSize: 11, letterSpacing: 0.5, textTransform: 'uppercase', color: owner?.ink ?? color.primary }}>Edit · {sublabel ?? owner?.label ?? 'event'}</Text>
       <Field label="Title" value={t} onChangeText={setT} autoCapitalize="sentences" />
       <Field label="Time (HH:MM)" value={tm} onChangeText={setTm} placeholder="09:00" />
-      <Field label="Location (optional)" value={loc} onChangeText={setLoc} placeholder="e.g. City Hospital" autoCapitalize="sentences" />
+      <LocationField label="Location (optional)" value={loc} onChange={setLoc} />
       <View style={{ flexDirection: 'row', gap: 8 }}>
         <Pressable onPress={onDelete} style={{ backgroundColor: '#FCE8EC', borderRadius: radius.tile, paddingVertical: 12, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontFamily: font.body700, fontSize: 13, color: '#C0405F' }}>Delete</Text></Pressable>
         <Button label="Cancel" variant="secondary" onPress={onCancel} style={{ flex: 1 }} />
