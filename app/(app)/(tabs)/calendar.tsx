@@ -91,7 +91,7 @@ export default function CalendarTab() {
   const [title, setTitle] = useState('');
   const [time, setTime] = useState('09:00');
   const [wxOpen, setWxOpen] = useState(false);
-  const [tlLayout, setTlLayout] = useState<'ribbon' | 'clock'>('ribbon');
+  const [tlLayout, setTlLayout] = useState<'ribbon' | 'clock'>('clock');
 
   const selKey = key(sel.y, sel.m, sel.d);
   // Per-day markers (colour per item) — the calendar shows only *scheduled*
