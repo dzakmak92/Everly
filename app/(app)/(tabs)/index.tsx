@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { ScrollView, View, Text, Pressable, Modal, TextInput, Linking, ActivityIndicator, Animated, Easing, PanResponder } from 'react-native';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { ScrollView, View, Text, Pressable, Modal, TextInput, Linking, ActivityIndicator, Animated, Easing, PanResponder, type NativeSyntheticEvent, type NativeScrollEvent } from 'react-native';
 import Svg, { Circle, Rect, Polyline, Polygon, Line as SvgLine, Text as SvgText } from 'react-native-svg';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -1891,6 +1891,128 @@ const apptDayKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).p
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const WD_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+/* ── swipeable appointment overviews (mirror the main calendar's wheels) ──── */
+const APPT_SPAN_DAYS = 120;
+const APPT_GAP = 4;
+const APPT_VISIBLE = 7;
+const APPT_MONTH_SPAN = 12;
+type DayWxLite = { code: number; tMax: number } | null;
+
+/** Week view: a smooth momentum day-wheel; settling selects the centred day. */
+function ApptWeekWheel({ days, selIndex, selectedKey, todayKey, apptDays, accent, fill, wxOf, onSelectDate }: {
+  days: Date[]; selIndex: number; selectedKey: string; todayKey: string; apptDays: Set<string>;
+  accent: string; fill: string; wxOf: (d: Date) => DayWxLite; onSelectDate: (d: Date) => void;
+}) {
+  const scRef = useRef<ScrollView>(null);
+  const [cw, setCw] = useState(0); // 0 until measured, so the init scroll waits for the real width
+  const lastX = useRef(0);
+  const didInit = useRef(false);
+  const idle = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const step = (cw || 46) + APPT_GAP;
+  const clampLeft = (l: number) => Math.max(0, Math.min(days.length - APPT_VISIBLE, l));
+  const onLayout = (e: NativeSyntheticEvent<{ layout: { width: number } }>) => { const w = e.nativeEvent.layout.width; if (w > 0) setCw((w - APPT_GAP * (APPT_VISIBLE - 1)) / APPT_VISIBLE); };
+  useEffect(() => {
+    if (cw <= 0 || didInit.current) return;
+    didInit.current = true; const s = cw + APPT_GAP;
+    requestAnimationFrame(() => scRef.current?.scrollTo({ x: clampLeft(selIndex - 3) * s, animated: false }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cw]);
+  const settleAt = (x: number) => { const c = Math.max(0, Math.min(days.length - 1, Math.round(x / step) + 3)); onSelectDate(days[c]); };
+  const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => { const x = e.nativeEvent.contentOffset.x; lastX.current = x; if (!didInit.current) return; if (idle.current) clearTimeout(idle.current); idle.current = setTimeout(() => settleAt(x), 130); };
+  const jumpWeek = (dir: number) => { const leftmost = Math.round(lastX.current / step); scRef.current?.scrollTo({ x: clampLeft(leftmost + dir * 7) * step, animated: true }); };
+  const arw = { width: 22, borderRadius: 9, backgroundColor: color.canvas, alignItems: 'center' as const, justifyContent: 'center' as const, alignSelf: 'stretch' as const };
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'stretch', gap: 4 }}>
+      <Pressable onPress={() => jumpWeek(-1)} hitSlop={6} style={arw}><ChevronLeft size={15} color={color.muted} /></Pressable>
+      <View style={{ flex: 1 }} onLayout={onLayout}>
+        <ScrollView ref={scRef} horizontal showsHorizontalScrollIndicator={false} snapToInterval={step} decelerationRate="normal" scrollEventThrottle={16} onScroll={onScroll} contentContainerStyle={{ gap: APPT_GAP }}>
+          {days.map((d, i) => {
+            const k = apptDayKey(d); const isToday = k === todayKey; const isSel = k === selectedKey; const has = apptDays.has(k); const w = wxOf(d);
+            const bg = isToday ? accent : isSel ? '#fff' : has ? fill : color.canvas;
+            return (
+              <Pressable key={i} onPress={() => { onSelectDate(d); scRef.current?.scrollTo({ x: clampLeft(i - 3) * step, animated: true }); }} style={{ width: cw, alignItems: 'center', paddingVertical: 6, borderRadius: 11, backgroundColor: bg, borderWidth: isSel && !isToday ? 1.5 : 0, borderColor: accent }}>
+                <Text style={{ fontFamily: font.body700, fontSize: 8, color: isToday ? 'rgba(255,255,255,0.85)' : isSel ? accent : color.faint }}>{isToday ? 'TODAY' : WD_SHORT[d.getDay()].toUpperCase()}</Text>
+                <Text style={{ fontFamily: font.display700, fontSize: 13, color: isToday ? '#fff' : isSel || has ? accent : color.ink, marginTop: 1 }}>{d.getDate()}</Text>
+                {w ? <View style={{ marginTop: 3 }}><WeatherGlyph code={w.code} size={15} /></View> : null}
+                {w ? <Text style={{ fontFamily: font.body700, fontSize: 8, color: isToday ? 'rgba(255,255,255,0.9)' : color.muted, marginTop: 1 }}>{w.tMax}°</Text> : null}
+                <View style={{ width: has ? 12 : 0, height: 4, borderRadius: 2, marginTop: 3, backgroundColor: isToday ? '#fff' : has ? accent : 'transparent' }} />
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </View>
+      <Pressable onPress={() => jumpWeek(1)} hitSlop={6} style={arw}><ChevronRight size={15} color={color.muted} /></Pressable>
+    </View>
+  );
+}
+
+/** One compact appointment month grid (fixed 6 rows). */
+function ApptMonthGrid({ month, selectedKey, todayKey, apptDays, accent, onSelectDate }: {
+  month: { y: number; m: number }; selectedKey: string; todayKey: string; apptDays: Set<string>; accent: string; onSelectDate: (d: Date) => void;
+}) {
+  const first = new Date(month.y, month.m, 1);
+  const gridStart = new Date(month.y, month.m, 1 - ((first.getDay() + 6) % 7));
+  const cells = Array.from({ length: 42 }, (_, i) => { const d = new Date(gridStart); d.setDate(gridStart.getDate() + i); return d; });
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', borderWidth: 1, borderColor: '#E7E1EF', borderRadius: 12, overflow: 'hidden' }}>
+      {cells.map((d, i) => {
+        const k = apptDayKey(d); const out = d.getMonth() !== month.m; const has = apptDays.has(k); const sel = k === selectedKey; const isToday = k === todayKey;
+        const col = i % 7; const isWeekend = col >= 5; const lastRow = i >= 35;
+        const cellBorder = { borderRightWidth: col === 6 ? 0 : 1, borderBottomWidth: lastRow ? 0 : 1, borderColor: '#EDE8F2' };
+        const cellBg = isToday && !sel ? '#EDEBF9' : isWeekend ? '#F4F1FA' : 'transparent';
+        return (
+          <Pressable key={k} onPress={() => onSelectDate(d)} style={{ width: `${100 / 7}%`, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: cellBg, ...cellBorder }}>
+            <View style={{ width: 28, height: 28, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: sel ? accent : 'transparent', borderWidth: isToday && !sel ? 1.5 : 0, borderColor: accent }}>
+              <Text style={{ fontFamily: font.display700, fontSize: 12, color: sel ? '#fff' : isToday ? accent : out ? color.faint : color.inkSecondary }}>{d.getDate()}</Text>
+            </View>
+            <View style={{ width: has ? 10 : 0, height: 4, borderRadius: 2, marginTop: 3, backgroundColor: has && !sel ? accent : 'transparent' }} />
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+/** Month view: a swipeable carousel of month grids — swipe anywhere to change. */
+function ApptMonthCarousel({ months, curMonthIndex, monthJump, selectedKey, todayKey, apptDays, accent, onSelectDate, onSettleMonth }: {
+  months: { y: number; m: number }[]; curMonthIndex: number; monthJump: { index: number; token: number };
+  selectedKey: string; todayKey: string; apptDays: Set<string>; accent: string; onSelectDate: (d: Date) => void; onSettleMonth: (index: number) => void;
+}) {
+  const scRef = useRef<ScrollView>(null);
+  const [pageW, setPageW] = useState(0);
+  const lastX = useRef(0);
+  const didInit = useRef(false);
+  const idle = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clampIdx = (i: number) => Math.max(0, Math.min(months.length - 1, i));
+  const onLayout = (e: NativeSyntheticEvent<{ layout: { width: number } }>) => { const w = e.nativeEvent.layout.width; if (w > 0 && w !== pageW) setPageW(w); };
+  useEffect(() => {
+    if (pageW <= 0 || didInit.current) return;
+    didInit.current = true; lastX.current = clampIdx(curMonthIndex) * pageW;
+    requestAnimationFrame(() => scRef.current?.scrollTo({ x: lastX.current, animated: false }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageW]);
+  const settleAt = (x: number) => { if (!pageW) return; onSettleMonth(clampIdx(Math.round(x / pageW))); };
+  const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => { const x = e.nativeEvent.contentOffset.x; lastX.current = x; if (!didInit.current) return; if (idle.current) clearTimeout(idle.current); idle.current = setTimeout(() => settleAt(x), 130); };
+  useEffect(() => {
+    if (!didInit.current || !pageW) return;
+    scRef.current?.scrollTo({ x: clampIdx(monthJump.index) * pageW, animated: true });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [monthJump.token]);
+  return (
+    <View onLayout={onLayout}>
+      {pageW > 0 && (
+        <ScrollView ref={scRef} horizontal pagingEnabled showsHorizontalScrollIndicator={false} decelerationRate="fast" scrollEventThrottle={16} onScroll={onScroll}>
+          {months.map((mm) => (
+            <View key={`${mm.y}-${mm.m}`} style={{ width: pageW }}>
+              <ApptMonthGrid month={mm} selectedKey={selectedKey} todayKey={todayKey} apptDays={apptDays} accent={accent} onSelectDate={onSelectDate} />
+            </View>
+          ))}
+        </ScrollView>
+      )}
+    </View>
+  );
+}
+
 function AppointmentsCard({ accent, fill, items, allowTests, standard, onAdd, onEdit, onDelete }: {
   accent: string; fill: string; items: ApptItem[]; allowTests?: boolean;
   standard?: DatedAntenatal[];
@@ -1927,14 +2049,20 @@ function AppointmentsCard({ accent, fill, items, allowTests, standard, onAdd, on
   const [result, setResult] = useState('');
   const [selKey, setSelKey] = useState<string | null>(null);
   const [month, setMonth] = useState(() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() }; });
-  const [weekOffset, setWeekOffset] = useState(0);
-  const goWeek = (delta: number) => setWeekOffset((o) => o + delta);
-  const weekPan = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dx) > 18 && Math.abs(g.dx) > Math.abs(g.dy) * 1.6,
-      onPanResponderRelease: (_e, g) => { if (g.dx <= -40) goWeek(1); else if (g.dx >= 40) goWeek(-1); },
-    }),
-  ).current;
+  // Stable ranges for the swipeable day-wheel (week) + month carousel.
+  const days = useMemo(() => {
+    const base = new Date(); base.setHours(0, 0, 0, 0); base.setDate(base.getDate() - APPT_SPAN_DAYS);
+    return Array.from({ length: APPT_SPAN_DAYS * 2 + 1 }, (_, i) => { const d = new Date(base); d.setDate(base.getDate() + i); return d; });
+  }, []);
+  const dayBase = days[0];
+  const monthsList = useMemo(() => {
+    const n = new Date();
+    return Array.from({ length: APPT_MONTH_SPAN * 2 + 1 }, (_, i) => { const d = new Date(n.getFullYear(), n.getMonth() - APPT_MONTH_SPAN + i, 1); return { y: d.getFullYear(), m: d.getMonth() }; });
+  }, []);
+  const curMonthIndex = (month.y - monthsList[0].y) * 12 + (month.m - monthsList[0].m);
+  const [monthJump, setMonthJump] = useState({ index: 0, token: 0 });
+  const monthArrow = (dir: number) => setMonthJump((j) => ({ index: Math.max(0, Math.min(monthsList.length - 1, curMonthIndex + dir)), token: j.token + 1 }));
+  const settleMonth = (idx: number) => { const mm = monthsList[idx]; if (mm) setMonth({ y: mm.y, m: mm.m }); };
 
   const now = Date.now();
   const sorted = [...items].sort((a, b) => a.at.localeCompare(b.at));
@@ -1968,16 +2096,9 @@ function AppointmentsCard({ accent, fill, items, allowTests, standard, onAdd, on
     setLocation(a.location ?? ''); setKind(a.kind ?? 'appointment'); setResult(a.result ?? ''); setAddOpen(true);
   };
 
-  // collapsed: a Monday-aligned week, navigable via arrows/swipe (weekOffset)
-  const weekStart = (() => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7) + weekOffset * 7); return d; })();
-  const week = Array.from({ length: 7 }, (_, i) => { const d = new Date(weekStart); d.setDate(weekStart.getDate() + i); return d; });
-  const weekLabel = weekOffset === 0 ? 'This week' : weekOffset === 1 ? 'Next week' : weekOffset === -1 ? 'Last week'
-    : `Week of ${weekStart.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}`;
-  // expanded: a Monday-first month grid
-  const first = new Date(month.y, month.m, 1);
-  const gridStart = new Date(month.y, month.m, 1 - ((first.getDay() + 6) % 7));
-  const cells = Array.from({ length: 42 }, (_, i) => { const d = new Date(gridStart); d.setDate(gridStart.getDate() + i); return d; });
   const selectedKey = selKey ?? (next ? apptDayKey(new Date(next.at)) : apptDayKey(new Date()));
+  const selDayIndex = Math.round((new Date(`${selectedKey}T00:00:00`).getTime() - dayBase.getTime()) / 86400000);
+  const pickDate = (d: Date) => { const k = apptDayKey(d); setSelKey(k); setDate(k); };
   const selAppts = items.filter((a) => apptDayKey(new Date(a.at)) === selectedKey).sort((a, b) => a.at.localeCompare(b.at));
   const timeLabel = (iso: string) => new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 
@@ -1996,63 +2117,18 @@ function AppointmentsCard({ accent, fill, items, allowTests, standard, onAdd, on
       </View>
 
       {!expanded ? (
-        <>
-          <Pressable onPress={() => weekOffset !== 0 && setWeekOffset(0)} disabled={weekOffset === 0} style={{ alignItems: 'center' }}>
-            <Text style={{ fontFamily: font.body700, fontSize: 11.5, color: color.inkSecondary }}>
-              {weekLabel}{weekOffset !== 0 ? <Text style={{ color: accent }}>  · Today</Text> : null}
-            </Text>
-          </Pressable>
-          <View style={{ flexDirection: 'row', alignItems: 'stretch', gap: 4 }} {...weekPan.panHandlers}>
-            <Pressable onPress={() => goWeek(-1)} hitSlop={6} style={{ width: 22, borderRadius: 9, backgroundColor: color.canvas, alignItems: 'center', justifyContent: 'center' }}><ChevronLeft size={15} color={color.muted} /></Pressable>
-            <View style={{ flex: 1, flexDirection: 'row', gap: 4 }}>
-              {week.map((d) => {
-                const has = apptDays.has(apptDayKey(d));
-                const isToday = apptDayKey(d) === todayKey;
-                const w = wxOf(d);
-                return (
-                  <View key={d.toISOString()} style={{ flex: 1, alignItems: 'center', paddingVertical: 6, borderRadius: 11, backgroundColor: isToday ? accent : has ? fill : color.canvas }}>
-                    <Text style={{ fontFamily: font.body700, fontSize: 8, color: isToday ? 'rgba(255,255,255,0.85)' : color.faint }}>{isToday ? 'TODAY' : WD_SHORT[d.getDay()].toUpperCase()}</Text>
-                    <Text style={{ fontFamily: font.display700, fontSize: 13, color: isToday ? '#fff' : has ? accent : color.ink, marginTop: 1 }}>{d.getDate()}</Text>
-                    {w ? <View style={{ marginTop: 3 }}><WeatherGlyph code={w.code} size={15} /></View> : null}
-                    {w ? <Text style={{ fontFamily: font.body700, fontSize: 8, color: isToday ? 'rgba(255,255,255,0.9)' : color.muted, marginTop: 1 }}>{w.tMax}°</Text> : null}
-                    <View style={{ width: has ? 12 : 0, height: 4, borderRadius: 2, marginTop: 3, backgroundColor: isToday ? '#fff' : has ? accent : 'transparent' }} />
-                  </View>
-                );
-              })}
-            </View>
-            <Pressable onPress={() => goWeek(1)} hitSlop={6} style={{ width: 22, borderRadius: 9, backgroundColor: color.canvas, alignItems: 'center', justifyContent: 'center' }}><ChevronRight size={15} color={color.muted} /></Pressable>
-          </View>
-        </>
+        <ApptWeekWheel days={days} selIndex={selDayIndex} selectedKey={selectedKey} todayKey={todayKey} apptDays={apptDays} accent={accent} fill={fill} wxOf={wxOf} onSelectDate={pickDate} />
       ) : (
         <>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 18 }}>
-            <Pressable hitSlop={10} onPress={() => setMonth((s) => ({ y: s.m === 0 ? s.y - 1 : s.y, m: (s.m + 11) % 12 }))}><ChevronLeft size={16} color={color.muted} /></Pressable>
+            <Pressable hitSlop={10} onPress={() => monthArrow(-1)}><ChevronLeft size={16} color={color.muted} /></Pressable>
             <Text style={{ fontFamily: font.display700, fontSize: 14, color: color.ink }}>{MONTH_NAMES[month.m]} {month.y}</Text>
-            <Pressable hitSlop={10} onPress={() => setMonth((s) => ({ y: s.m === 11 ? s.y + 1 : s.y, m: (s.m + 1) % 12 }))}><ChevronRight size={16} color={color.muted} /></Pressable>
+            <Pressable hitSlop={10} onPress={() => monthArrow(1)}><ChevronRight size={16} color={color.muted} /></Pressable>
           </View>
           <View style={{ flexDirection: 'row', marginBottom: 2 }}>
             {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((l, i) => <Text key={i} style={{ flex: 1, textAlign: 'center', fontFamily: font.body700, fontSize: 9, color: color.faint }}>{l}</Text>)}
           </View>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', borderWidth: 1, borderColor: '#E7E1EF', borderRadius: 12, overflow: 'hidden' }}>
-            {cells.map((d, i) => {
-              const k = apptDayKey(d);
-              const out = d.getMonth() !== month.m;
-              const has = apptDays.has(k);
-              const sel = k === selectedKey;
-              const isToday = k === todayKey;
-              const col = i % 7; const isWeekend = col >= 5; const lastRow = i >= 35;
-              const cellBorder = { borderRightWidth: col === 6 ? 0 : 1, borderBottomWidth: lastRow ? 0 : 1, borderColor: '#EDE8F2' };
-              const cellBg = isToday && !sel ? '#EDEBF9' : isWeekend ? '#F4F1FA' : 'transparent';
-              return (
-                <Pressable key={k} onPress={() => { setSelKey(k); setDate(k); }} style={{ width: `${100 / 7}%`, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: cellBg, ...cellBorder }}>
-                  <View style={{ width: 28, height: 28, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: sel ? accent : 'transparent', borderWidth: isToday && !sel ? 1.5 : 0, borderColor: accent }}>
-                    <Text style={{ fontFamily: font.display700, fontSize: 12, color: sel ? '#fff' : isToday ? accent : out ? color.faint : color.inkSecondary }}>{d.getDate()}</Text>
-                  </View>
-                  <View style={{ width: has ? 10 : 0, height: 4, borderRadius: 2, marginTop: 3, backgroundColor: has && !sel ? accent : 'transparent' }} />
-                </Pressable>
-              );
-            })}
-          </View>
+          <ApptMonthCarousel months={monthsList} curMonthIndex={curMonthIndex} monthJump={monthJump} selectedKey={selectedKey} todayKey={todayKey} apptDays={apptDays} accent={accent} onSelectDate={pickDate} onSettleMonth={settleMonth} />
         </>
       )}
 
