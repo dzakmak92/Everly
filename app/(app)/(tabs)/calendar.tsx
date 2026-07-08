@@ -19,6 +19,7 @@ const VIEWS = ['Month', 'Week'] as const;
 type ViewMode = (typeof VIEWS)[number];
 const SWITCH_TRACK = '#E9E2D6'; // warm cream track for the Month/Week switch
 const RAIL_SPAN = 120; // days shown on each side of today in the Week rail wheel
+const MONTH_SPAN = 12; // months shown on each side of the current month in the carousel
 
 const EVENT_COLOR = color.primary; // periwinkle/lilac for scheduled events
 const ENTRY_COLOR = '#3FA98A'; // mint for logged entries
@@ -101,12 +102,6 @@ export default function CalendarTab() {
   events.filter((e) => shown(ownerOf(e.childId))).forEach((e) => pushMark(dkey(e.at), EVENT_COLOR));
   if (shown('mumme')) appts.forEach((a) => pushMark(dkey(a.at), APPT_COLOR));
 
-  const firstWeekday = monIndex(new Date(view.y, view.m, 1).getDay());
-  const daysInMonth = new Date(view.y, view.m + 1, 0).getDate();
-  const cells: (number | null)[] = [];
-  for (let i = 0; i < firstWeekday; i++) cells.push(null);
-  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
-
   const todayKey = key(now.getFullYear(), now.getMonth(), now.getDate());
   const selIsToday = selKey === todayKey;
 
@@ -119,20 +114,42 @@ export default function CalendarTab() {
     ...selAppts.map((a) => ({ id: a.id, title: a.title, at: a.at, color: color.maternalTeal })),
   ].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
 
-  // Change the shown month, keeping the SAME date selected (clamped to the new
+  // Show a specific month, keeping the SAME date selected (clamped to the new
   // month's length). Bumps centerToken so the Week rail re-centres on it.
-  function changeMonth(delta: number) {
-    const first = new Date(view.y, view.m + delta, 1);
-    const y = first.getFullYear(), m = first.getMonth();
+  function changeMonthTo(y: number, m: number) {
     const d = Math.min(sel.d, new Date(y, m + 1, 0).getDate());
     setView({ y, m });
     setSel({ y, m, d });
     setCenterToken((t) => t + 1);
   }
+  function changeMonth(delta: number) {
+    const first = new Date(view.y, view.m + delta, 1);
+    changeMonthTo(first.getFullYear(), first.getMonth());
+  }
   // Select a day (updates the day detail + keeps the month in sync).
   function selectDay(d: Date) {
     setSel({ y: d.getFullYear(), m: d.getMonth(), d: d.getDate() });
     setView({ y: d.getFullYear(), m: d.getMonth() });
+  }
+  // A stable range of months for the swipeable month carousel (like the day
+  // wheel, but paged one month at a time).
+  const months = useMemo(() => {
+    const n = new Date();
+    return Array.from({ length: MONTH_SPAN * 2 + 1 }, (_, i) => {
+      const d = new Date(n.getFullYear(), n.getMonth() - MONTH_SPAN + i, 1);
+      return { y: d.getFullYear(), m: d.getMonth() };
+    });
+  }, []);
+  const monthBase = months[0];
+  const curMonthIndex = (view.y - monthBase.y) * 12 + (view.m - monthBase.m);
+  const [monthJump, setMonthJump] = useState({ index: 0, token: 0 });
+  const settleMonth = (index: number) => { const mm = months[index]; if (mm) changeMonthTo(mm.y, mm.m); };
+  // Header ‹ › : in Week mode jump a month (keeps the date, re-centres the
+  // rail); in Month mode glide the month carousel to the neighbour.
+  function headerArrow(delta: number) {
+    if (mode === 'Week') { changeMonth(delta); return; }
+    const idx = Math.max(0, Math.min(months.length - 1, curMonthIndex + delta));
+    setMonthJump((j) => ({ index: idx, token: j.token + 1 }));
   }
   // A wide, stable range of days for the Week rail so it can momentum-scroll
   // (wheel-style) smoothly in either direction. Index 0 = RAIL_SPAN days ago.
@@ -172,17 +189,19 @@ export default function CalendarTab() {
       {/* Calendar card */}
       <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, paddingTop: 20, paddingHorizontal: 18, paddingBottom: 16 }, shadow.card]}>
         {/* Month nav — year above a swipeable month carousel (dimmed neighbours) */}
-        <MonthHeader view={view} onChange={changeMonth} />
+        <MonthHeader view={view} onChange={headerArrow} />
 
         {mode === 'Month' ? (
-          <MonthGrid
-            cells={cells}
-            view={view}
+          <MonthCarousel
+            months={months}
+            curMonthIndex={curMonthIndex}
+            monthJump={monthJump}
             selKey={selKey}
             todayKey={todayKey}
             dayMarks={dayMarks}
             wxForDate={wx.wxForDate}
-            onSelect={(d) => setSel({ y: view.y, m: view.m, d })}
+            onSelectDate={selectDay}
+            onSettleMonth={settleMonth}
           />
         ) : (
           <WeekRail
@@ -480,24 +499,27 @@ function isoWeek(d: Date): number {
 }
 
 function MonthGrid({
-  cells,
   view,
   selKey,
   todayKey,
   dayMarks,
   wxForDate,
-  onSelect,
+  onSelectDate,
 }: {
-  cells: (number | null)[];
   view: { y: number; m: number };
   selKey: string;
   todayKey: string;
   dayMarks: Map<string, string[]>;
   wxForDate: (d: Date) => DayWx | null;
-  onSelect: (d: number) => void;
+  onSelectDate: (d: Date) => void;
 }) {
-  const rows = Math.ceil(cells.length / 7);
+  const rows = 6; // fixed 6-week grid so every month page is the same height
   const firstWeekday = (new Date(view.y, view.m, 1).getDay() + 6) % 7;
+  const daysInMonth = new Date(view.y, view.m + 1, 0).getDate();
+  const cells: (number | null)[] = [];
+  for (let i = 0; i < firstWeekday; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+  while (cells.length < rows * 7) cells.push(null);
   const rowMonday = (r: number) => new Date(view.y, view.m, 1 - firstWeekday + r * 7);
   return (
     <View style={{ flexDirection: 'row' }}>
@@ -540,7 +562,7 @@ function MonthGrid({
           const cellBg = isWeekend ? WEEKEND_BG : 'transparent';
           const numColor = isToday ? '#fff' : isSel ? color.primary : isWeekend ? color.muted : color.ink;
           return (
-            <Pressable key={k} onPress={() => onSelect(d)} style={{ width: `${100 / 7}%`, height: 54, backgroundColor: cellBg, ...cellBorder }}>
+            <Pressable key={k} onPress={() => onSelectDate(new Date(view.y, view.m, d))} style={{ width: `${100 / 7}%`, height: 54, backgroundColor: cellBg, ...cellBorder }}>
               {/* whole-cell highlight — filled for today, outlined for the selected day */}
               {isToday ? (
                 <View style={{ position: 'absolute', top: 3, left: 3, right: 3, bottom: 3, borderRadius: 9, backgroundColor: color.primary }} />
@@ -565,6 +587,81 @@ function MonthGrid({
         })}
       </View>
       </View>
+    </View>
+  );
+}
+
+/* ── month carousel — full-width paged month grids, swipe anywhere to change ── */
+
+function MonthCarousel({ months, curMonthIndex, monthJump, selKey, todayKey, dayMarks, wxForDate, onSelectDate, onSettleMonth }: {
+  months: { y: number; m: number }[];
+  curMonthIndex: number;
+  monthJump: { index: number; token: number };
+  selKey: string;
+  todayKey: string;
+  dayMarks: Map<string, string[]>;
+  wxForDate: (d: Date) => DayWx | null;
+  onSelectDate: (d: Date) => void;
+  onSettleMonth: (index: number) => void;
+}) {
+  const scRef = useRef<ScrollView>(null);
+  const [pageW, setPageW] = useState(0);
+  const lastX = useRef(0);
+  const didInit = useRef(false);
+  const idle = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clampIdx = (i: number) => Math.max(0, Math.min(months.length - 1, i));
+
+  const onLayout = (e: NativeSyntheticEvent<{ layout: { width: number } }>) => {
+    const w = e.nativeEvent.layout.width;
+    if (w > 0 && w !== pageW) setPageW(w);
+  };
+
+  // Once the pages have a width (and the ScrollView is mounted), jump to the
+  // current month without animation.
+  useEffect(() => {
+    if (pageW <= 0 || didInit.current) return;
+    didInit.current = true;
+    lastX.current = clampIdx(curMonthIndex) * pageW;
+    requestAnimationFrame(() => scRef.current?.scrollTo({ x: lastX.current, animated: false }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageW]);
+
+  // Settle: once scrolling has been idle briefly, adopt the centred month.
+  const settleAt = (x: number) => { if (!pageW) return; onSettleMonth(clampIdx(Math.round(x / pageW))); };
+  const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const x = e.nativeEvent.contentOffset.x;
+    lastX.current = x;
+    if (!didInit.current) return;
+    if (idle.current) clearTimeout(idle.current);
+    idle.current = setTimeout(() => settleAt(x), 130);
+  };
+
+  // Header ‹ › glide the carousel to the requested month.
+  useEffect(() => {
+    if (!didInit.current || !pageW) return;
+    scRef.current?.scrollTo({ x: clampIdx(monthJump.index) * pageW, animated: true });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [monthJump.token]);
+
+  return (
+    <View onLayout={onLayout}>
+      {pageW > 0 && (
+        <ScrollView
+          ref={scRef}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          decelerationRate="fast"
+          scrollEventThrottle={16}
+          onScroll={onScroll}
+        >
+          {months.map((mm) => (
+            <View key={`${mm.y}-${mm.m}`} style={{ width: pageW }}>
+              <MonthGrid view={mm} selKey={selKey} todayKey={todayKey} dayMarks={dayMarks} wxForDate={wxForDate} onSelectDate={onSelectDate} />
+            </View>
+          ))}
+        </ScrollView>
+      )}
     </View>
   );
 }
