@@ -15,6 +15,7 @@ import { Silhouette, ProgressBar } from '../../../src/components/ui';
 import { DateField } from '../../../src/components/DateField';
 import { LocationField } from '../../../src/components/LocationField';
 import { DurationField } from '../../../src/components/DurationField';
+import { TimeField } from '../../../src/components/TimeField';
 import { ageLabel, stageFrom } from '../../../src/lib/age';
 import {
   gestFromDueDate, weekContent, MOODS, PREG_SYMPTOMS, RED_FLAGS_CALL_NOW, RED_FLAGS_CALL_SOON, expectedSymptoms, dueDateFromLmp, TRIMESTER_TIPS, BABY_NAMES,
@@ -33,7 +34,7 @@ import { SwipePager } from '../../../src/components/SwipePager';
 import {
   useData, entriesOn, entryDetail, ENTRY_META, quickLogKinds, MOOD_LABELS, CHILD_COLORS,
   type EntryKind, type FeedSide, type DiaperType, type Child, type Lochia, type ChildColor, type PregArchive, type PregStatus,
-  type Entry, type EventItem, type Vaccine, type Medication, type KickSession, type PregVital, type PregCheckin, type PregAppt, type BirthPrepItem,
+  type Entry, type EntryDetails, type EventItem, type Vaccine, type Medication, type KickSession, type PregVital, type PregCheckin, type PregAppt, type BirthPrepItem,
 } from '../../../src/lib/store';
 import { useUnits } from '../../../src/lib/units';
 import HealthTab from '../health';
@@ -64,7 +65,7 @@ export default function Today() {
   const router = useRouter();
   const u = useUnits();
   const {
-    entries, addEntry, deleteEntry, children, activeChild, setActiveChild, events, vaccines,
+    entries, addEntry, updateEntry, deleteEntry, children, activeChild, setActiveChild, events, vaccines,
     dueDate, setDueDate, maternalBirth, setMaternalBirth, pregAppts, matAppts,
     addChild, savedNames, pregArchive, closePregnancy, dockSide, setDockSide,
     medications, kickSessions, pregVitals, checkins,
@@ -146,12 +147,17 @@ export default function Today() {
   }
 
   const [kind, setKind] = useState<EntryKind | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [at, setAt] = useState(() => new Date().toISOString());
   const [side, setSide] = useState<FeedSide>('left');
   const [diaper, setDiaper] = useState<DiaperType>('wet');
   const [ml, setMl] = useState('');
   const [mins, setMins] = useState('');
   const [note, setNote] = useState('');
   const [mood, setMood] = useState(2);
+  const [undo, setUndo] = useState<{ id: string; label: string } | null>(null);
+  const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (undoTimer.current) clearTimeout(undoTimer.current); }, []);
 
   // Quick-log options adapt to the active child's life-stage.
   const quick = quickLogKinds(activeChild?.birthDate ? stageFrom(activeChild.birthDate) : 'newborn');
@@ -173,28 +179,54 @@ export default function Today() {
   // Next due vaccine (this child) — a small reminder under the appointments card.
   const dueVax = forChild(vaccines).filter((v) => !v.givenDate)[0];
 
-  function open(k: EntryKind) { setKind(k); setSide('left'); setDiaper('wet'); setMl(''); setMins(''); setNote(''); setMood(2); }
-  function save() {
-    if (!kind) return;
+  function open(k: EntryKind) { setKind(k); setEditId(null); setAt(new Date().toISOString()); setSide('left'); setDiaper('wet'); setMl(''); setMins(''); setNote(''); setMood(2); }
+  function openEdit(e: Entry) {
+    setKind(e.kind); setEditId(e.id); setAt(e.at);
+    setSide(e.side ?? 'left'); setDiaper(e.diaperType ?? 'wet');
+    setMl(e.volumeMl != null ? String(Math.round(u.bottleFromMl(e.volumeMl) * 10) / 10) : '');
+    setMins(e.durationMin != null ? String(e.durationMin) : '');
+    setNote(e.note ?? ''); setMood(e.mood ?? 2);
+  }
+  function detailsFor(k: EntryKind): EntryDetails {
     const n = (s: string) => { const v = parseInt(s, 10); return isNaN(v) ? undefined : v; };
     const vol = (s: string) => { const v = parseFloat(s.replace(',', '.')); return isNaN(v) ? undefined : Math.round(u.bottleToMl(v)); };
-    if (kind === 'feed') addEntry('feed', { side, volumeMl: side === 'bottle' ? vol(ml) : undefined, durationMin: n(mins), note });
-    else if (kind === 'pump') addEntry('pump', { volumeMl: vol(ml), note });
-    else if (kind === 'sleep') addEntry('sleep', { durationMin: n(mins), note });
-    else if (kind === 'diaper') addEntry('diaper', { diaperType: diaper, note });
-    else if (kind === 'activity') addEntry('activity', { durationMin: n(mins), note });
-    else if (kind === 'mood') addEntry('mood', { mood, note });
-    else addEntry(kind, { note }); // note / meal / medicine / potty
-    setKind(null);
+    const d: EntryDetails = { note };
+    if (k === 'feed') { d.side = side; d.volumeMl = side === 'bottle' ? vol(ml) : undefined; d.durationMin = n(mins); }
+    else if (k === 'pump') d.volumeMl = vol(ml);
+    else if (k === 'sleep' || k === 'activity') d.durationMin = n(mins);
+    else if (k === 'diaper') d.diaperType = diaper;
+    else if (k === 'mood') d.mood = mood;
+    return d;
   }
+  function save() {
+    if (!kind) return;
+    const details = detailsFor(kind);
+    if (editId) { updateEntry(editId, { ...details, at }); }
+    else {
+      const id = addEntry(kind, details, at);
+      setUndo({ id, label: ENTRY_META[kind].label });
+      if (undoTimer.current) clearTimeout(undoTimer.current);
+      undoTimer.current = setTimeout(() => setUndo(null), 6000);
+    }
+    setKind(null); setEditId(null);
+  }
+  function del() { if (editId) deleteEntry(editId); setKind(null); setEditId(null); }
 
   // On-device intelligence for the focused child / pregnancy.
   const now = Date.now();
   const rhythm = cid ? childRhythm(cid, entries, now) : null;
   const feedPred = rhythm ? nextFeed(rhythm, now) : null;
   const napPred = rhythm ? napWindow(rhythm, now) : null;
-  // "Needs a look" now lives only on the family overview (as per-member pills);
-  // the child/Mum&Me views no longer repeat the nudge list.
+  // Actionable "needs you" prompts for the focused child. These also appear on
+  // the family overview, but a single-child household never sees that overview —
+  // so they're surfaced here on the child's own Today view too.
+  const childNds = cid && rhythm ? childNudges(cid, { entries, medications, vaccines }, rhythm, now) : [];
+  function onNudge(n: Nudge) {
+    if (n.id === 'vax') { router.push(`/(app)/child/${cid}` as any); return; }
+    if (n.id === 'med') { open('medicine'); return; }
+    if (n.id === 'awake') { open('sleep'); return; }
+    open(quick[0] ?? 'note'); // empty / anything else → start a log
+  }
   const tlItems = today.map((e) => ({ id: e.id, title: ENTRY_META[e.kind].label, at: e.at, color: ENTRY_META[e.kind].ink }));
 
   const showDock = children.length > 0 || hasJourney;
@@ -285,6 +317,28 @@ export default function Today() {
       {/* ── Child view (existing Today content) ───────────────────────────── */}
       {!onOverview && !isYou && <>
 
+      {/* Needs-you nudges for this child (tappable) */}
+      {childNds.length > 0 && (
+        <Pressable onPress={() => onNudge(childNds[0])} style={({ pressed }) => [{ backgroundColor: '#FFF1DC', borderColor: '#F2DBB0', borderWidth: 1, borderRadius: 14, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10, opacity: pressed ? 0.9 : 1 }]}>
+          <Text style={{ fontSize: 17 }}>{childNds[0].icon}</Text>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={{ fontFamily: font.body700, fontSize: 13, color: '#8a6418' }} numberOfLines={1}>{childNds[0].title}</Text>
+            {childNds[0].sub ? <Text style={{ fontFamily: font.body400, fontSize: 11.5, color: '#a5813a' }} numberOfLines={1}>{childNds[0].sub}{childNds.length > 1 ? ` · +${childNds.length - 1} more` : ''}</Text> : (childNds.length > 1 ? <Text style={{ fontFamily: font.body400, fontSize: 11.5, color: '#a5813a' }}>+{childNds.length - 1} more</Text> : null)}
+          </View>
+          <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.primary }}>{childNds[0].cta ?? 'Open'} ›</Text>
+        </Pressable>
+      )}
+
+      {/* just-logged → offer an Undo for a few seconds */}
+      {undo && (
+        <View style={{ backgroundColor: '#33324A', borderRadius: radius.tile, paddingVertical: 11, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <Text style={{ flex: 1, fontFamily: font.body600, fontSize: 13, color: '#fff' }}>Logged {undo.label.toLowerCase()}</Text>
+          <Pressable onPress={() => { deleteEntry(undo.id); setUndo(null); }} hitSlop={8}>
+            <Text style={{ fontFamily: font.body700, fontSize: 13, color: '#B7B9F0' }}>Undo</Text>
+          </Pressable>
+        </View>
+      )}
+
       {/* Predicted (top) + today's actuals stacked directly beneath */}
       <PredictionHero nap={napPred} feed={feedPred} rhythm={rhythm} />
       {today.length > 0 && (
@@ -338,7 +392,7 @@ export default function Today() {
           </View>
         ) : (
           <View style={[{ backgroundColor: '#fff', borderRadius: radius.card, paddingVertical: 16, paddingHorizontal: 8 }, shadow.card]}>
-            <DayTimeline items={tlItems} layout={tlLayout} />
+            <DayTimeline items={tlItems} layout={tlLayout} onPressItem={(id) => { const e = today.find((x) => x.id === id); if (e) openEdit(e); }} />
           </View>
         )}
       </View>
@@ -373,18 +427,24 @@ export default function Today() {
       <Modal visible={kind !== null} transparent animationType="fade" onRequestClose={() => setKind(null)}>
         <Pressable onPress={() => setKind(null)} style={{ flex: 1, backgroundColor: 'rgba(40,18,50,0.35)', justifyContent: 'center', paddingHorizontal: 28 }}>
           <Pressable onPress={() => {}} style={[{ backgroundColor: color.canvas, borderRadius: radius.card, padding: 20, gap: 14 }, shadow.card]}>
-            <Text style={{ fontFamily: font.display700, fontSize: 18, color: color.ink }}>{kind ? ENTRY_META[kind].label : ''}</Text>
+            <Text style={{ fontFamily: font.display700, fontSize: 18, color: color.ink }}>{kind ? `${editId ? 'Edit ' : ''}${ENTRY_META[kind].label}` : ''}</Text>
             {kind === 'feed' && <Chips options={[['left', 'Left'], ['right', 'Right'], ['bottle', 'Bottle']]} value={side} onChange={(v) => setSide(v as FeedSide)} />}
             {kind === 'feed' && side === 'bottle' && <Field label={`Amount (${u.bottleUnit})`} value={ml} onChangeText={setMl} placeholder={u.imperial ? 'e.g. 4' : 'e.g. 120'} />}
             {(kind === 'feed' || kind === 'sleep' || kind === 'activity') && <DurationField label="Duration" value={mins} onChange={setMins} />}
             {kind === 'pump' && <Field label={`Amount (${u.bottleUnit})`} value={ml} onChangeText={setMl} placeholder={u.imperial ? 'e.g. 3' : 'e.g. 90'} />}
             {kind === 'diaper' && <Chips options={[['wet', 'Wet'], ['dirty', 'Dirty'], ['both', 'Both']]} value={diaper} onChange={(v) => setDiaper(v as DiaperType)} />}
             {kind === 'mood' && <Chips options={MOOD_LABELS.map((l, i) => [String(i), l] as [string, string])} value={String(mood)} onChange={(v) => setMood(parseInt(v, 10))} />}
+            {kind && <TimeField value={at} onChange={setAt} />}
             <Field label={kind === 'note' || kind === 'meal' || kind === 'medicine' || kind === 'potty' ? 'Note' : 'Note (optional)'} value={note} onChangeText={setNote} placeholder={kind === 'meal' ? 'What did they eat?' : kind === 'medicine' ? 'Medicine & dose' : kind === 'potty' ? 'e.g. pee / poo / accident' : 'Anything to add?'} autoCapitalize="sentences" />
             <View style={{ flexDirection: 'row', gap: 10 }}>
-              <Button label="Cancel" variant="secondary" onPress={() => setKind(null)} style={{ flex: 1 }} />
-              <Button label="Save" onPress={save} style={{ flex: 1 }} />
+              <Button label="Cancel" variant="secondary" onPress={() => { setKind(null); setEditId(null); }} style={{ flex: 1 }} />
+              <Button label={editId ? 'Update' : 'Save'} onPress={save} style={{ flex: 1 }} />
             </View>
+            {editId && (
+              <Pressable onPress={del} hitSlop={6} style={{ alignItems: 'center', paddingTop: 2 }}>
+                <Text style={{ fontFamily: font.body700, fontSize: 13, color: color.rose }}>Delete entry</Text>
+              </Pressable>
+            )}
           </Pressable>
         </Pressable>
       </Modal>
