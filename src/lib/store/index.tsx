@@ -175,7 +175,8 @@ type DataValue = {
   updateChild: (id: string, patch: Partial<Pick<Child, 'name' | 'color' | 'birthDate'>>) => void;
   deleteChild: (id: string) => void;
   entries: Entry[]; // newest first
-  addEntry: (kind: EntryKind, details?: EntryDetails) => void;
+  addEntry: (kind: EntryKind, details?: EntryDetails, at?: string) => string;
+  updateEntry: (id: string, patch: EntryDetails & { at?: string }) => void;
   deleteEntry: (id: string) => void;
   events: EventItem[]; // soonest first
   addEvent: (input: { title: string; at: string; childId?: string; location?: string; note?: string }) => void;
@@ -550,13 +551,18 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
 
   const setActiveChild = useCallback((id: string) => setActiveId(id), []);
 
+  // Newest-first ordering by timestamp — keeps "most recent" logic correct even
+  // when an entry is back-dated (e.g. logging the 2am feed at 7am).
+  const byNewest = (a: Entry, b: Entry) => b.at.localeCompare(a.at);
+
   const addEntry = useCallback(
-    (kind: EntryKind, details?: EntryDetails) => {
+    (kind: EntryKind, details?: EntryDetails, at?: string): string => {
+      const id = newId();
       setEntries((prev) => [
         {
-          id: newId(),
+          id,
           kind,
-          at: new Date().toISOString(),
+          at: at || new Date().toISOString(),
           childId: activeId ?? undefined,
           note: details?.note?.trim() || undefined,
           side: details?.side,
@@ -566,10 +572,26 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
           mood: details?.mood,
         },
         ...prev,
-      ]);
+      ].sort(byNewest));
+      return id;
     },
     [activeId],
   );
+
+  const updateEntry = useCallback((id: string, patch: EntryDetails & { at?: string }) => {
+    setEntries((prev) => prev.map((e) => {
+      if (e.id !== id) return e;
+      const next = { ...e };
+      if (patch.at !== undefined) next.at = patch.at;
+      if (patch.note !== undefined) next.note = patch.note.trim() || undefined;
+      if (patch.side !== undefined) next.side = patch.side;
+      if (patch.volumeMl !== undefined) next.volumeMl = patch.volumeMl;
+      if (patch.durationMin !== undefined) next.durationMin = patch.durationMin;
+      if (patch.diaperType !== undefined) next.diaperType = patch.diaperType;
+      if (patch.mood !== undefined) next.mood = patch.mood;
+      return next;
+    }).sort(byNewest));
+  }, []);
 
   const deleteEntry = useCallback((id: string) => setEntries((prev) => prev.filter((e) => e.id !== id)), []);
 
@@ -789,7 +811,7 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
   const value = useMemo<DataValue>(
     () => ({
       loading, children, activeChild, setActiveChild, addChild, updateChild, deleteChild,
-      entries, addEntry, deleteEntry, events, addEvent, deleteEvent, updateEvent,
+      entries, addEntry, updateEntry, deleteEntry, events, addEvent, deleteEvent, updateEvent,
       vaccines, addVaccine, updateVaccine, deleteVaccine,
       medications, addMedication, toggleMedication, deleteMedication,
       growth, addGrowth, deleteGrowth,
@@ -822,7 +844,7 @@ export function DataProvider({ children: node }: { children: React.ReactNode }) 
       clearAll,
       demoPremium, setDemoPremium, loadSampleData,
     }),
-    [loading, children, activeChild, setActiveChild, addChild, updateChild, deleteChild, entries, addEntry, deleteEntry, events, addEvent, deleteEvent, updateEvent, vaccines, addVaccine, updateVaccine, deleteVaccine, medications, addMedication, toggleMedication, deleteMedication, growth, addGrowth, deleteGrowth, routines, addRoutine, addRoutineStep, toggleStep, resetRoutine, deleteRoutine, chores, addChore, toggleChore, deleteChore, milestones, addMilestone, deleteMilestone, milestoneMedia, addMilestoneMedia, removeMilestoneMedia, caregivers, addCaregiver, deleteCaregiver, custody, setCustodyDay, expenses, addExpense, toggleExpenseSettled, deleteExpense, dueDate, setDueDate, checkins, addCheckin, upsertTodayCheckin, deleteCheckin, pregArchive, closePregnancy, dockSide, setDockSide, maternalBirth, setMaternalBirth, epdsResults, addEpdsResult, deleteEpdsResult, recoveryLogs, addRecoveryLog, deleteRecoveryLog, tzContacts, addTzContact, deleteTzContact, savedTips, saveTip, deleteTip, birthPrep, addBirthPrep, toggleBirthPrep, deleteBirthPrep, prepSections, addPrepSection, renamePrepSection, deletePrepSection, savedNames, saveName, deleteName, supportContacts, addSupportContact, deleteSupportContact, startWeightKg, setStartWeightKg, heightCm, setHeightCm, pregStatus, setPregStatus, pregAppts, addPregAppt, deletePregAppt, updatePregAppt, pregVitals, addPregVital, deletePregVital, lastPeriod, setLastPeriod, cycleLength, setCycleLength, ttcItems, addTtc, toggleTtc, deleteTtc, momCare, addMomCare, deleteMomCare, pelvicLog, addPelvic, matAppts, addMatAppt, deleteMatAppt, updateMatAppt, kickSessions, addKickSession, deleteKickSession, clearKickSessions, contractionSessions, addContraction, deleteContraction, clearContractions, kickDraft, setKickDraft, contractionStart, setContractionStart, clearAll, demoPremium, setDemoPremium, loadSampleData],
+    [loading, children, activeChild, setActiveChild, addChild, updateChild, deleteChild, entries, addEntry, updateEntry, deleteEntry, events, addEvent, deleteEvent, updateEvent, vaccines, addVaccine, updateVaccine, deleteVaccine, medications, addMedication, toggleMedication, deleteMedication, growth, addGrowth, deleteGrowth, routines, addRoutine, addRoutineStep, toggleStep, resetRoutine, deleteRoutine, chores, addChore, toggleChore, deleteChore, milestones, addMilestone, deleteMilestone, milestoneMedia, addMilestoneMedia, removeMilestoneMedia, caregivers, addCaregiver, deleteCaregiver, custody, setCustodyDay, expenses, addExpense, toggleExpenseSettled, deleteExpense, dueDate, setDueDate, checkins, addCheckin, upsertTodayCheckin, deleteCheckin, pregArchive, closePregnancy, dockSide, setDockSide, maternalBirth, setMaternalBirth, epdsResults, addEpdsResult, deleteEpdsResult, recoveryLogs, addRecoveryLog, deleteRecoveryLog, tzContacts, addTzContact, deleteTzContact, savedTips, saveTip, deleteTip, birthPrep, addBirthPrep, toggleBirthPrep, deleteBirthPrep, prepSections, addPrepSection, renamePrepSection, deletePrepSection, savedNames, saveName, deleteName, supportContacts, addSupportContact, deleteSupportContact, startWeightKg, setStartWeightKg, heightCm, setHeightCm, pregStatus, setPregStatus, pregAppts, addPregAppt, deletePregAppt, updatePregAppt, pregVitals, addPregVital, deletePregVital, lastPeriod, setLastPeriod, cycleLength, setCycleLength, ttcItems, addTtc, toggleTtc, deleteTtc, momCare, addMomCare, deleteMomCare, pelvicLog, addPelvic, matAppts, addMatAppt, deleteMatAppt, updateMatAppt, kickSessions, addKickSession, deleteKickSession, clearKickSessions, contractionSessions, addContraction, deleteContraction, clearContractions, kickDraft, setKickDraft, contractionStart, setContractionStart, clearAll, demoPremium, setDemoPremium, loadSampleData],
   );
 
   return <DataContext.Provider value={value}>{node}</DataContext.Provider>;

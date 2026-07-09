@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ScrollView, View, Text, Pressable, Modal, TextInput } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -10,6 +10,7 @@ import { ChevronLeft, Clock, Calendar as CalIcon } from '../../../src/components
 import { EntryIcon } from '../../../src/components/EntryIcon';
 import { DurationField } from '../../../src/components/DurationField';
 import { DateField } from '../../../src/components/DateField';
+import { TimeField } from '../../../src/components/TimeField';
 import { Silhouette } from '../../../src/components/ui';
 import { stageFrom } from '../../../src/lib/age';
 import {
@@ -88,17 +89,23 @@ export default function AddLog() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ night?: string }>();
-  const { addEntry, addEvent, entries, activeChild } = useData();
+  const { addEntry, updateEntry, deleteEntry, addEvent, entries, activeChild } = useData();
   const { toast: notify } = useFeedback();
 
   const [night, setNight] = useState(params.night === '1');
   const [kind, setKind] = useState<EntryKind | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [at, setAt] = useState(() => new Date().toISOString());
   const [side, setSide] = useState<FeedSide>('left');
   const [diaper, setDiaper] = useState<DiaperType>('wet');
   const [ml, setMl] = useState('');
   const [mins, setMins] = useState('');
   const [note, setNote] = useState('');
   const [mood, setMood] = useState(2);
+  // Just-logged entry, so the toast can offer an Undo for a few seconds.
+  const [undo, setUndo] = useState<{ id: string; label: string } | null>(null);
+  const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (undoTimer.current) clearTimeout(undoTimer.current); }, []);
   const [cmd, setCmd] = useState('');
   const [toast, setToast] = useState('');
   // Appointment composer
@@ -132,22 +139,41 @@ export default function AddLog() {
     ? { bg: '#1A1730', card: '#262144', cardText: '#EDEBFA', sub: '#9C97C4', headText: '#EDEBFA', tileFill: '#2E2952' }
     : { bg: color.canvas, card: '#fff', cardText: color.ink, sub: color.muted, headText: color.ink, tileFill: '' };
 
-  function open(k: EntryKind) { setKind(k); setSide('left'); setDiaper('wet'); setMl(''); setMins(''); setNote(''); setMood(2); }
+  function open(k: EntryKind) { setKind(k); setEditId(null); setAt(new Date().toISOString()); setSide('left'); setDiaper('wet'); setMl(''); setMins(''); setNote(''); setMood(2); }
+  function openEdit(e: Entry) {
+    setKind(e.kind); setEditId(e.id); setAt(e.at);
+    setSide(e.side ?? 'left'); setDiaper(e.diaperType ?? 'wet');
+    setMl(e.volumeMl != null ? String(e.volumeMl) : ''); setMins(e.durationMin != null ? String(e.durationMin) : '');
+    setNote(e.note ?? ''); setMood(e.mood ?? 2);
+  }
   function flash(label: string) { setToast(`Logged ${label.toLowerCase()}${activeChild ? ` for ${activeChild.name}` : ''}.`); setTimeout(() => setToast(''), 2200); }
+  function offerUndo(id: string, label: string) {
+    setUndo({ id, label });
+    if (undoTimer.current) clearTimeout(undoTimer.current);
+    undoTimer.current = setTimeout(() => setUndo(null), 6000);
+  }
+
+  function detailsFor(k: EntryKind): EntryDetails {
+    const n = (s: string) => { const v = parseInt(s, 10); return isNaN(v) ? undefined : v; };
+    const d: EntryDetails = { note };
+    if (k === 'feed') { d.side = side; d.volumeMl = side === 'bottle' ? n(ml) : undefined; d.durationMin = n(mins); }
+    else if (k === 'pump') d.volumeMl = n(ml);
+    else if (k === 'sleep' || k === 'activity') d.durationMin = n(mins);
+    else if (k === 'diaper') d.diaperType = diaper;
+    else if (k === 'mood') d.mood = mood;
+    return d;
+  }
 
   function save() {
     if (!kind) return;
-    const n = (s: string) => { const v = parseInt(s, 10); return isNaN(v) ? undefined : v; };
-    if (kind === 'feed') addEntry('feed', { side, volumeMl: side === 'bottle' ? n(ml) : undefined, durationMin: n(mins), note });
-    else if (kind === 'pump') addEntry('pump', { volumeMl: n(ml), note });
-    else if (kind === 'sleep') addEntry('sleep', { durationMin: n(mins), note });
-    else if (kind === 'diaper') addEntry('diaper', { diaperType: diaper, note });
-    else if (kind === 'activity') addEntry('activity', { durationMin: n(mins), note });
-    else if (kind === 'mood') addEntry('mood', { mood, note });
-    else addEntry(kind, { note }); // note / meal / medicine / potty
-    flash(ENTRY_META[kind].label);
-    setKind(null);
-    notify('Saved');
+    const details = detailsFor(kind);
+    if (editId) { updateEntry(editId, { ...details, at }); notify('Updated'); }
+    else { const id = addEntry(kind, details, at); offerUndo(id, ENTRY_META[kind].label); flash(ENTRY_META[kind].label); notify('Saved'); }
+    setKind(null); setEditId(null);
+  }
+  function del() {
+    if (editId) { deleteEntry(editId); notify('Deleted'); }
+    setKind(null); setEditId(null);
   }
 
   function openAppt() {
@@ -208,6 +234,16 @@ export default function AddLog() {
           </Pressable>
         </View>
       </View>
+
+      {/* just-logged → offer an Undo for a few seconds */}
+      {undo && (
+        <View style={{ backgroundColor: '#33324A', borderRadius: radius.tile, paddingVertical: 11, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <Text style={{ flex: 1, fontFamily: font.body600, fontSize: 13, color: '#fff' }}>Logged {undo.label.toLowerCase()}{activeChild ? ` for ${activeChild.name}` : ''}</Text>
+          <Pressable onPress={() => { deleteEntry(undo.id); setUndo(null); }} hitSlop={8}>
+            <Text style={{ fontFamily: font.body700, fontSize: 13, color: '#B7B9F0' }}>Undo</Text>
+          </Pressable>
+        </View>
+      )}
 
       {/* wake-window banner (night) */}
       {night && (
@@ -293,11 +329,12 @@ export default function AddLog() {
           {today.slice(0, 6).map((e) => {
             const m = ENTRY_META[e.kind]; const det = entryDetail(e);
             return (
-              <View key={e.id} style={[{ backgroundColor: t.card, borderRadius: radius.cardSm, padding: 13, flexDirection: 'row', alignItems: 'center', gap: 10 }, night ? null : shadow.card]}>
+              <Pressable key={e.id} onPress={() => openEdit(e)} style={({ pressed }) => [{ backgroundColor: t.card, borderRadius: radius.cardSm, padding: 13, flexDirection: 'row', alignItems: 'center', gap: 10, opacity: pressed ? 0.9 : 1 }, night ? null : shadow.card]}>
                 <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: night ? NIGHT_TINT[e.kind] : m.ink }} />
                 <Text style={{ flex: 1, fontFamily: font.body600, fontSize: 13, color: t.cardText }} numberOfLines={1}>{m.label}{det ? ` · ${det}` : ''}</Text>
                 <Text style={{ fontFamily: font.body500, fontSize: 11, color: t.sub }}>{clockTime(e.at)}</Text>
-              </View>
+                <Text style={{ fontFamily: font.body700, fontSize: 11, color: color.primary }}>Edit</Text>
+              </Pressable>
             );
           })}
         </View>
@@ -307,18 +344,24 @@ export default function AddLog() {
       <Modal visible={kind !== null} transparent animationType="fade" onRequestClose={() => setKind(null)}>
         <Pressable onPress={() => setKind(null)} style={{ flex: 1, backgroundColor: 'rgba(20,12,40,0.5)', justifyContent: 'center', paddingHorizontal: 28 }}>
           <Pressable onPress={() => {}} style={[{ backgroundColor: night ? t.card : color.canvas, borderRadius: radius.card, padding: 20, gap: 14 }, shadow.card]}>
-            <Text style={{ fontFamily: font.display700, fontSize: 18, color: t.cardText }}>{kind ? ENTRY_META[kind].label : ''}</Text>
+            <Text style={{ fontFamily: font.display700, fontSize: 18, color: t.cardText }}>{kind ? `${editId ? 'Edit ' : ''}${ENTRY_META[kind].label}` : ''}</Text>
             {kind === 'feed' && <Chips night={night} options={[['left', 'Left'], ['right', 'Right'], ['bottle', 'Bottle']]} value={side} onChange={(v) => setSide(v as FeedSide)} />}
             {kind === 'feed' && side === 'bottle' && <Field label="Amount (ml)" value={ml} onChangeText={setMl} placeholder="e.g. 120" />}
             {(kind === 'feed' || kind === 'sleep' || kind === 'activity') && <DurationField label="Duration" value={mins} onChange={setMins} />}
             {kind === 'pump' && <Field label="Amount (ml)" value={ml} onChangeText={setMl} placeholder="e.g. 90" />}
             {kind === 'diaper' && <Chips night={night} options={[['wet', 'Wet'], ['dirty', 'Dirty'], ['both', 'Both']]} value={diaper} onChange={(v) => setDiaper(v as DiaperType)} />}
             {kind === 'mood' && <Chips night={night} options={MOOD_LABELS.map((l, i) => [String(i), l] as [string, string])} value={String(mood)} onChange={(v) => setMood(parseInt(v, 10))} />}
+            {kind && <TimeField value={at} onChange={setAt} />}
             <Field label={kind === 'note' || kind === 'meal' || kind === 'medicine' || kind === 'potty' ? 'Note' : 'Note (optional)'} value={note} onChangeText={setNote} placeholder={kind === 'meal' ? 'What did they eat?' : kind === 'medicine' ? 'Medicine & dose' : kind === 'potty' ? 'e.g. pee / poo / accident' : 'Anything to add?'} autoCapitalize="sentences" />
             <View style={{ flexDirection: 'row', gap: 10 }}>
-              <Button label="Cancel" variant="secondary" onPress={() => setKind(null)} style={{ flex: 1 }} />
-              <Button label="Save" onPress={save} style={{ flex: 1 }} />
+              <Button label="Cancel" variant="secondary" onPress={() => { setKind(null); setEditId(null); }} style={{ flex: 1 }} />
+              <Button label={editId ? 'Update' : 'Save'} onPress={save} style={{ flex: 1 }} />
             </View>
+            {editId && (
+              <Pressable onPress={del} hitSlop={6} style={{ alignItems: 'center', paddingTop: 2 }}>
+                <Text style={{ fontFamily: font.body700, fontSize: 13, color: color.rose }}>Delete entry</Text>
+              </Pressable>
+            )}
           </Pressable>
         </Pressable>
       </Modal>

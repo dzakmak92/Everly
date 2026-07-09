@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import Svg, { Circle, Path, Rect, Line as SvgLine, Defs, LinearGradient, Stop, Text as SvgText } from 'react-native-svg';
 import { color, font } from '../theme/tokens';
 
@@ -23,12 +23,12 @@ function colorAt(h: number) {
 }
 
 /** Switchable day overview — a horizontal ribbon or a sunrise→sunset dial. */
-export function DayTimeline({ items, layout, unit = 'entry', isToday = true }: { items: TlItem[]; layout: 'ribbon' | 'clock'; unit?: 'entry' | 'event'; isToday?: boolean }) {
-  return layout === 'clock' ? <ClockTimeline items={items} unit={unit} isToday={isToday} /> : <RibbonTimeline items={items} isToday={isToday} />;
+export function DayTimeline({ items, layout, unit = 'entry', isToday = true, onPressItem }: { items: TlItem[]; layout: 'ribbon' | 'clock'; unit?: 'entry' | 'event'; isToday?: boolean; onPressItem?: (id: string) => void }) {
+  return layout === 'clock' ? <ClockTimeline items={items} unit={unit} isToday={isToday} onPressItem={onPressItem} /> : <RibbonTimeline items={items} isToday={isToday} onPressItem={onPressItem} />;
 }
 
 /** Ribbon: a horizontal strip shaded by time of day (day/night gradient). */
-function RibbonTimeline({ items, isToday = true }: { items: TlItem[]; isToday?: boolean }) {
+function RibbonTimeline({ items, isToday = true, onPressItem }: { items: TlItem[]; isToday?: boolean; onPressItem?: (id: string) => void }) {
   const hrs = items.map((i) => { const d = new Date(i.at); return d.getHours() + d.getMinutes() / 60; });
   const lo = Math.max(0, Math.min(7, Math.floor(Math.min(...hrs))));
   const hi = Math.min(24, Math.max(20, Math.ceil(Math.max(...hrs))));
@@ -64,7 +64,9 @@ function RibbonTimeline({ items, isToday = true }: { items: TlItem[]; isToday?: 
       {items.map((it, i) => (
         <React.Fragment key={it.id}>
           <Text style={{ position: 'absolute', top: 20, left: pct(hrs[i]), marginLeft: -20, width: 40, textAlign: 'center', fontFamily: font.body700, fontSize: 9.5, color: it.color }} numberOfLines={1}>{tlTime(it.at)}</Text>
-          <View style={{ position: 'absolute', top: 33, left: pct(hrs[i]), marginLeft: -9, width: 18, height: 18, borderRadius: 9, backgroundColor: it.color, borderWidth: 3, borderColor: '#fff' }} />
+          <Pressable disabled={!onPressItem} onPress={() => onPressItem?.(it.id)} hitSlop={6} style={{ position: 'absolute', top: 33, left: pct(hrs[i]), marginLeft: -9 }}>
+            <View style={{ width: 18, height: 18, borderRadius: 9, backgroundColor: it.color, borderWidth: 3, borderColor: '#fff' }} />
+          </Pressable>
         </React.Fragment>
       ))}
     </View>
@@ -74,7 +76,7 @@ function RibbonTimeline({ items, isToday = true }: { items: TlItem[]; isToday?: 
 /** Clock: a sunrise→sunset dial. Sunrise on the left, noon at the top, sunset on
    the right, midnight at the bottom — day arc over the top, night below — with
    24-hour tick slots and time-of-day colour bands. */
-function ClockTimeline({ items, unit, isToday = true }: { items: TlItem[]; unit: 'entry' | 'event'; isToday?: boolean }) {
+function ClockTimeline({ items, unit, isToday = true, onPressItem }: { items: TlItem[]; unit: 'entry' | 'event'; isToday?: boolean; onPressItem?: (id: string) => void }) {
   const cx = 110, cy = 110, R = 86;
   // Map the hour so 6→left, 12→top, 18→right, 0→bottom.
   const angle = (h: number) => ((((h - 18) % 24) + 24) % 24) / 24 * 2 * Math.PI;
@@ -118,11 +120,12 @@ function ClockTimeline({ items, unit, isToday = true }: { items: TlItem[]; unit:
       {items.length > 0 ? (
         <View style={{ alignSelf: 'stretch', gap: 7 }}>
           {items.map((it) => (
-            <View key={it.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Pressable key={it.id} disabled={!onPressItem} onPress={() => onPressItem?.(it.id)} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 8, opacity: pressed ? 0.6 : 1 })}>
               <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: it.color }} />
               <Text style={{ fontFamily: font.body700, fontSize: 12, color: color.muted, width: 64 }}>{tlTime(it.at)}</Text>
               <Text style={{ flex: 1, fontFamily: font.body600, fontSize: 13, color: color.ink }} numberOfLines={1}>{it.title}</Text>
-            </View>
+              {onPressItem ? <Text style={{ fontFamily: font.body700, fontSize: 11, color: color.primary }}>Edit</Text> : null}
+            </Pressable>
           ))}
         </View>
       ) : (
