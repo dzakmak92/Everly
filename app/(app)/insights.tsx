@@ -25,7 +25,7 @@ export default function Insights({ embedded }: { embedded?: boolean }) {
   const params = useLocalSearchParams<{ tab?: string }>();
 
   const initial: Tab =
-    params.tab === 'day' || params.tab === 'week' || params.tab === 'patterns' ? params.tab : 'patterns';
+    params.tab === 'day' || params.tab === 'week' || params.tab === 'patterns' ? params.tab : 'day';
   const [tab, setTab] = useState<Tab>(initial);
 
   return (
