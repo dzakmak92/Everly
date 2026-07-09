@@ -45,7 +45,8 @@ export default function Insights({ embedded }: { embedded?: boolean }) {
         </Pressable>
       )}
 
-      <Text style={{ fontFamily: font.display700, fontSize: 28, color: color.ink }}>Insights</Text>
+      {/* Title only when standalone — the home tab already says "Insights". */}
+      {!embedded && <Text style={{ fontFamily: font.display700, fontSize: 28, color: color.ink }}>Insights</Text>}
 
       {/* segmented tab control */}
       <View
