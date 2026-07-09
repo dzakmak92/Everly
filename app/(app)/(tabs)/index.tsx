@@ -95,8 +95,6 @@ export default function Today() {
   // switch sits where the app logo + greeting used to be. Phone/browser Back
   // from Insights returns to Today instead of leaving the app.
   const [homeTab, setHomeTab] = useState<'today' | 'insights'>('today');
-  // Only intercept Back while Insights is actually on screen (home root).
-  useBackClose(atHome && homeTab === 'insights', () => setHomeTab('today'));
 
   // Mum&Me phase tab — default to where she is: pregnancy while expecting,
   // postpartum once the baby has arrived.
@@ -247,7 +245,17 @@ export default function Today() {
     onNavigate: (key: string) => setActiveCat(key),
   };
   const catLabel = activeCat ? RAIL_CATS.find((c) => c.key === activeCat)?.label ?? '' : '';
-  const goOverview = () => { setActiveCat(null); setShowOverview(true); };
+  const goOverview = () => { setActiveCat(null); setShowOverview(true); setHomeTab('today'); };
+  // A single Back interceptor for every "not on the plain Today home" state, so
+  // phone/browser Back steps back inside the app instead of leaving it: from
+  // Insights → Today, and from a drilled-in member / Mum&Me / category → the
+  // family overview. One hook (not two) keeps a single parked history entry, so
+  // moving between these states never races a stray popstate.
+  const backAway =
+    atHome && homeTab === 'insights' ? () => setHomeTab('today')
+    : multiModule && !onOverview ? goOverview
+    : null;
+  useBackClose(backAway !== null, () => backAway?.());
   return (
     <View style={{ flex: 1, backgroundColor: color.canvas }}>
       {/* Fixed header — Today/Insights switch on the home root, module title once you drill in */}
