@@ -282,9 +282,11 @@ export default function Today() {
         {showDock && dockSide === 'left' && <RailDock {...railProps} side="left" onMirror={() => setDockSide('right')} />}
     {activeCat ? (
       <View style={{ flex: 1 }}><CategoryView cat={activeCat} /></View>
-    ) : isYou ? (
+    ) : (!onOverview && isYou) ? (
       // Mum&Me — a module page (not the home root): its own Pregnancy/Postpartum
-      // switch, swipeable left/right. No Today/Insights here.
+      // switch, swipeable left/right. No Today/Insights here. Gated on !onOverview
+      // so returning to the overview (which keeps person='you') shows the family
+      // home, not Mum&Me with a duplicate tab bar.
       <View style={{ flex: 1 }}>
         <View style={{ paddingTop: 10, paddingBottom: 10, paddingLeft: padStart, paddingRight: padEnd, backgroundColor: color.canvas }}>
           <PhaseTabs phase={phase} setPhase={setPhase} />
